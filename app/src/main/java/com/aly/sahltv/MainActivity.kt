@@ -58,7 +58,7 @@ import java.time.ZoneId
  *  - Apps load on a background thread; icons are cached in memory, so going Home is instant.
  *  - Rows: Favorites (your order), Recent, All apps. Long-press OK (or Menu) on a tile for options.
  */
-class MainActivity : Activity() {
+class MainActivity : Activity(), RemoteServer.Host {
 
     private class App(val pkg: String, val label: String, val banner: Drawable?, val icon: Drawable?, val tint: Int)
 
@@ -126,6 +126,7 @@ class MainActivity : Activity() {
     private val autoClean get() = prefs.getBoolean("autoClean", true)
     private val saverMin get() = prefs.getInt("saverMin", 5)          // 0 = off
     private val nowOn get() = prefs.getBoolean("nowOn", true)
+    private val remoteOn get() = prefs.getBoolean("remoteOn", false)
     private val locked get() = list("locked")
     private val pinSet get() = prefs.getString("pinHash", null) != null
     private val lockSettings get() = prefs.getBoolean("lockSettings", false)
@@ -173,6 +174,8 @@ class MainActivity : Activity() {
         if (android.os.Build.VERSION.SDK_INT >= 33) registerReceiver(pkgReceiver, filter, Context.RECEIVER_EXPORTED)
         else registerReceiver(pkgReceiver, filter)
         loadApps()
+        RemoteServer.host = this
+        if (remoteOn) RemoteServer.start(this)
     }
 
     override fun onDestroy() {
@@ -932,6 +935,50 @@ class MainActivity : Activity() {
         }
     }
 
+    // ------------------------------------------------------------------ phone remote
+
+    override fun appList(): List<Pair<String, String>> {
+        val fav = favorites.filter { apps.containsKey(it) }
+        val rest = apps.values.filter { it.pkg !in fav && it.pkg !in hidden && it.pkg !in locked }.sortedBy { it.label.lowercase() }.map { it.pkg }
+        return (fav.filter { it !in locked } + rest).mapNotNull { p -> apps[p]?.let { p to it.label } }
+    }
+    override fun launchPkg(pkg: String) { apps[pkg]?.let { if (it.pkg !in locked) launchNow(it) } }
+    override fun media(action: String) {
+        val c = controller?.transportControls ?: return
+        when (action) {
+            "toggle" -> if (isPlaying()) c.pause() else c.play()
+            "next" -> c.skipToNext()
+            "prev" -> c.skipToPrevious()
+        }
+    }
+    override fun nowPlaying(): String = if (nowBar.visibility == View.VISIBLE) nowTv.text.toString() else ""
+    override fun goHome() {
+        startActivity(Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+    }
+    override fun arabic() = ar
+
+    private fun remoteMenu() {
+        val ip = RemoteServer.ip()
+        val url = if (ip != null) "http://$ip:${RemoteServer.PORT}" else t("(connect the TV to Wi-Fi first)", "(وصّل التلفاز بالشبكة أولًا)")
+        val msg = if (remoteOn) t(
+            "On your phone (same Wi-Fi), open:\n\n$url\n\nPairing code:  ${RemoteServer.code(this)}\n\nYou can open apps, control playback and volume, go Home, and type text.\n\nFor typing, run these once from your PC:\nadb shell ime enable ${RemoteServer.IME_ID}\nadb shell pm grant com.aly.sahltv android.permission.WRITE_SECURE_SETTINGS\n\nLocked apps are not shown on the phone.",
+            "على هاتفك (نفس شبكة الواي فاي) افتح:\n\n$url\n\nرمز الاقتران:  ${RemoteServer.code(this)}\n\nيمكنك فتح التطبيقات والتحكم بالتشغيل والصوت والعودة للرئيسية والكتابة.\n\nللكتابة، نفّذ هذين الأمرين مرة واحدة من الكمبيوتر:\nadb shell ime enable ${RemoteServer.IME_ID}\nadb shell pm grant com.aly.sahltv android.permission.WRITE_SECURE_SETTINGS\n\nالتطبيقات المقفلة لا تظهر على الهاتف.")
+        else t("Control the TV from your phone's browser on the same Wi-Fi: open apps, play/pause, volume, Home, and type text.\n\nIt stays off until you turn it on, and each phone must enter a pairing code once.",
+               "تحكّم بالتلفاز من متصفح هاتفك على نفس الشبكة: فتح التطبيقات، التشغيل والإيقاف، الصوت، الرئيسية، والكتابة.\n\nيبقى متوقفًا حتى تفعّله، ويجب إدخال رمز اقتران مرة واحدة لكل هاتف.")
+        dialog().setTitle(t("📱 Phone remote", "📱 الريموت من الهاتف")).setMessage(msg)
+            .setPositiveButton(if (remoteOn) t("Turn off", "إيقاف") else t("Turn on", "تفعيل")) { _, _ ->
+                guarded {
+                    prefs.edit().putBoolean("remoteOn", !remoteOn).apply()
+                    if (remoteOn) RemoteServer.start(this) else RemoteServer.stop()
+                    handler.postDelayed({ remoteMenu() }, 300)
+                }
+            }
+            .setNeutralButton(t("New code", "رمز جديد")) { _, _ ->
+                guarded { RemoteServer.resetPairing(this); toast(t("New pairing code — phones must pair again", "رمز جديد — يجب إعادة الاقتران")); remoteMenu() }
+            }
+            .setNegativeButton(t("Close", "إغلاق"), null).show()
+    }
+
     // ------------------------------------------------------------------ menus
 
     private fun dialog() = AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
@@ -986,6 +1033,7 @@ class MainActivity : Activity() {
             t("Clock screensaver: ", "شاشة توقف الساعة: ") + (if (saverMin == 0) t("Off", "متوقفة") else t("after $saverMin min", "بعد $saverMin دقائق")) + ch,
             t("Now playing controls: ", "التحكم بالتشغيل الحالي: ") + onOff(nowOn) + (if (nowOn && !mediaAllowed) t("  (needs setup)", "  (يحتاج إعدادًا)") else ""),
             t("💾  Backup & restore settings", "💾  نسخ الإعدادات احتياطيًا واستعادتها"),
+            t("📱  Phone remote: ", "📱  الريموت من الهاتف: ") + onOff(remoteOn) + t("  (settings)", "  (إعدادات)"),
             t("About Sahl TV", "حول سهل TV")
         )
         dialog().setTitle(t("Launcher", "الواجهة")).setItems(items) { _, which ->
@@ -1005,7 +1053,8 @@ class MainActivity : Activity() {
                 }
                 9 -> nowMenu()
                 10 -> backupMenu()
-                11 -> dialog().setTitle("Sahl TV  ·  سهل")
+                11 -> remoteMenu()
+                12 -> dialog().setTitle("Sahl TV  ·  سهل")
                     .setMessage(t("A fast, ad-free home screen for Android TV.\n\nNo tracking, no background services. Internet is used only to download preview pictures when you turn App previews on.\n\nPrayer times are calculated on the TV (Qatar method: Fajr 18°, Asr Shafi'i, Isha 90 min after Maghrib). Please compare with the official Awqaf timetable.\n\nTip: hold OK on an app (or press Menu) for options.\n\nFree & open source (MIT).\nContact: alysherif1309@gmail.com",
                                   "واجهة رئيسية سريعة وبلا إعلانات لأجهزة Android TV.\n\nبلا تتبّع وبلا خدمات تعمل في الخلفية. يُستخدم الإنترنت فقط لتنزيل صور المعاينات عند تفعيل «معاينات التطبيقات».\n\nتُحسب مواقيت الصلاة على التلفاز (طريقة قطر: الفجر 18°، العصر شافعي، العشاء بعد المغرب بـ 90 دقيقة). يُرجى مقارنتها بتقويم الأوقاف الرسمي.\n\nنصيحة: اضغط مطولًا على OK فوق تطبيق (أو زر القائمة) لعرض الخيارات.\n\nمجاني ومفتوح المصدر (MIT).\nللتواصل: alysherif1309@gmail.com"))
                     .setPositiveButton(t("OK", "حسنًا"), null).show()

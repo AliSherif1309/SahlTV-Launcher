@@ -7,6 +7,8 @@
     <!-- App previews (optional, off by default): read the rows apps publish, and download their pictures -->
     <uses-permission android:name="android.permission.READ_TV_LISTINGS" />
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Phone remote: optional automatic keyboard switching (granted once with ADB) -->
+    <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" />
     <!-- Backup & restore to the Download folder (Android 10 and older; newer versions need no permission) -->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
@@ -50,6 +52,17 @@
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity>
+        <!-- Sahl Keyboard: receives text typed on the phone remote -->
+        <service
+            android:name=".RemoteKeyboard"
+            android:exported="true"
+            android:label="Sahl Keyboard (phone typing)"
+            android:permission="android.permission.BIND_INPUT_METHOD">
+            <intent-filter>
+                <action android:name="android.view.InputMethod" />
+            </intent-filter>
+            <meta-data android:name="android.view.im" android:resource="@xml/method" />
+        </service>
         <!-- Now playing bar: lets the launcher see media sessions (reads no notifications) -->
         <service
             android:name=".MediaListener"

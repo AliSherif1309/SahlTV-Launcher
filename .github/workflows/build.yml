@@ -17,6 +17,25 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.7"
+      - name: Fetch Quran text (Tanzil) and font (Amiri Quran), and verify them
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          A=quran/src/main/assets
+          curl -fsSL --retry 3 "https://tanzil.net/pub/download/index.php?marks=true&sajdah=true&rub=true&alef=true&quranType=uthmani&outType=txt-2&agree=true" -o $A/quran-uthmani.txt
+          n=$(grep -cE '^[0-9]+\|[0-9]+\|' $A/quran-uthmani.txt || true)
+          echo "Ayahs in downloaded text: $n"
+          test "$n" -eq 6236
+          grep -qi "tanzil" $A/quran-uthmani.txt
+          curl -fsSL --retry 3 "https://tanzil.net/res/text/metadata/quran-data.js" -o $A/quran-data.js || rm -f $A/quran-data.js
+          ls -la $A
+          mkdir -p /tmp/amiri && gh release download -R aliftype/amiri -p "Amiri-*.zip" -D /tmp/amiri
+          unzip -o -q /tmp/amiri/Amiri-*.zip -d /tmp/amiri/x
+          F=$(find /tmp/amiri/x -name "AmiriQuran.ttf" | head -1); test -n "$F"
+          cp "$F" $A/AmiriQuran.ttf
+          L=$(find /tmp/amiri/x -name "OFL.txt" | head -1); [ -n "$L" ] && cp "$L" $A/Amiri-OFL.txt || true
+          ls -la $A
       - name: Build signed release APK
         env:
           KEYSTORE_B64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
@@ -30,15 +49,18 @@ jobs:
           fi
           gradle assembleRelease --no-daemon
           cp app/build/outputs/apk/release/app-release.apk SahlTV.apk
+          cp quran/build/outputs/apk/release/quran-release.apk SahlQuran.apk
           rm -f "$RUNNER_TEMP/release.jks"
       - uses: actions/upload-artifact@v4
         with:
           name: SahlTV.apk
-          path: SahlTV.apk
+          path: |
+            SahlTV.apk
+            SahlQuran.apk
       - name: Publish as the "latest" release (direct download on the phone)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release delete latest --yes --cleanup-tag || true
-          gh release create latest SahlTV.apk --title "Sahl TV launcher (latest build)" \
-            --notes "Build ${GITHUB_RUN_NUMBER} (${GITHUB_SHA::7}). Download **SahlTV.apk** on your PC, then install it on the TV with ADB (see README)."
+          gh release create latest SahlTV.apk SahlQuran.apk --title "Sahl TV launcher (latest build)" \
+            --notes "Build ${GITHUB_RUN_NUMBER} (${GITHUB_SHA::7}). Download **SahlTV.apk** (launcher) and **SahlQuran.apk** (Quran reader) on your PC, then install it on the TV with ADB (see README)."

@@ -56,3 +56,18 @@ Release signing uses the repository secrets `SIGNING_KEYSTORE_BASE64`, `SIGNING_
 
 ## License
 [MIT](LICENSE). Contact: alysherif1309@gmail.com
+
+## 📱 Phone remote (v1.4)
+Turn on in ☰ Launcher → Phone remote. Open the shown address (http://TV-IP:8765) on a phone on the same Wi-Fi and enter the 6-digit code.
+Launch apps, play/pause/next, volume, Home, and type text into any search box.
+For typing, run once:
+```
+adb shell ime enable com.aly.sahltv/.RemoteKeyboard
+adb shell pm grant com.aly.sahltv android.permission.WRITE_SECURE_SETTINGS
+```
+
+## 📖 Sahl Quran (separate app: SahlQuran.apk)
+Quran reader for the TV: continues where you stopped, jump by Surah / Juz' / page, bookmarks, text size, dark / light / sepia.
+Remote: ◀ ▶ turn pages, ▲ ▼ scroll, OK opens the menu.
+
+Quran text: Tanzil Project (tanzil.net), Uthmani, CC BY 3.0, used unchanged. Font: Amiri Quran, SIL Open Font License.
