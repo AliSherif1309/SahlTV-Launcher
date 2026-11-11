@@ -54,6 +54,19 @@ class MainActivity : Activity() {
     private class App(val pkg: String, val label: String, val banner: Drawable?, val icon: Drawable?, val tint: Int)
 
     private val prefs by lazy { getSharedPreferences("sahl", MODE_PRIVATE) }
+
+    /** Language chosen in the launcher menu (first start: follows the system language). */
+    private val ar: Boolean by lazy {
+        val saved = prefs.getString("lang", null)
+        if (saved != null) saved == "ar" else resources.configuration.locales[0].language == "ar"
+    }
+    private fun t(en: String, arabic: String) = if (ar) arabic else en
+
+    // app previews (rows that apps publish to the Android TV home screen)
+    private var previewRows: List<Previews.Row> = emptyList()
+    private var lastPreviewLoad = 0L
+    private val previewsOn get() = prefs.getBoolean("pvOn", false)
+    private val previewOff get() = list("pvOff")          // row keys the user switched off
     private val handler = Handler(Looper.getMainLooper())
     private val worker = Executors.newSingleThreadExecutor()
     private var apps: Map<String, App> = emptyMap()
@@ -114,6 +127,7 @@ class MainActivity : Activity() {
         }
         val col = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
+            layoutDirection = if (ar) View.LAYOUT_DIRECTION_RTL else View.LAYOUT_DIRECTION_LTR
             setPadding(dp(48), dp(24), dp(48), 0)       // TV safe area
         }
         col.addView(buildTopBar())
@@ -152,6 +166,7 @@ class MainActivity : Activity() {
         handler.post(clockTick)
         if (dirty && !loading) loadApps() else if (apps.isNotEmpty()) render(keepFocus = true)
         maybeAutoClean()
+        refreshPreviews(force = false)
     }
 
     override fun onPause() {
@@ -193,13 +208,13 @@ class MainActivity : Activity() {
         left.addView(clockTv); left.addView(dateTv); left.addView(prayerTv)
         bar.addView(left, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
 
-        memBtn = pill("🧹  Free memory") { freeMemory() }
+        memBtn = pill(t("🧹  Free memory", "🧹  تحرير الذاكرة")) { freeMemory() }
         bar.addView(memBtn)
-        settingsBtn = pill("⚙  TV settings") {
-            if (lockSettings) askPin("TV settings are locked") { open(Intent(Settings.ACTION_SETTINGS)) } else open(Intent(Settings.ACTION_SETTINGS))
+        settingsBtn = pill(t("⚙  TV settings", "⚙  إعدادات التلفاز")) {
+            if (lockSettings) askPin(t("TV settings are locked", "إعدادات التلفاز مقفلة")) { open(Intent(Settings.ACTION_SETTINGS)) } else open(Intent(Settings.ACTION_SETTINGS))
         }
         bar.addView(settingsBtn, LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply { marginStart = dp(12) })
-        bar.addView(pill("☰  Launcher") { launcherMenu() }, LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply { marginStart = dp(12) })
+        bar.addView(pill(t("☰  Launcher", "☰  الواجهة")) { launcherMenu() }, LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply { marginStart = dp(12) })
         return bar
     }
 
@@ -220,16 +235,18 @@ class MainActivity : Activity() {
 
     private val hijriMonths = arrayOf("Muharram", "Safar", "Rabi' al-Awwal", "Rabi' al-Thani", "Jumada al-Ula", "Jumada al-Akhirah",
         "Rajab", "Sha'ban", "Ramadan", "Shawwal", "Dhu al-Qa'dah", "Dhu al-Hijjah")
+    private val hijriMonthsAr = arrayOf("محرم", "صفر", "ربيع الأول", "ربيع الآخر", "جمادى الأولى", "جمادى الآخرة",
+        "رجب", "شعبان", "رمضان", "شوال", "ذو القعدة", "ذو الحجة")
 
     private fun updateClock() {
         val now = Date()
         clockTv.text = SimpleDateFormat(if (clock24) "HH:mm" else "h:mm a", Locale.US).format(now)
-        var d = SimpleDateFormat("EEEE d MMMM yyyy", Locale.US).format(now)
+        var d = SimpleDateFormat("EEEE d MMMM yyyy", if (ar) Locale.forLanguageTag("ar") else Locale.US).format(now)
         try {
             val cal = android.icu.util.IslamicCalendar()
             cal.calculationType = android.icu.util.IslamicCalendar.CalculationType.ISLAMIC_UMALQURA
             cal.timeInMillis = now.time
-            d += "  ·  ${cal.get(android.icu.util.Calendar.DAY_OF_MONTH)} ${hijriMonths[cal.get(android.icu.util.Calendar.MONTH)]} ${cal.get(android.icu.util.Calendar.YEAR)} AH"
+            d += "  ·  ${cal.get(android.icu.util.Calendar.DAY_OF_MONTH)} ${(if (ar) hijriMonthsAr else hijriMonths)[cal.get(android.icu.util.Calendar.MONTH)]} ${cal.get(android.icu.util.Calendar.YEAR)} ${t("AH", "هـ")}"
         } catch (_: Throwable) {}
         dateTv.text = d
         updatePrayer()
@@ -247,17 +264,19 @@ class MainActivity : Activity() {
         val today = nowZ.toLocalDate()
         val t = Prayer.compute(today, la, lo, tz)
         val friday = today.dayOfWeek == DayOfWeek.FRIDAY
-        val list = listOf("Fajr" to t.fajr, (if (friday) "Jumu'ah" else "Dhuhr") to t.dhuhr, "Asr" to t.asr, "Maghrib" to t.maghrib, "Isha" to t.isha)
+        val list = listOf(t("Fajr", "الفجر") to t.fajr, (if (friday) t("Jumu'ah", "الجمعة") else t("Dhuhr", "الظهر")) to t.dhuhr,
+            t("Asr", "العصر") to t.asr, t("Maghrib", "المغرب") to t.maghrib, t("Isha", "العشاء") to t.isha)
         var next = list.firstOrNull { it.second > nowH }
         var hoursLeft = next?.let { it.second - nowH }
         if (next == null) {   // after Isha: tomorrow's Fajr
             val tm = Prayer.compute(today.plusDays(1), la, lo, tz)
-            next = "Fajr" to tm.fajr
+            next = t("Fajr", "الفجر") to tm.fajr
             hoursLeft = tm.fajr + 24.0 - nowH
         }
         val mins = Math.round(hoursLeft!! * 60).toInt()
-        val left = if (mins >= 60) "${mins / 60} h ${mins % 60} min" else "$mins min"
-        prayerTv.text = "🕌  Next: ${next.first} ${Prayer.hm(next.second)}  ·  in $left  ·  $city"
+        val left = if (mins >= 60) t("${mins / 60} h ${mins % 60} min", "${mins / 60} س ${mins % 60} د") else t("$mins min", "$mins دقيقة")
+        prayerTv.text = t("🕌  Next: ${next.first} ${Prayer.hm(next.second)}  ·  in $left  ·  $city",
+                          "🕌  الصلاة القادمة: ${next.first} ${Prayer.hm(next.second)}  ·  بعد $left  ·  ${cityAr(idx)}")
     }
 
     // ------------------------------------------------------------------ apps
@@ -319,14 +338,14 @@ class MainActivity : Activity() {
     }
 
     private fun launch(app: App) {
-        if (app.pkg in locked) { askPin("${app.label} is locked") { launchNow(app) }; return }
+        if (app.pkg in locked) { askPin(t("${app.label} is locked", "${app.label} مقفل")) { launchNow(app) }; return }
         launchNow(app)
     }
 
     private fun launchNow(app: App) {
         val pm = packageManager
         val intent = pm.getLeanbackLaunchIntentForPackage(app.pkg) ?: pm.getLaunchIntentForPackage(app.pkg)
-        if (intent == null) { toast("Can't open ${app.label}"); return }
+        if (intent == null) { toast(t("Can't open ${app.label}", "تعذّر فتح ${app.label}")); return }
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         // remember for "Recent" and "most used"
         val r = recent; r.remove(app.pkg); r.add(0, app.pkg); saveList("recent", r.take(8))
@@ -335,7 +354,7 @@ class MainActivity : Activity() {
     }
 
     private fun open(i: Intent) {
-        try { startActivity(i) } catch (_: Exception) { toast("Not available on this TV") }
+        try { startActivity(i) } catch (_: Exception) { toast(t("Not available on this TV", "غير متاح على هذا التلفاز")) }
     }
 
     private fun toast(s: String) = Toast.makeText(this, s, Toast.LENGTH_SHORT).show()
@@ -349,7 +368,7 @@ class MainActivity : Activity() {
         // nothing changed since last time? keep the existing tiles: Home stays instant and focus stays put
         val sig = listOf(apps.keys.joinToString(), prefs.getString("fav", ""), prefs.getString("recent", ""),
             prefs.getString("hidden", ""), prefs.getString("locked", ""), sortMostUsed.toString(),
-            resources.configuration.screenWidthDp.toString()).joinToString("#")
+            resources.configuration.screenWidthDp.toString(), previewSig()).joinToString("#")
         if (!force && sig == lastSig && content.childCount > 0) return
         lastSig = sig
         val hid = hidden.toSet()
@@ -362,20 +381,21 @@ class MainActivity : Activity() {
         content.removeAllViews()
 
         if (fav.isNotEmpty()) {
-            content.addView(rowTitle("Favorites"))
+            content.addView(rowTitle(t("Favorites", "المفضلة")))
             content.addView(hRow("fav", fav.mapNotNull { apps[it] }, big = true))
         } else {
-            content.addView(rowTitle("Favorites"))
+            content.addView(rowTitle(t("Favorites", "المفضلة")))
             content.addView(TextView(this).apply {
-                text = "Tip: hold OK on any app (or press Menu) and choose “Add to Favorites”."
+                text = t("Tip: hold OK on any app (or press Menu) and choose “Add to Favorites”.", "نصيحة: اضغط مطولًا على OK فوق أي تطبيق (أو زر القائمة) واختر «إضافة إلى المفضلة».")
                 textSize = 14f; setTextColor(MUTED); setPadding(0, dp(4), 0, dp(8))
             })
         }
+        renderPreviews()
         if (rec.size >= 2) {
-            content.addView(rowTitle("Recent"))
+            content.addView(rowTitle(t("Recent", "المستخدمة مؤخرًا")))
             content.addView(hRow("rec", rec.mapNotNull { apps[it] }, big = false))
         }
-        content.addView(rowTitle("All apps  ·  ${all.size}"))
+        content.addView(rowTitle(t("All apps  ·  ${all.size}", "كل التطبيقات  ·  ${all.size}")))
         // as many 142 dp columns as fit inside the TV safe area (48 dp each side)
         val cols = maxOf(4, (resources.configuration.screenWidthDp - 96) / 142)
         val grid = GridLayout(this).apply { columnCount = cols; useDefaultMargins = false; clipChildren = false; clipToPadding = false }
@@ -482,6 +502,131 @@ class MainActivity : Activity() {
         return frame
     }
 
+    // ------------------------------------------------------------------ app previews
+
+    private fun previewSig() = if (!previewsOn) "off" else
+        previewRows.joinToString("|") { r -> r.key + ":" + r.items.size + ":" + (r.items.firstOrNull()?.title ?: "") } + "~" + prefs.getString("pvOff", "")
+
+    /** Reload the published rows at most every 3 minutes (or now, when forced). */
+    private fun refreshPreviews(force: Boolean) {
+        if (!previewsOn || !Previews.hasPermission(this)) return
+        val now = System.currentTimeMillis()
+        if (!force && now - lastPreviewLoad < 180_000) return
+        lastPreviewLoad = now
+        worker.execute {
+            val rows = Previews.load(this) ?: return@execute
+            handler.post { previewRows = rows; render(keepFocus = true) }
+        }
+    }
+
+    private fun rowTitleFor(r: Previews.Row): String = if (r.key == "watchnext") t("Continue watching", "متابعة المشاهدة")
+        else (apps[r.pkg]?.label ?: r.pkg) + (if (r.name.isNotBlank()) "  ·  ${r.name}" else "")
+
+    private fun renderPreviews() {
+        if (!previewsOn) return
+        val off = previewOff.toSet()
+        for (r in previewRows) {
+            if (r.key in off || (r.pkg.isNotEmpty() && r.pkg in hidden)) continue
+            if (r.items.isEmpty()) continue
+            content.addView(rowTitle(rowTitleFor(r)))
+            val line = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(dp(6), dp(6), dp(6), dp(6)) }
+            r.items.forEachIndexed { i, it -> line.addView(previewTile(r, i, it)) }
+            content.addView(HorizontalScrollView(this).apply {
+                isHorizontalScrollBarEnabled = false; clipToPadding = false; clipChildren = false; addView(line)
+            })
+        }
+    }
+
+    private fun previewTile(r: Previews.Row, i: Int, item: Previews.Item): View {
+        val w = dp(192); val h = dp(108); val radius = dp(10).toFloat()
+        val frame = FrameLayout(this).apply {
+            tag = "pv:${r.key}/$i"
+            isFocusable = true; isClickable = true; defaultFocusHighlightEnabled = false
+            clipToOutline = true
+            background = GradientDrawable().apply { setColor(Color.parseColor("#1C2A30")); cornerRadius = radius }
+            contentDescription = item.title
+        }
+        val img = ImageView(this).apply { scaleType = ImageView.ScaleType.CENTER_CROP }
+        frame.addView(img, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
+        item.poster?.let { uri -> Previews.image(this, uri, w, h) { b -> if (b != null) img.setImageBitmap(b) } }
+        frame.addView(TextView(this).apply {
+            text = item.title; textSize = 12f; setTextColor(Color.WHITE); maxLines = 2
+            setPadding(dp(8), dp(16), dp(8), dp(6))
+            background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Color.TRANSPARENT, Color.parseColor("#DD000000")))
+        }, FrameLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT, Gravity.BOTTOM))
+        val ring = View(this).apply {
+            background = GradientDrawable().apply { setColor(Color.TRANSPARENT); setStroke(dp(3), Color.WHITE); cornerRadius = radius }
+            visibility = View.INVISIBLE
+        }
+        frame.addView(ring, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
+        frame.setOnFocusChangeListener { v, has ->
+            ring.visibility = if (has) View.VISIBLE else View.INVISIBLE
+            v.animate().scaleX(if (has) 1.08f else 1f).scaleY(if (has) 1.08f else 1f).translationZ(if (has) dp(10).toFloat() else 0f)
+                .setInterpolator(ease).setDuration(150).withLayer().start()
+        }
+        frame.setOnClickListener { openPreview(r, item) }
+        frame.layoutParams = LinearLayout.LayoutParams(w, h).apply { setMargins(dp(6), 0, dp(6), 0) }
+        return frame
+    }
+
+    private fun openPreview(r: Previews.Row, item: Previews.Item) {
+        if (r.pkg in locked) { askPin(t("This app is locked", "هذا التطبيق مقفل")) { openPreviewNow(r, item) }; return }
+        openPreviewNow(r, item)
+    }
+
+    private fun openPreviewNow(r: Previews.Row, item: Previews.Item) {
+        try {
+            val i = Intent.parseUri(item.intentUri ?: throw IllegalStateException(), Intent.URI_INTENT_SCHEME)
+            i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            startActivity(i)
+        } catch (_: Exception) {
+            apps[r.pkg]?.let { launchNow(it) } ?: toast(t("Can't open this item", "تعذّر فتح هذا العنصر"))
+        }
+    }
+
+    private fun previewsMenu() {
+        if (!Previews.hasPermission(this)) {
+            dialog().setTitle(t("App previews", "معاينات التطبيقات"))
+                .setMessage(t("Show the rows that apps publish for the home screen (e.g. recommended videos from SmartTube, “Continue watching”).\n\nAndroid needs one permission for this. If no prompt appears on your TV, run this once from your PC:\n\nadb shell pm grant com.aly.sahltv android.permission.READ_TV_LISTINGS\n\nThe pictures are downloaded from the internet only while previews are on.",
+                              "عرض الصفوف التي تنشرها التطبيقات للشاشة الرئيسية (مثل الفيديوهات المقترحة من SmartTube و«متابعة المشاهدة»).\n\nيحتاج أندرويد إلى إذن واحد لذلك. إذا لم تظهر نافذة طلب الإذن على التلفاز، نفّذ هذا الأمر مرة واحدة من الكمبيوتر:\n\nadb shell pm grant com.aly.sahltv android.permission.READ_TV_LISTINGS\n\nتُنزَّل الصور من الإنترنت فقط أثناء تفعيل المعاينات."))
+                .setPositiveButton(t("Allow", "السماح")) { _, _ -> requestPermissions(arrayOf(Previews.PERMISSION), 7) }
+                .setNegativeButton(t("Cancel", "إلغاء"), null).show()
+            return
+        }
+        // load fresh rows so the list shows every app that currently publishes something
+        worker.execute {
+            val rows = Previews.load(this) ?: emptyList()
+            handler.post {
+                previewRows = rows
+                val off = previewOff
+                val labels = ArrayList<String>()
+                labels.add(t("Previews: ", "المعاينات: ") + onOff(previewsOn) + t("  (turn ", "  (") + (if (previewsOn) t("off)", "إيقاف)") else t("on)", "تفعيل)")))
+                for (r in rows) labels.add((if (r.key in off) "☐  " else "☑  ") + rowTitleFor(r) + "  (${r.items.size})")
+                if (rows.isEmpty()) labels.add(t("No app publishes rows yet. In SmartTube/YouTube, enable their home-screen channels or recommendations option.",
+                                                  "لا يوجد تطبيق ينشر صفوفًا بعد. في SmartTube أو YouTube فعّل خيار قنوات/اقتراحات الشاشة الرئيسية."))
+                dialog().setTitle(t("App previews — choose rows", "معاينات التطبيقات — اختر الصفوف")).setItems(labels.toTypedArray()) { _, which ->
+                    if (which == 0) {
+                        prefs.edit().putBoolean("pvOn", !previewsOn).apply()
+                        if (previewsOn) refreshPreviews(force = true) else render(true)
+                        previewsMenu()
+                    } else if (which - 1 < rows.size) {
+                        val k = rows[which - 1].key
+                        val l = previewOff; if (k in l) l.remove(k) else l.add(k); saveList("pvOff", l)
+                        render(true); previewsMenu()
+                    }
+                }.show()
+            }
+        }
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == 7) {
+            if (Previews.hasPermission(this)) { prefs.edit().putBoolean("pvOn", true).apply(); refreshPreviews(force = true); previewsMenu() }
+            else toast(t("Not allowed — use the ADB command shown before.", "لم يُسمح — استخدم أمر ADB المذكور."))
+        }
+    }
+
     // ------------------------------------------------------------------ menus
 
     private fun dialog() = AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
@@ -491,61 +636,71 @@ class MainActivity : Activity() {
         val isFav = a.pkg in fav
         val items = ArrayList<Pair<String, () -> Unit>>()
         if (isFav) {
-            items.add("★  Remove from Favorites" to { fav.remove(a.pkg); saveList("fav", fav); render(true) })
+            items.add(t("★  Remove from Favorites", "★  إزالة من المفضلة") to { fav.remove(a.pkg); saveList("fav", fav); render(true) })
             val i = fav.indexOf(a.pkg)
-            if (i > 0) items.add("←  Move left" to { fav.removeAt(i); fav.add(i - 1, a.pkg); saveList("fav", fav); focusRow = "fav"; render(true) })
-            if (i < fav.size - 1) items.add("→  Move right" to { fav.removeAt(i); fav.add(i + 1, a.pkg); saveList("fav", fav); focusRow = "fav"; render(true) })
+            if (i > 0) items.add((if (ar) "→  تحريك لليمين" else "←  Move left") to { fav.removeAt(i); fav.add(i - 1, a.pkg); saveList("fav", fav); focusRow = "fav"; render(true) })
+            if (i < fav.size - 1) items.add((if (ar) "←  تحريك لليسار" else "→  Move right") to { fav.removeAt(i); fav.add(i + 1, a.pkg); saveList("fav", fav); focusRow = "fav"; render(true) })
         } else {
-            items.add("☆  Add to Favorites" to { fav.add(a.pkg); saveList("fav", fav); focusRow = "fav"; render(true) })
+            items.add(t("☆  Add to Favorites", "☆  إضافة إلى المفضلة") to { fav.add(a.pkg); saveList("fav", fav); focusRow = "fav"; render(true) })
         }
-        if (a.pkg in locked) items.add("🔓  Remove PIN lock" to {
-            askPin("Enter PIN to unlock ${a.label}") { val l = locked; l.remove(a.pkg); saveList("locked", l); render(true) }
-        }) else items.add("🔒  Lock with PIN" to {
-            val doLock = { val l = locked; l.add(a.pkg); saveList("locked", l); render(true); toast("${a.label} now needs the PIN") }
-            if (pinSet) askPin("Enter PIN to lock ${a.label}") { doLock() } else createPin { doLock() }
+        if (a.pkg in locked) items.add(t("🔓  Remove PIN lock", "🔓  إزالة القفل") to {
+            askPin(t("Enter PIN to unlock ${a.label}", "أدخل الرمز لفتح قفل ${a.label}")) { val l = locked; l.remove(a.pkg); saveList("locked", l); render(true) }
+        }) else items.add(t("🔒  Lock with PIN", "🔒  قفل برمز سري") to {
+            val doLock = { val l = locked; l.add(a.pkg); saveList("locked", l); render(true); toast(t("${a.label} now needs the PIN", "${a.label} يحتاج الآن إلى الرمز")) }
+            if (pinSet) askPin(t("Enter PIN to lock ${a.label}", "أدخل الرمز لقفل ${a.label}")) { doLock() } else createPin { doLock() }
         })
-        items.add("🙈  Hide this app" to {
+        items.add(t("🙈  Hide this app", "🙈  إخفاء هذا التطبيق") to {
             guarded {
                 val h = hidden; h.add(a.pkg); saveList("hidden", h)
                 fav.remove(a.pkg); saveList("fav", fav); render(false)
             }
         })
-        items.add("ⓘ  App info" to { guarded { open(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${a.pkg}"))) } })
-        items.add("🗑  Uninstall" to { guarded { open(Intent(Intent.ACTION_DELETE, Uri.parse("package:${a.pkg}"))) } })
+        items.add(t("ⓘ  App info", "ⓘ  معلومات التطبيق") to { guarded { open(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${a.pkg}"))) } })
+        items.add(t("🗑  Uninstall", "🗑  إلغاء التثبيت") to { guarded { open(Intent(Intent.ACTION_DELETE, Uri.parse("package:${a.pkg}"))) } })
         dialog().setTitle(a.label)
             .setItems(items.map { it.first }.toTypedArray()) { _, which -> items[which].second() }
             .show()
     }
 
+    private fun onOff(b: Boolean) = if (b) t("On", "مُفعّل") else t("Off", "متوقف")
+    private val citiesAr = listOf("الدوحة", "الوكرة", "الريان", "لوسيل", "أم صلال", "الخور", "مسيعيد", "دخان", "مدينة الشمال")
+    private fun cityAr(i: Int) = citiesAr.getOrElse(i) { cities[i].first }
+
     private fun launcherMenu() {
-        val city = if (cityIndex in cities.indices) cities[cityIndex].first else "Off"
+        val city = if (cityIndex in cities.indices) (if (ar) cityAr(cityIndex) else cities[cityIndex].first) else t("Off", "متوقف")
+        val ch = t("  (change)", "  (تغيير)")
         val items = arrayOf(
-            "Sort all apps: " + (if (sortMostUsed) "Most used first" else "A to Z") + "  (change)",
-            "Clock: " + (if (clock24) "24-hour" else "12-hour") + "  (change)",
-            "Prayer times: $city  (change)",
-            "Auto clean when memory is low: " + (if (autoClean) "On" else "Off") + "  (change)",
-            "🔒  PIN & locks" + (if (pinSet) "  (${locked.size} apps locked)" else "  (no PIN set)"),
-            "Show hidden apps (${hidden.size})",
-            "About Sahl TV"
+            t("Language: English  (العربية)", "اللغة: العربية  (English)"),
+            t("App previews (recommended videos…): ", "معاينات التطبيقات (فيديوهات مقترحة…): ") + onOff(previewsOn) + t("  (settings)", "  (إعدادات)"),
+            t("Sort all apps: ", "ترتيب التطبيقات: ") + (if (sortMostUsed) t("Most used first", "الأكثر استخدامًا أولًا") else t("A to Z", "أبجديًا")) + ch,
+            t("Clock: ", "الساعة: ") + (if (clock24) t("24-hour", "24 ساعة") else t("12-hour", "12 ساعة")) + ch,
+            t("Prayer times: ", "مواقيت الصلاة: ") + city + ch,
+            t("Auto clean when memory is low: ", "التنظيف التلقائي عند انخفاض الذاكرة: ") + onOff(autoClean) + ch,
+            t("🔒  PIN & locks", "🔒  الرمز السري والأقفال") + (if (pinSet) t("  (${locked.size} apps locked)", "  (${locked.size} تطبيقات مقفلة)") else t("  (no PIN set)", "  (لا يوجد رمز)")),
+            t("Show hidden apps (${hidden.size})", "إظهار التطبيقات المخفية (${hidden.size})"),
+            t("About Sahl TV", "حول سهل TV")
         )
-        dialog().setTitle("Launcher").setItems(items) { _, which ->
+        dialog().setTitle(t("Launcher", "الواجهة")).setItems(items) { _, which ->
             when (which) {
-                0 -> { prefs.edit().putBoolean("sortUsed", !sortMostUsed).apply(); render(false) }
-                1 -> { prefs.edit().putBoolean("clock24", !clock24).apply(); updateClock() }
-                2 -> cityMenu()
-                3 -> { prefs.edit().putBoolean("autoClean", !autoClean).apply(); toast("Auto clean " + if (autoClean) "on" else "off") }
-                4 -> pinMenu()
-                5 -> guarded { hiddenMenu() }
-                6 -> dialog().setTitle("Sahl TV  ·  سهل")
-                    .setMessage("A fast, ad-free home screen for Android TV.\n\nNo internet access, no tracking, no background services — it only shows your apps and opens them.\n\nPrayer times are calculated on the TV (Qatar method: Fajr 18°, Asr Shafi'i, Isha 90 min after Maghrib). Please compare with the official Awqaf timetable.\n\nTip: hold OK on an app (or press Menu) for options.\n\nFree & open source (MIT).\nContact: alysherif1309@gmail.com")
-                    .setPositiveButton("OK", null).show()
+                0 -> { prefs.edit().putString("lang", if (ar) "en" else "ar").apply(); recreate() }
+                1 -> previewsMenu()
+                2 -> { prefs.edit().putBoolean("sortUsed", !sortMostUsed).apply(); render(false) }
+                3 -> { prefs.edit().putBoolean("clock24", !clock24).apply(); updateClock() }
+                4 -> cityMenu()
+                5 -> { prefs.edit().putBoolean("autoClean", !autoClean).apply(); toast(t("Auto clean: ", "التنظيف التلقائي: ") + onOff(autoClean)) }
+                6 -> pinMenu()
+                7 -> guarded { hiddenMenu() }
+                8 -> dialog().setTitle("Sahl TV  ·  سهل")
+                    .setMessage(t("A fast, ad-free home screen for Android TV.\n\nNo tracking, no background services. Internet is used only to download preview pictures when you turn App previews on.\n\nPrayer times are calculated on the TV (Qatar method: Fajr 18°, Asr Shafi'i, Isha 90 min after Maghrib). Please compare with the official Awqaf timetable.\n\nTip: hold OK on an app (or press Menu) for options.\n\nFree & open source (MIT).\nContact: alysherif1309@gmail.com",
+                                  "واجهة رئيسية سريعة وبلا إعلانات لأجهزة Android TV.\n\nبلا تتبّع وبلا خدمات تعمل في الخلفية. يُستخدم الإنترنت فقط لتنزيل صور المعاينات عند تفعيل «معاينات التطبيقات».\n\nتُحسب مواقيت الصلاة على التلفاز (طريقة قطر: الفجر 18°، العصر شافعي، العشاء بعد المغرب بـ 90 دقيقة). يُرجى مقارنتها بتقويم الأوقاف الرسمي.\n\nنصيحة: اضغط مطولًا على OK فوق تطبيق (أو زر القائمة) لعرض الخيارات.\n\nمجاني ومفتوح المصدر (MIT).\nللتواصل: alysherif1309@gmail.com"))
+                    .setPositiveButton(t("OK", "حسنًا"), null).show()
             }
         }.show()
     }
 
     private fun cityMenu() {
-        val names = cities.map { it.first } + "Turn prayer times off"
-        dialog().setTitle("Prayer times for").setItems(names.toTypedArray()) { _, which ->
+        val names = cities.indices.map { if (ar) cityAr(it) else cities[it].first } + t("Turn prayer times off", "إيقاف مواقيت الصلاة")
+        dialog().setTitle(t("Prayer times for", "مواقيت الصلاة في")).setItems(names.toTypedArray()) { _, which ->
             prefs.edit().putInt("city", if (which < cities.size) which else -1).apply(); updatePrayer()
         }.show()
     }
@@ -558,23 +713,23 @@ class MainActivity : Activity() {
     }
 
     /** Runs the action directly when no PIN is set; otherwise only after the right PIN. */
-    private fun guarded(action: () -> Unit) { if (pinSet) askPin("Enter PIN") { action() } else action() }
+    private fun guarded(action: () -> Unit) { if (pinSet) askPin(t("Enter PIN", "أدخل الرمز السري")) { action() } else action() }
 
     private fun askPin(title: String, onOk: () -> Unit) {
         if (!pinSet) { onOk(); return }
         pinPad(title) { pin, dlg, msg ->
             if (hash(pin) == prefs.getString("pinHash", "")) { dlg.dismiss(); onOk(); true }
-            else { msg.text = "Wrong PIN — try again"; false }
+            else { msg.text = t("Wrong PIN — try again", "رمز خاطئ — حاول مجددًا"); false }
         }
     }
 
     private fun createPin(after: () -> Unit) {
-        pinPad("Choose a 4-digit PIN") { first, dlg, _ ->
+        pinPad(t("Choose a 4-digit PIN", "اختر رمزًا من 4 أرقام")) { first, dlg, _ ->
             dlg.dismiss()
-            pinPad("Enter the same PIN again") { second, dlg2, msg2 ->
+            pinPad(t("Enter the same PIN again", "أدخل الرمز نفسه مرة أخرى")) { second, dlg2, msg2 ->
                 if (second == first) {
-                    prefs.edit().putString("pinHash", hash(first)).apply(); dlg2.dismiss(); toast("PIN saved"); after(); true
-                } else { msg2.text = "PINs didn't match — try again"; false }
+                    prefs.edit().putString("pinHash", hash(first)).apply(); dlg2.dismiss(); toast(t("PIN saved", "تم حفظ الرمز")); after(); true
+                } else { msg2.text = t("PINs didn't match — try again", "الرمزان غير متطابقين — حاول مجددًا"); false }
             }
             true
         }
@@ -582,25 +737,25 @@ class MainActivity : Activity() {
 
     private fun pinMenu() {
         if (!pinSet) {
-            dialog().setTitle("PIN & locks")
-                .setMessage("Set a 4-digit PIN to lock apps (e.g. YouTube, Play Store) and the TV settings button.\n\nNote: this lock works from this home screen. Someone who knows Android well could still reach apps another way (e.g. voice search).")
-                .setPositiveButton("Set a PIN") { _, _ -> createPin { pinMenu() } }
-                .setNegativeButton("Cancel", null).show()
+            dialog().setTitle(t("PIN & locks", "الرمز السري والأقفال"))
+                .setMessage(if (ar) "اضبط رمزًا من 4 أرقام لقفل التطبيقات (مثل يوتيوب ومتجر Play) وزر إعدادات التلفاز.\n\nملاحظة: هذا القفل يعمل من هذه الشاشة الرئيسية. قد يتمكن شخص خبير بأندرويد من الوصول إلى التطبيقات بطريقة أخرى (مثل البحث الصوتي)." else "Set a 4-digit PIN to lock apps (e.g. YouTube, Play Store) and the TV settings button.\n\nNote: this lock works from this home screen. Someone who knows Android well could still reach apps another way (e.g. voice search).")
+                .setPositiveButton(t("Set a PIN", "ضبط رمز")) { _, _ -> createPin { pinMenu() } }
+                .setNegativeButton(t("Cancel", "إلغاء"), null).show()
             return
         }
-        askPin("Enter PIN") {
+        askPin(t("Enter PIN", "أدخل الرمز السري")) {
             val items = arrayOf(
-                "Change PIN",
-                "Lock the TV settings button: " + (if (lockSettings) "On" else "Off") + "  (change)",
-                "Locked apps: " + (locked.mapNotNull { apps[it]?.label }.joinToString(", ").ifEmpty { "none — hold OK on an app to lock it" }),
-                "Remove PIN (unlocks everything)"
+                t("Change PIN", "تغيير الرمز"),
+                t("Lock the TV settings button: ", "قفل زر إعدادات التلفاز: ") + onOff(lockSettings) + t("  (change)", "  (تغيير)"),
+                t("Locked apps: ", "التطبيقات المقفلة: ") + (locked.mapNotNull { apps[it]?.label }.joinToString(", ").ifEmpty { t("none — hold OK on an app to lock it", "لا يوجد — اضغط مطولًا على تطبيق لقفله") }),
+                t("Remove PIN (unlocks everything)", "إزالة الرمز (فتح كل الأقفال)")
             )
-            dialog().setTitle("PIN & locks").setItems(items) { _, which ->
+            dialog().setTitle(t("PIN & locks", "الرمز السري والأقفال")).setItems(items) { _, which ->
                 when (which) {
                     0 -> createPin { }
-                    1 -> { prefs.edit().putBoolean("lockSettings", !lockSettings).apply(); toast("TV settings lock " + if (lockSettings) "on" else "off") }
+                    1 -> { prefs.edit().putBoolean("lockSettings", !lockSettings).apply(); toast(t("TV settings lock: ", "قفل الإعدادات: ") + onOff(lockSettings)) }
                     2 -> {}
-                    3 -> { prefs.edit().remove("pinHash").putBoolean("lockSettings", false).putString("locked", "").apply(); render(true); toast("PIN removed") }
+                    3 -> { prefs.edit().remove("pinHash").putBoolean("lockSettings", false).putString("locked", "").apply(); render(true); toast(t("PIN removed", "تمت إزالة الرمز")) }
                 }
             }.show()
         }
@@ -615,7 +770,7 @@ class MainActivity : Activity() {
         box.addView(dots); box.addView(msg)
         val grid = GridLayout(this).apply { columnCount = 3 }
         box.addView(grid)
-        val dlg = dialog().setTitle(title).setView(box).setNegativeButton("Cancel", null).create()
+        val dlg = dialog().setTitle(title).setView(box).setNegativeButton(t("Cancel", "إلغاء"), null).create()
         fun refresh() { dots.text = (0 until 4).joinToString(" ") { if (it < pin.length) "●" else "○" } }
         for (k in listOf("1", "2", "3", "4", "5", "6", "7", "8", "9", "⌫", "0", "✓")) {
             grid.addView(TextView(this).apply {
@@ -658,16 +813,16 @@ class MainActivity : Activity() {
             val after = ActivityManager.MemoryInfo().also { am.getMemoryInfo(it) }.availMem
             val freed = ((after - before) / (1024 * 1024)).coerceAtLeast(0)
             if (freed > 0) handler.post {
-                memBtn.text = "🧹  Auto-freed $freed MB"
-                handler.postDelayed({ memBtn.text = "🧹  Free memory" }, 4000)
+                memBtn.text = t("🧹  Auto-freed $freed MB", "🧹  تم تحرير $freed ميغابايت تلقائيًا")
+                handler.postDelayed({ memBtn.text = t("🧹  Free memory", "🧹  تحرير الذاكرة") }, 4000)
             }
         }
     }
 
     private fun hiddenMenu() {
         val h = hidden.filter { apps.containsKey(it) }
-        if (h.isEmpty()) { toast("No hidden apps"); return }
-        dialog().setTitle("Tap an app to show it again")
+        if (h.isEmpty()) { toast(t("No hidden apps", "لا توجد تطبيقات مخفية")); return }
+        dialog().setTitle(t("Tap an app to show it again", "اختر تطبيقًا لإظهاره من جديد"))
             .setItems(h.map { apps[it]?.label ?: it }.toTypedArray()) { _, which ->
                 val l = hidden; l.remove(h[which]); saveList("hidden", l); render(true)
             }.show()
@@ -679,7 +834,7 @@ class MainActivity : Activity() {
     private fun freeMemory() {
         val am = getSystemService(ACTIVITY_SERVICE) as ActivityManager
         val before = ActivityManager.MemoryInfo().also { am.getMemoryInfo(it) }.availMem
-        memBtn.text = "🧹  Cleaning…"
+        memBtn.text = t("🧹  Cleaning…", "🧹  جارٍ التنظيف…")
         worker.execute {
             for (pkg in apps.keys) try { am.killBackgroundProcesses(pkg) } catch (_: Exception) {}
             Thread.sleep(600)
@@ -688,8 +843,8 @@ class MainActivity : Activity() {
             val freeMb = info.availMem / (1024 * 1024)
             val totalMb = info.totalMem / (1024 * 1024)
             handler.post {
-                memBtn.text = "🧹  Free memory"
-                toast("Freed $freed MB  ·  $freeMb MB of $totalMb MB now free")
+                memBtn.text = t("🧹  Free memory", "🧹  تحرير الذاكرة")
+                toast(t("Freed $freed MB  ·  $freeMb MB of $totalMb MB now free", "تم تحرير $freed ميغابايت  ·  المتاح الآن $freeMb من $totalMb ميغابايت"))
             }
         }
     }

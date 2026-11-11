@@ -1,6 +1,6 @@
 # Sahl TV (سهل): a fast, ad-free home screen for Android TV
 
-A replacement home screen for Android TV / Mi TV. It opens instantly, shows only your apps, has no ads, uses no internet, and is easy to use with the remote.
+A replacement home screen for Android TV / Mi TV. It opens instantly, shows only your apps, has no ads, and is easy to use with the remote. It's in **English and Arabic** (العربية, right-to-left), switchable in the app.
 
 **⬇ Download:** [SahlTV.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlTV.apk)
 
@@ -14,7 +14,8 @@ A replacement home screen for Android TV / Mi TV. It opens instantly, shows only
 - **🧹 Free memory:** closes apps running in the background and shows how much memory was freed. **Auto clean** does this by itself when you return Home and memory is low.
 - **🔒 PIN lock:** lock any app, and optionally the TV settings button, with a 4-digit PIN entered on a remote-friendly number pad.
 - **⚙ TV settings** and **☰ Launcher** options: sort order, 12/24-hour clock, show hidden apps.
-- **No internet permission, no tracking, no background services.** Apps load in the background and icons are kept in memory, so the Home button is instant.
+- **App previews (optional, off by default):** rows that apps publish for the home screen (e.g. recommended videos from SmartTube, or "Continue watching"). Each row can be switched on or off in ☰ Launcher → App previews. This needs one permission: `adb shell pm grant com.aly.sahltv android.permission.READ_TV_LISTINGS`. Pictures are downloaded only while previews are on.
+- **No tracking, no background services.** Apps load in the background and icons are kept in memory, so the Home button is instant.
 
 ## Install (from a Windows PC with ADB)
 1. On the TV, turn on **Developer options → USB debugging / Network debugging**, and note the TV's IP address (Settings → Network).
