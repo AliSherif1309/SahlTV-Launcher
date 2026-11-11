@@ -12,6 +12,7 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Typeface
+import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
 import android.net.Uri
@@ -22,6 +23,7 @@ import android.provider.Settings
 import android.view.Gravity
 import android.view.KeyEvent
 import android.view.View
+import android.view.animation.DecelerateInterpolator
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.widget.FrameLayout
@@ -36,6 +38,9 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.concurrent.Executors
+import java.time.DayOfWeek
+import java.time.LocalDate
+import java.time.ZoneId
 
 /**
  * Sahl TV (سهل = "easy") — a fast, ad-free home screen for Android TV.
@@ -61,6 +66,11 @@ class MainActivity : Activity() {
     private lateinit var content: LinearLayout
     private lateinit var scroll: ScrollView
     private lateinit var memBtn: TextView
+    private lateinit var prayerTv: TextView
+    private lateinit var settingsBtn: TextView
+    private var lastSig = ""
+    private var lastAutoClean = 0L
+    private val ease = DecelerateInterpolator(1.6f)
 
     // look
     private val BG_TOP = Color.parseColor("#0E1A24")
@@ -82,6 +92,18 @@ class MainActivity : Activity() {
     private fun launches(pkg: String) = prefs.getInt("n_$pkg", 0)
     private val sortMostUsed get() = prefs.getBoolean("sortUsed", true)
     private val clock24 get() = prefs.getBoolean("clock24", true)
+    private val autoClean get() = prefs.getBoolean("autoClean", true)
+    private val locked get() = list("locked")
+    private val pinSet get() = prefs.getString("pinHash", null) != null
+    private val lockSettings get() = prefs.getBoolean("lockSettings", false)
+
+    // prayer-time locations (Qatar). Index stored in prefs; -1 = prayer times off.
+    private val cities = listOf(
+        Triple("Doha", 25.2854, 51.5310), Triple("Al Wakrah", 25.1715, 51.6034), Triple("Al Rayyan", 25.2919, 51.4244),
+        Triple("Lusail", 25.4230, 51.4900), Triple("Umm Salal", 25.4697, 51.3975), Triple("Al Khor", 25.6839, 51.5058),
+        Triple("Mesaieed", 24.9909, 51.5493), Triple("Dukhan", 25.4248, 50.7820), Triple("Madinat ash Shamal", 26.1293, 51.2009)
+    )
+    private val cityIndex get() = prefs.getInt("city", 0)
 
     // ------------------------------------------------------------------ lifecycle
 
@@ -107,6 +129,7 @@ class MainActivity : Activity() {
         col.addView(scroll, LinearLayout.LayoutParams(MATCH_PARENT, 0, 1f))
         root.addView(col)
         setContentView(root)
+        window.setBackgroundDrawable(null)      // the gradient covers everything: skip one full-screen draw
 
         val filter = IntentFilter().apply {
             addAction(Intent.ACTION_PACKAGE_ADDED); addAction(Intent.ACTION_PACKAGE_REMOVED); addAction(Intent.ACTION_PACKAGE_CHANGED)
@@ -128,6 +151,7 @@ class MainActivity : Activity() {
         updateClock()
         handler.post(clockTick)
         if (dirty && !loading) loadApps() else if (apps.isNotEmpty()) render(keepFocus = true)
+        maybeAutoClean()
     }
 
     override fun onPause() {
@@ -165,12 +189,16 @@ class MainActivity : Activity() {
         val left = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         clockTv = TextView(this).apply { textSize = 40f; setTextColor(TEXT); typeface = Typeface.create("sans-serif-light", Typeface.NORMAL) }
         dateTv = TextView(this).apply { textSize = 15f; setTextColor(MUTED) }
-        left.addView(clockTv); left.addView(dateTv)
+        prayerTv = TextView(this).apply { textSize = 15f; setTextColor(ACCENT); setPadding(0, dp(2), 0, 0) }
+        left.addView(clockTv); left.addView(dateTv); left.addView(prayerTv)
         bar.addView(left, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
 
         memBtn = pill("🧹  Free memory") { freeMemory() }
         bar.addView(memBtn)
-        bar.addView(pill("⚙  TV settings") { open(Intent(Settings.ACTION_SETTINGS)) }, LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply { marginStart = dp(12) })
+        settingsBtn = pill("⚙  TV settings") {
+            if (lockSettings) askPin("TV settings are locked") { open(Intent(Settings.ACTION_SETTINGS)) } else open(Intent(Settings.ACTION_SETTINGS))
+        }
+        bar.addView(settingsBtn, LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply { marginStart = dp(12) })
         bar.addView(pill("☰  Launcher") { launcherMenu() }, LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply { marginStart = dp(12) })
         return bar
     }
@@ -179,6 +207,7 @@ class MainActivity : Activity() {
         this.text = text; textSize = 14f; setTextColor(TEXT)
         setPadding(dp(16), dp(9), dp(16), dp(9))
         isFocusable = true; isClickable = true
+        defaultFocusHighlightEnabled = false
         val normal = GradientDrawable().apply { setColor(Color.parseColor("#1AFFFFFF")); cornerRadius = dp(20).toFloat() }
         val focused = GradientDrawable().apply { setColor(Color.WHITE); cornerRadius = dp(20).toFloat() }
         background = normal
@@ -203,6 +232,32 @@ class MainActivity : Activity() {
             d += "  ·  ${cal.get(android.icu.util.Calendar.DAY_OF_MONTH)} ${hijriMonths[cal.get(android.icu.util.Calendar.MONTH)]} ${cal.get(android.icu.util.Calendar.YEAR)} AH"
         } catch (_: Throwable) {}
         dateTv.text = d
+        updatePrayer()
+    }
+
+    private fun updatePrayer() {
+        val idx = cityIndex
+        if (idx < 0 || idx >= cities.size) { prayerTv.visibility = View.GONE; return }
+        prayerTv.visibility = View.VISIBLE
+        val (city, la, lo) = cities[idx]
+        val zone = ZoneId.systemDefault()
+        val nowZ = java.time.ZonedDateTime.now(zone)
+        val tz = nowZ.offset.totalSeconds / 3600.0
+        val nowH = nowZ.hour + nowZ.minute / 60.0 + nowZ.second / 3600.0
+        val today = nowZ.toLocalDate()
+        val t = Prayer.compute(today, la, lo, tz)
+        val friday = today.dayOfWeek == DayOfWeek.FRIDAY
+        val list = listOf("Fajr" to t.fajr, (if (friday) "Jumu'ah" else "Dhuhr") to t.dhuhr, "Asr" to t.asr, "Maghrib" to t.maghrib, "Isha" to t.isha)
+        var next = list.firstOrNull { it.second > nowH }
+        var hoursLeft = next?.let { it.second - nowH }
+        if (next == null) {   // after Isha: tomorrow's Fajr
+            val tm = Prayer.compute(today.plusDays(1), la, lo, tz)
+            next = "Fajr" to tm.fajr
+            hoursLeft = tm.fajr + 24.0 - nowH
+        }
+        val mins = Math.round(hoursLeft!! * 60).toInt()
+        val left = if (mins >= 60) "${mins / 60} h ${mins % 60} min" else "$mins min"
+        prayerTv.text = "🕌  Next: ${next.first} ${Prayer.hm(next.second)}  ·  in $left  ·  $city"
     }
 
     // ------------------------------------------------------------------ apps
@@ -223,7 +278,7 @@ class MainActivity : Activity() {
                     val pkg = ri.activityInfo.packageName
                     if (pkg == packageName || found.containsKey(pkg)) continue
                     val ai = ri.activityInfo.applicationInfo
-                    val banner = try { ri.activityInfo.loadBanner(pm) ?: ai.loadBanner(pm) } catch (_: Exception) { null }
+                    val banner = try { (ri.activityInfo.loadBanner(pm) ?: ai.loadBanner(pm))?.let { prescale(it, dp(200), dp(112)) } } catch (_: Exception) { null }
                     val icon = try { ri.loadIcon(pm) } catch (_: Exception) { null }
                     val label = ri.loadLabel(pm)?.toString() ?: pkg
                     found[pkg] = App(pkg, label, banner, icon, if (banner == null) tintOf(icon) else Color.BLACK)
@@ -235,6 +290,14 @@ class MainActivity : Activity() {
                 render(keepFocus = true)
             }
         }
+    }
+
+    /** Draw the banner once at tile size, so scrolling never has to rescale vector or large images. */
+    private fun prescale(d: Drawable, w: Int, h: Int): Drawable {
+        val b = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        val c = Canvas(b)
+        d.setBounds(0, 0, w, h); d.draw(c)
+        return BitmapDrawable(resources, b)
     }
 
     /** A pleasant tile colour taken from the icon (average of its pixels, darkened). */
@@ -256,6 +319,11 @@ class MainActivity : Activity() {
     }
 
     private fun launch(app: App) {
+        if (app.pkg in locked) { askPin("${app.label} is locked") { launchNow(app) }; return }
+        launchNow(app)
+    }
+
+    private fun launchNow(app: App) {
         val pm = packageManager
         val intent = pm.getLeanbackLaunchIntentForPackage(app.pkg) ?: pm.getLaunchIntentForPackage(app.pkg)
         if (intent == null) { toast("Can't open ${app.label}"); return }
@@ -277,7 +345,13 @@ class MainActivity : Activity() {
     private var focusPkg: String? = null
     private var focusRow: String? = null
 
-    private fun render(keepFocus: Boolean) {
+    private fun render(keepFocus: Boolean, force: Boolean = false) {
+        // nothing changed since last time? keep the existing tiles: Home stays instant and focus stays put
+        val sig = listOf(apps.keys.joinToString(), prefs.getString("fav", ""), prefs.getString("recent", ""),
+            prefs.getString("hidden", ""), prefs.getString("locked", ""), sortMostUsed.toString(),
+            resources.configuration.screenWidthDp.toString()).joinToString("#")
+        if (!force && sig == lastSig && content.childCount > 0) return
+        lastSig = sig
         val hid = hidden.toSet()
         val fav = favorites.filter { apps.containsKey(it) }
         val rec = recent.filter { apps.containsKey(it) && it !in hid }.take(6)
@@ -347,9 +421,11 @@ class MainActivity : Activity() {
         val w = if (big) dp(200) else dp(130)
         val h = if (big) dp(112) else dp(73)
         val radius = dp(10).toFloat()
+        var nameStrip: TextView? = null
         val frame = FrameLayout(this).apply {
             tag = "$row/${a.pkg}"
             isFocusable = true; isClickable = true
+            defaultFocusHighlightEnabled = false
             clipToOutline = true
             background = GradientDrawable().apply { setColor(a.tint); cornerRadius = radius }
             contentDescription = a.label
@@ -367,6 +443,20 @@ class MainActivity : Activity() {
             }, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT))
             frame.addView(inner, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
         }
+        if (a.banner != null) {
+            // app name slides in at the bottom of banner tiles when focused
+            nameStrip = TextView(this).apply {
+                text = a.label; textSize = if (big) 13f else 11f; setTextColor(Color.WHITE); maxLines = 1
+                setPadding(dp(8), dp(14), dp(8), dp(5))
+                background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Color.TRANSPARENT, Color.parseColor("#CC000000")))
+                alpha = 0f
+            }
+            frame.addView(nameStrip, FrameLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT, Gravity.BOTTOM))
+        }
+        if (a.pkg in locked) {
+            frame.addView(TextView(this).apply { text = "🔒"; textSize = 12f; setPadding(dp(5), dp(3), dp(5), dp(3)) },
+                FrameLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT, Gravity.TOP or Gravity.END))
+        }
         // focus ring drawn on top
         val ring = View(this).apply {
             background = GradientDrawable().apply { setColor(Color.TRANSPARENT); setStroke(dp(3), Color.WHITE); cornerRadius = radius }
@@ -376,8 +466,9 @@ class MainActivity : Activity() {
 
         frame.setOnFocusChangeListener { v, has ->
             ring.visibility = if (has) View.VISIBLE else View.INVISIBLE
-            v.animate().scaleX(if (has) 1.1f else 1f).scaleY(if (has) 1.1f else 1f).translationZ(if (has) dp(8).toFloat() else 0f)
-                .setDuration(120).start()
+            v.animate().scaleX(if (has) 1.1f else 1f).scaleY(if (has) 1.1f else 1f).translationZ(if (has) dp(10).toFloat() else 0f)
+                .setInterpolator(ease).setDuration(150).withLayer().start()
+            nameStrip?.animate()?.alpha(if (has) 1f else 0f)?.setDuration(150)?.start()
             if (has) { focusPkg = a.pkg; focusRow = row }
         }
         frame.setOnClickListener { launch(a) }
@@ -407,21 +498,33 @@ class MainActivity : Activity() {
         } else {
             items.add("☆  Add to Favorites" to { fav.add(a.pkg); saveList("fav", fav); focusRow = "fav"; render(true) })
         }
-        items.add("🙈  Hide this app" to {
-            val h = hidden; h.add(a.pkg); saveList("hidden", h)
-            fav.remove(a.pkg); saveList("fav", fav); render(false)
+        if (a.pkg in locked) items.add("🔓  Remove PIN lock" to {
+            askPin("Enter PIN to unlock ${a.label}") { val l = locked; l.remove(a.pkg); saveList("locked", l); render(true) }
+        }) else items.add("🔒  Lock with PIN" to {
+            val doLock = { val l = locked; l.add(a.pkg); saveList("locked", l); render(true); toast("${a.label} now needs the PIN") }
+            if (pinSet) askPin("Enter PIN to lock ${a.label}") { doLock() } else createPin { doLock() }
         })
-        items.add("ⓘ  App info" to { open(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${a.pkg}"))) })
-        items.add("🗑  Uninstall" to { open(Intent(Intent.ACTION_DELETE, Uri.parse("package:${a.pkg}"))) })
+        items.add("🙈  Hide this app" to {
+            guarded {
+                val h = hidden; h.add(a.pkg); saveList("hidden", h)
+                fav.remove(a.pkg); saveList("fav", fav); render(false)
+            }
+        })
+        items.add("ⓘ  App info" to { guarded { open(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${a.pkg}"))) } })
+        items.add("🗑  Uninstall" to { guarded { open(Intent(Intent.ACTION_DELETE, Uri.parse("package:${a.pkg}"))) } })
         dialog().setTitle(a.label)
             .setItems(items.map { it.first }.toTypedArray()) { _, which -> items[which].second() }
             .show()
     }
 
     private fun launcherMenu() {
+        val city = if (cityIndex in cities.indices) cities[cityIndex].first else "Off"
         val items = arrayOf(
             "Sort all apps: " + (if (sortMostUsed) "Most used first" else "A to Z") + "  (change)",
             "Clock: " + (if (clock24) "24-hour" else "12-hour") + "  (change)",
+            "Prayer times: $city  (change)",
+            "Auto clean when memory is low: " + (if (autoClean) "On" else "Off") + "  (change)",
+            "🔒  PIN & locks" + (if (pinSet) "  (${locked.size} apps locked)" else "  (no PIN set)"),
             "Show hidden apps (${hidden.size})",
             "About Sahl TV"
         )
@@ -429,12 +532,136 @@ class MainActivity : Activity() {
             when (which) {
                 0 -> { prefs.edit().putBoolean("sortUsed", !sortMostUsed).apply(); render(false) }
                 1 -> { prefs.edit().putBoolean("clock24", !clock24).apply(); updateClock() }
-                2 -> hiddenMenu()
-                3 -> dialog().setTitle("Sahl TV  ·  سهل")
-                    .setMessage("A fast, ad-free home screen for Android TV.\n\nNo internet access, no tracking, no background services — it only shows your apps and opens them.\n\nTip: hold OK on an app (or press Menu) for options.\n\nFree & open source (MIT). github.com/AliSherif1309/SahlTV-Launcher\nContact: alysherif1309@gmail.com")
+                2 -> cityMenu()
+                3 -> { prefs.edit().putBoolean("autoClean", !autoClean).apply(); toast("Auto clean " + if (autoClean) "on" else "off") }
+                4 -> pinMenu()
+                5 -> guarded { hiddenMenu() }
+                6 -> dialog().setTitle("Sahl TV  ·  سهل")
+                    .setMessage("A fast, ad-free home screen for Android TV.\n\nNo internet access, no tracking, no background services — it only shows your apps and opens them.\n\nPrayer times are calculated on the TV (Qatar method: Fajr 18°, Asr Shafi'i, Isha 90 min after Maghrib). Please compare with the official Awqaf timetable.\n\nTip: hold OK on an app (or press Menu) for options.\n\nFree & open source (MIT).\nContact: alysherif1309@gmail.com")
                     .setPositiveButton("OK", null).show()
             }
         }.show()
+    }
+
+    private fun cityMenu() {
+        val names = cities.map { it.first } + "Turn prayer times off"
+        dialog().setTitle("Prayer times for").setItems(names.toTypedArray()) { _, which ->
+            prefs.edit().putInt("city", if (which < cities.size) which else -1).apply(); updatePrayer()
+        }.show()
+    }
+
+    // ------------------------------------------------------------------ PIN
+
+    private fun hash(pin: String): String {
+        val md = java.security.MessageDigest.getInstance("SHA-256")
+        return md.digest(("sahltv:" + pin).toByteArray()).joinToString("") { String.format("%02x", it) }
+    }
+
+    /** Runs the action directly when no PIN is set; otherwise only after the right PIN. */
+    private fun guarded(action: () -> Unit) { if (pinSet) askPin("Enter PIN") { action() } else action() }
+
+    private fun askPin(title: String, onOk: () -> Unit) {
+        if (!pinSet) { onOk(); return }
+        pinPad(title) { pin, dlg, msg ->
+            if (hash(pin) == prefs.getString("pinHash", "")) { dlg.dismiss(); onOk(); true }
+            else { msg.text = "Wrong PIN — try again"; false }
+        }
+    }
+
+    private fun createPin(after: () -> Unit) {
+        pinPad("Choose a 4-digit PIN") { first, dlg, _ ->
+            dlg.dismiss()
+            pinPad("Enter the same PIN again") { second, dlg2, msg2 ->
+                if (second == first) {
+                    prefs.edit().putString("pinHash", hash(first)).apply(); dlg2.dismiss(); toast("PIN saved"); after(); true
+                } else { msg2.text = "PINs didn't match — try again"; false }
+            }
+            true
+        }
+    }
+
+    private fun pinMenu() {
+        if (!pinSet) {
+            dialog().setTitle("PIN & locks")
+                .setMessage("Set a 4-digit PIN to lock apps (e.g. YouTube, Play Store) and the TV settings button.\n\nNote: this lock works from this home screen. Someone who knows Android well could still reach apps another way (e.g. voice search).")
+                .setPositiveButton("Set a PIN") { _, _ -> createPin { pinMenu() } }
+                .setNegativeButton("Cancel", null).show()
+            return
+        }
+        askPin("Enter PIN") {
+            val items = arrayOf(
+                "Change PIN",
+                "Lock the TV settings button: " + (if (lockSettings) "On" else "Off") + "  (change)",
+                "Locked apps: " + (locked.mapNotNull { apps[it]?.label }.joinToString(", ").ifEmpty { "none — hold OK on an app to lock it" }),
+                "Remove PIN (unlocks everything)"
+            )
+            dialog().setTitle("PIN & locks").setItems(items) { _, which ->
+                when (which) {
+                    0 -> createPin { }
+                    1 -> { prefs.edit().putBoolean("lockSettings", !lockSettings).apply(); toast("TV settings lock " + if (lockSettings) "on" else "off") }
+                    2 -> {}
+                    3 -> { prefs.edit().remove("pinHash").putBoolean("lockSettings", false).putString("locked", "").apply(); render(true); toast("PIN removed") }
+                }
+            }.show()
+        }
+    }
+
+    /** Remote-friendly number pad. check(pin, dialog, messageView) returns true when finished. */
+    private fun pinPad(title: String, check: (String, android.app.Dialog, TextView) -> Boolean) {
+        var pin = ""
+        val box = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL; setPadding(dp(16), dp(8), dp(16), dp(8)) }
+        val dots = TextView(this).apply { textSize = 28f; setTextColor(TEXT); gravity = Gravity.CENTER; text = "○ ○ ○ ○" }
+        val msg = TextView(this).apply { textSize = 13f; setTextColor(Color.parseColor("#F08A8A")); gravity = Gravity.CENTER }
+        box.addView(dots); box.addView(msg)
+        val grid = GridLayout(this).apply { columnCount = 3 }
+        box.addView(grid)
+        val dlg = dialog().setTitle(title).setView(box).setNegativeButton("Cancel", null).create()
+        fun refresh() { dots.text = (0 until 4).joinToString(" ") { if (it < pin.length) "●" else "○" } }
+        for (k in listOf("1", "2", "3", "4", "5", "6", "7", "8", "9", "⌫", "0", "✓")) {
+            grid.addView(TextView(this).apply {
+                text = k; textSize = 22f; setTextColor(TEXT); gravity = Gravity.CENTER
+                isFocusable = true; isClickable = true; defaultFocusHighlightEnabled = false
+                val n = GradientDrawable().apply { setColor(Color.parseColor("#1AFFFFFF")); cornerRadius = dp(10).toFloat() }
+                val f = GradientDrawable().apply { setColor(Color.WHITE); cornerRadius = dp(10).toFloat() }
+                background = n
+                setOnFocusChangeListener { v, has -> v.background = if (has) f else n; (v as TextView).setTextColor(if (has) BG_TOP else TEXT) }
+                setOnClickListener {
+                    msg.text = ""
+                    when (k) {
+                        "⌫" -> pin = pin.dropLast(1)
+                        "✓" -> if (pin.length == 4) { if (!check(pin, dlg, msg)) pin = "" }
+                        else -> if (pin.length < 4) pin += k
+                    }
+                    if (k != "✓" && pin.length == 4) { if (!check(pin, dlg, msg)) pin = "" }
+                    refresh()
+                }
+            }, GridLayout.LayoutParams().apply { width = dp(64); height = dp(48); setMargins(dp(4), dp(4), dp(4), dp(4)) })
+        }
+        dlg.show()
+    }
+
+    // ------------------------------------------------------------------ auto clean
+
+    /** When you come back Home and memory is low, quietly close background apps (at most every 2 minutes). */
+    private fun maybeAutoClean() {
+        if (!autoClean) return
+        val now = System.currentTimeMillis()
+        if (now - lastAutoClean < 120_000) return
+        val am = getSystemService(ACTIVITY_SERVICE) as ActivityManager
+        val info = ActivityManager.MemoryInfo().also { am.getMemoryInfo(it) }
+        if (!info.lowMemory && info.availMem > info.totalMem / 4) return
+        lastAutoClean = now
+        val before = info.availMem
+        worker.execute {
+            for (pkg in apps.keys) try { am.killBackgroundProcesses(pkg) } catch (_: Exception) {}
+            Thread.sleep(500)
+            val after = ActivityManager.MemoryInfo().also { am.getMemoryInfo(it) }.availMem
+            val freed = ((after - before) / (1024 * 1024)).coerceAtLeast(0)
+            if (freed > 0) handler.post {
+                memBtn.text = "🧹  Auto-freed $freed MB"
+                handler.postDelayed({ memBtn.text = "🧹  Free memory" }, 4000)
+            }
+        }
     }
 
     private fun hiddenMenu() {

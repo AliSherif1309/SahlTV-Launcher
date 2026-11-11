@@ -6,11 +6,13 @@ A replacement home screen for Android TV / Mi TV. It opens instantly, shows only
 
 ## What you get
 - **Clock and dates:** the Gregorian date plus the Hijri date (Umm al-Qura).
+- **Next prayer** in the top bar, with a countdown and "Jumu'ah" on Fridays. It's calculated on the TV with the Qatar method (Fajr 18°, Asr Shafi'i, Isha 90 minutes after Maghrib), and you can pick your city in Qatar.
 - **Favorites row:** your main apps as big tiles, in the order you choose.
 - **Recent row:** the apps you opened last.
 - **All apps:** sorted by most used (or A–Z), using the TV app banners where apps provide them.
 - **Hold OK (or press Menu) on any app:** Add to / Remove from Favorites, Move left / right, Hide, App info, Uninstall.
-- **🧹 Free memory:** closes apps running in the background and shows how much memory was freed.
+- **🧹 Free memory:** closes apps running in the background and shows how much memory was freed. **Auto clean** does this by itself when you return Home and memory is low.
+- **🔒 PIN lock:** lock any app, and optionally the TV settings button, with a 4-digit PIN entered on a remote-friendly number pad.
 - **⚙ TV settings** and **☰ Launcher** options: sort order, 12/24-hour clock, show hidden apps.
 - **No internet permission, no tracking, no background services.** Apps load in the background and icons are kept in memory, so the Home button is instant.
 
