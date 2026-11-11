@@ -15,6 +15,9 @@ A replacement home screen for Android TV / Mi TV. It opens instantly, shows only
 - **🔒 PIN lock:** lock any app, and optionally the TV settings button, with a 4-digit PIN entered on a remote-friendly number pad.
 - **⚙ TV settings** and **☰ Launcher** options: sort order, 12/24-hour clock, show hidden apps.
 - **App previews (optional, off by default):** rows that apps publish for the home screen (e.g. recommended videos from SmartTube, or "Continue watching"). Each row can be switched on or off in ☰ Launcher → App previews. This needs one permission: `adb shell pm grant com.aly.sahltv android.permission.READ_TV_LISTINGS`. Pictures are downloaded only while previews are on.
+- **Now playing bar:** shows what's playing (e.g. SmartTube in picture-in-picture or background audio) with ⏮ ⏯ ⏭ and Open buttons. One-time setup: `adb shell cmd notification allow_listener com.aly.sahltv/com.aly.sahltv.MediaListener` (Sahl TV reads no notifications).
+- **Clock screensaver:** after 3, 5 or 10 idle minutes on the home screen, a dim clock with the dates and next prayer that slowly moves around the screen (safe for OLED). It doesn't start while something is playing; any key wakes it.
+- **Backup & restore:** saves all settings (favourites, order, hidden and locked apps, previews, language…) to `Download/SahlTV-backup.json` on the TV. Keep a copy on your PC with `adb pull /sdcard/Download/SahlTV-backup.json`.
 - **No tracking, no background services.** Apps load in the background and icons are kept in memory, so the Home button is instant.
 
 ## Install (from a Windows PC with ADB)

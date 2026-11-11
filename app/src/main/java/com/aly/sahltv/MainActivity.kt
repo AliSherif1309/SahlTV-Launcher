@@ -5,6 +5,8 @@ import android.app.ActivityManager
 import android.app.AlertDialog
 import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.ComponentName
+import android.content.ContentValues
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
@@ -15,6 +17,13 @@ import android.graphics.Typeface
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
+import android.media.MediaMetadata
+import android.media.session.MediaController
+import android.media.session.MediaSessionManager
+import android.media.session.PlaybackState
+import android.os.Build
+import android.os.Environment
+import android.provider.MediaStore
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
@@ -80,6 +89,15 @@ class MainActivity : Activity() {
     private lateinit var scroll: ScrollView
     private lateinit var memBtn: TextView
     private lateinit var prayerTv: TextView
+    private lateinit var rootFrame: FrameLayout
+    private lateinit var nowBar: LinearLayout
+    private lateinit var nowTv: TextView
+    private lateinit var nowPlayBtn: TextView
+    private var saver: FrameLayout? = null
+    private var lastInput = System.currentTimeMillis()
+    private var msm: MediaSessionManager? = null
+    private var controller: MediaController? = null
+    private var mediaAllowed = false
     private lateinit var settingsBtn: TextView
     private var lastSig = ""
     private var lastAutoClean = 0L
@@ -106,6 +124,8 @@ class MainActivity : Activity() {
     private val sortMostUsed get() = prefs.getBoolean("sortUsed", true)
     private val clock24 get() = prefs.getBoolean("clock24", true)
     private val autoClean get() = prefs.getBoolean("autoClean", true)
+    private val saverMin get() = prefs.getInt("saverMin", 5)          // 0 = off
+    private val nowOn get() = prefs.getBoolean("nowOn", true)
     private val locked get() = list("locked")
     private val pinSet get() = prefs.getString("pinHash", null) != null
     private val lockSettings get() = prefs.getBoolean("lockSettings", false)
@@ -122,7 +142,7 @@ class MainActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val root = FrameLayout(this).apply {
+        val root = FrameLayout(this).also { rootFrame = it }.apply {
             background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(BG_TOP, BG_BOTTOM))
         }
         val col = LinearLayout(this).apply {
@@ -131,6 +151,7 @@ class MainActivity : Activity() {
             setPadding(dp(48), dp(24), dp(48), 0)       // TV safe area
         }
         col.addView(buildTopBar())
+        col.addView(buildNowBar())
         content = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL; setPadding(0, dp(4), 0, dp(40)); clipChildren = false; clipToPadding = false
         }
@@ -157,6 +178,8 @@ class MainActivity : Activity() {
     override fun onDestroy() {
         super.onDestroy()
         try { unregisterReceiver(pkgReceiver) } catch (_: Exception) {}
+        try { msm?.removeOnActiveSessionsChangedListener(sessionsListener) } catch (_: Exception) {}
+        controller?.unregisterCallback(mediaCallback)
         worker.shutdown()
     }
 
@@ -167,11 +190,16 @@ class MainActivity : Activity() {
         if (dirty && !loading) loadApps() else if (apps.isNotEmpty()) render(keepFocus = true)
         maybeAutoClean()
         refreshPreviews(force = false)
+        setupMedia()
+        lastInput = System.currentTimeMillis()
+        handler.removeCallbacks(saverTick); handler.postDelayed(saverTick, 15_000)
     }
 
     override fun onPause() {
         super.onPause()
         handler.removeCallbacks(clockTick)
+        handler.removeCallbacks(saverTick)
+        hideSaver()
     }
 
     /** Pressing Home while already home: jump back to the top. */
@@ -621,9 +649,286 @@ class MainActivity : Activity() {
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == 8) { if (storageOk(write = true)) doBackup() else storageHelp(); return }
+        if (requestCode == 9) { if (storageOk(write = false)) doRestore() else storageHelp(); return }
         if (requestCode == 7) {
             if (Previews.hasPermission(this)) { prefs.edit().putBoolean("pvOn", true).apply(); refreshPreviews(force = true); previewsMenu() }
             else toast(t("Not allowed — use the ADB command shown before.", "لم يُسمح — استخدم أمر ADB المذكور."))
+        }
+    }
+
+    // ------------------------------------------------------------------ now playing (media sessions)
+
+    private fun buildNowBar(): View {
+        nowBar = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
+            setPadding(dp(14), dp(8), dp(8), dp(8))
+            background = GradientDrawable().apply { setColor(Color.parseColor("#22FFFFFF")); cornerRadius = dp(14).toFloat() }
+            visibility = View.GONE
+        }
+        nowTv = TextView(this).apply { textSize = 14f; setTextColor(TEXT); maxLines = 1 }
+        nowBar.addView(nowTv, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
+        nowBar.addView(pill("⏮") { controller?.transportControls?.skipToPrevious() })
+        nowPlayBtn = pill("⏯") {
+            val c = controller ?: return@pill
+            if (c.playbackState?.state == PlaybackState.STATE_PLAYING) c.transportControls.pause() else c.transportControls.play()
+        }
+        nowBar.addView(nowPlayBtn, LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply { marginStart = dp(8) })
+        nowBar.addView(pill("⏭") { controller?.transportControls?.skipToNext() }, LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply { marginStart = dp(8) })
+        nowBar.addView(pill(t("Open", "فتح")) {
+            controller?.packageName?.let { pkg -> apps[pkg]?.let { launch(it) } }
+        }, LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply { marginStart = dp(8) })
+        val wrap = LinearLayout(this).apply { setPadding(0, dp(12), 0, 0) }
+        wrap.addView(nowBar, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT))
+        return wrap
+    }
+
+    private val mediaCallback = object : MediaController.Callback() {
+        override fun onPlaybackStateChanged(state: PlaybackState?) { handler.post { updateNowBar() } }
+        override fun onMetadataChanged(metadata: MediaMetadata?) { handler.post { updateNowBar() } }
+        override fun onSessionDestroyed() { handler.post { pickController(null) } }
+    }
+
+    private val sessionsListener = MediaSessionManager.OnActiveSessionsChangedListener { list ->
+        handler.post { pickController(list) }
+    }
+
+    /** Needs "notification access" (granted once with ADB); without it the bar simply stays hidden. */
+    private fun setupMedia() {
+        if (!nowOn) { pickController(emptyList()); return }
+        try {
+            val m = msm ?: getSystemService(MediaSessionManager::class.java).also { msm = it } ?: return
+            val cn = ComponentName(this, MediaListener::class.java)
+            val list = m.getActiveSessions(cn)
+            if (!mediaAllowed) m.addOnActiveSessionsChangedListener(sessionsListener, cn)
+            mediaAllowed = true
+            pickController(list)
+        } catch (_: SecurityException) {
+            mediaAllowed = false
+            pickController(emptyList())
+        }
+    }
+
+    private fun pickController(list: List<MediaController>?) {
+        val sessions = list ?: try { msm?.getActiveSessions(ComponentName(this, MediaListener::class.java)) } catch (_: Exception) { null } ?: emptyList()
+        val playing = sessions.firstOrNull { it.playbackState?.state == PlaybackState.STATE_PLAYING }
+        val best = playing ?: sessions.firstOrNull {
+            val st = it.playbackState?.state
+            st == PlaybackState.STATE_PAUSED || st == PlaybackState.STATE_BUFFERING
+        }
+        if (best?.sessionToken != controller?.sessionToken) {
+            controller?.unregisterCallback(mediaCallback)
+            controller = best
+            best?.registerCallback(mediaCallback, handler)
+        }
+        updateNowBar()
+    }
+
+    private fun isPlaying() = controller?.playbackState?.state == PlaybackState.STATE_PLAYING
+
+    private fun updateNowBar() {
+        val c = controller
+        if (!nowOn || c == null) { nowBar.visibility = View.GONE; return }
+        val md = c.metadata
+        val title = md?.getString(MediaMetadata.METADATA_KEY_TITLE) ?: md?.getString(MediaMetadata.METADATA_KEY_DISPLAY_TITLE) ?: ""
+        val artist = md?.getString(MediaMetadata.METADATA_KEY_ARTIST) ?: md?.getString(MediaMetadata.METADATA_KEY_DISPLAY_SUBTITLE) ?: ""
+        val app = apps[c.packageName]?.label ?: c.packageName
+        val state = if (isPlaying()) t("▶ Playing", "▶ يعمل الآن") else t("⏸ Paused", "⏸ متوقف مؤقتًا")
+        nowTv.text = "$state  ·  $app" + (if (title.isNotBlank()) "  ·  $title" else "") + (if (artist.isNotBlank()) " — $artist" else "")
+        nowBar.visibility = View.VISIBLE
+    }
+
+    private fun nowMenu() {
+        if (!mediaAllowed) {
+            dialog().setTitle(t("Now playing controls", "التحكم بالتشغيل الحالي"))
+                .setMessage(t("Shows what's playing (e.g. SmartTube in picture-in-picture or background audio) with ⏮ ⏯ ⏭ buttons on the home screen.\n\nAndroid needs “notification access” for this (Sahl TV reads no notifications). Run once from your PC:\n\nadb shell cmd notification allow_listener com.aly.sahltv/com.aly.sahltv.MediaListener\n\nThen press Home again.",
+                              "يعرض ما يتم تشغيله (مثل SmartTube في نافذة صغيرة أو صوت في الخلفية) مع أزرار ⏮ ⏯ ⏭ على الشاشة الرئيسية.\n\nيحتاج أندرويد إلى «إذن الوصول إلى الإشعارات» لذلك (سهل TV لا يقرأ أي إشعارات). نفّذ هذا مرة واحدة من الكمبيوتر:\n\nadb shell cmd notification allow_listener com.aly.sahltv/com.aly.sahltv.MediaListener\n\nثم اضغط زر الرئيسية مرة أخرى."))
+                .setPositiveButton(t("OK", "حسنًا")) { _, _ -> setupMedia() }
+                .setNegativeButton(if (nowOn) t("Turn off", "إيقاف") else t("Turn on", "تفعيل")) { _, _ ->
+                    prefs.edit().putBoolean("nowOn", !nowOn).apply(); setupMedia()
+                }.show()
+            return
+        }
+        prefs.edit().putBoolean("nowOn", !nowOn).apply()
+        setupMedia()
+        toast(t("Now playing controls: ", "التحكم بالتشغيل الحالي: ") + onOff(nowOn))
+    }
+
+    // ------------------------------------------------------------------ clock screensaver
+
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        lastInput = System.currentTimeMillis()
+        if (saver != null) {                       // any key just wakes the screen
+            if (event.action == KeyEvent.ACTION_UP) hideSaver()
+            return true
+        }
+        return super.dispatchKeyEvent(event)
+    }
+
+    private val saverTick = object : Runnable {
+        override fun run() {
+            val min = saverMin
+            if (min > 0 && saver == null && !isPlaying() && System.currentTimeMillis() - lastInput > min * 60_000L) showSaver()
+            saver?.let { moveSaver(it) }
+            handler.postDelayed(this, if (saver != null) 30_000 else 15_000)
+        }
+    }
+
+    private fun showSaver() {
+        val clock = TextView(this).apply { textSize = 72f; setTextColor(Color.parseColor("#B8C4BF")); typeface = Typeface.create("sans-serif-thin", Typeface.NORMAL) }
+        val date = TextView(this).apply { textSize = 18f; setTextColor(Color.parseColor("#6E7C76")) }
+        val pray = TextView(this).apply { textSize = 18f; setTextColor(Color.parseColor("#2E8F66")); setPadding(0, dp(6), 0, 0) }
+        val box = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL; tag = "box"
+            addView(clock); addView(date); addView(pray)
+        }
+        val f = FrameLayout(this).apply {
+            setBackgroundColor(Color.BLACK); alpha = 0f
+            addView(box, FrameLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT))
+        }
+        rootFrame.addView(f, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
+        saver = f
+        fun fill() { clock.text = clockTv.text; date.text = dateTv.text; pray.text = if (prayerTv.visibility == View.VISIBLE) prayerTv.text else "" }
+        fill()
+        f.tag = Runnable { fill() }
+        f.animate().alpha(1f).setDuration(800).start()
+        f.post { moveSaver(f) }
+    }
+
+    /** Drift the clock to a new random spot every 30 s, so nothing stays burned into an OLED screen. */
+    private fun moveSaver(f: FrameLayout) {
+        (f.tag as? Runnable)?.run()
+        val box = f.findViewWithTag<View>("box") ?: return
+        val maxX = (f.width - box.width).coerceAtLeast(1); val maxY = (f.height - box.height).coerceAtLeast(1)
+        box.animate().translationX((Math.random() * maxX).toFloat()).translationY((Math.random() * maxY).toFloat())
+            .setDuration(2000).start()
+    }
+
+    private fun hideSaver() {
+        val f = saver ?: return
+        saver = null
+        rootFrame.removeView(f)
+        lastInput = System.currentTimeMillis()
+    }
+
+    // ------------------------------------------------------------------ backup & restore
+
+    private val backupName = "SahlTV-backup.json"
+
+    private fun backupMenu() {
+        dialog().setTitle(t("Backup & restore", "النسخ الاحتياطي والاستعادة"))
+            .setItems(arrayOf(
+                t("💾  Back up settings now", "💾  نسخ الإعدادات احتياطيًا الآن"),
+                t("♻  Restore settings from backup", "♻  استعادة الإعدادات من النسخة"),
+            )) { _, which ->
+                if (which == 0) { if (storageOk(true)) doBackup() else askStorage(8) }
+                else guarded { if (storageOk(false)) doRestore() else askStorage(9) }
+            }.show()
+    }
+
+    private fun storageOk(write: Boolean): Boolean {
+        if (Build.VERSION.SDK_INT >= 30) return true          // MediaStore: no permission needed for our own file
+        val perm = if (write) "android.permission.WRITE_EXTERNAL_STORAGE" else "android.permission.READ_EXTERNAL_STORAGE"
+        return checkSelfPermission(perm) == PackageManager.PERMISSION_GRANTED
+    }
+
+    private fun askStorage(code: Int) =
+        requestPermissions(arrayOf("android.permission.WRITE_EXTERNAL_STORAGE", "android.permission.READ_EXTERNAL_STORAGE"), code)
+
+    private fun storageHelp() {
+        dialog().setTitle(t("Storage permission needed", "يلزم إذن التخزين"))
+            .setMessage(t("If no prompt appeared on the TV, run once from your PC:\n\nadb shell pm grant com.aly.sahltv android.permission.WRITE_EXTERNAL_STORAGE\nadb shell pm grant com.aly.sahltv android.permission.READ_EXTERNAL_STORAGE",
+                          "إذا لم تظهر نافذة طلب الإذن على التلفاز، نفّذ هذا مرة واحدة من الكمبيوتر:\n\nadb shell pm grant com.aly.sahltv android.permission.WRITE_EXTERNAL_STORAGE\nadb shell pm grant com.aly.sahltv android.permission.READ_EXTERNAL_STORAGE"))
+            .setPositiveButton(t("OK", "حسنًا"), null).show()
+    }
+
+    private fun settingsJson(): String {
+        val o = org.json.JSONObject()
+        o.put("app", "SahlTV"); o.put("version", 1)
+        val data = org.json.JSONObject()
+        for ((k, v) in prefs.all) {
+            if (k.startsWith("n_")) { data.put(k, org.json.JSONObject().put("t", "i").put("v", v)); continue }
+            when (v) {
+                is Boolean -> data.put(k, org.json.JSONObject().put("t", "b").put("v", v))
+                is Int -> data.put(k, org.json.JSONObject().put("t", "i").put("v", v))
+                is String -> data.put(k, org.json.JSONObject().put("t", "s").put("v", v))
+            }
+        }
+        o.put("settings", data)
+        return o.toString(2)
+    }
+
+    private fun doBackup() {
+        worker.execute {
+            val ok = try {
+                val text = settingsJson().toByteArray()
+                if (Build.VERSION.SDK_INT >= 30) {
+                    val uri = MediaStore.Downloads.EXTERNAL_CONTENT_URI
+                    contentResolver.delete(uri, MediaStore.MediaColumns.DISPLAY_NAME + "=?", arrayOf(backupName))
+                    val cv = ContentValues().apply {
+                        put(MediaStore.MediaColumns.DISPLAY_NAME, backupName)
+                        put(MediaStore.MediaColumns.MIME_TYPE, "application/json")
+                        put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+                    }
+                    val item = contentResolver.insert(uri, cv) ?: throw IllegalStateException()
+                    contentResolver.openOutputStream(item)?.use { it.write(text) }
+                } else {
+                    @Suppress("DEPRECATION")
+                    val dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+                    dir.mkdirs()
+                    java.io.File(dir, backupName).writeBytes(text)
+                }
+                true
+            } catch (_: Exception) { false }
+            handler.post {
+                if (!ok) { storageHelp(); return@post }
+                dialog().setTitle(t("✓ Backup saved", "✓ تم حفظ النسخة الاحتياطية"))
+                    .setMessage(t("Saved to Download/$backupName on the TV.\n\nTo keep a copy on your PC:\nadb pull /sdcard/Download/$backupName\n\nTo restore after a reinstall, first copy it back:\nadb push $backupName /sdcard/Download/",
+                                  "تم الحفظ في Download/$backupName على التلفاز.\n\nللاحتفاظ بنسخة على الكمبيوتر:\nadb pull /sdcard/Download/$backupName\n\nللاستعادة بعد إعادة التثبيت، انسخها أولًا إلى التلفاز:\nadb push $backupName /sdcard/Download/"))
+                    .setPositiveButton(t("OK", "حسنًا"), null).show()
+            }
+        }
+    }
+
+    private fun doRestore() {
+        worker.execute {
+            val text: String? = try {
+                if (Build.VERSION.SDK_INT >= 30) {
+                    val uri = MediaStore.Downloads.EXTERNAL_CONTENT_URI
+                    contentResolver.query(uri, arrayOf("_id"), MediaStore.MediaColumns.DISPLAY_NAME + "=?", arrayOf(backupName), null)?.use { c ->
+                        if (c.moveToNext()) contentResolver.openInputStream(android.content.ContentUris.withAppendedId(uri, c.getLong(0)))
+                            ?.use { it.readBytes().toString(Charsets.UTF_8) } else null
+                    }
+                } else {
+                    @Suppress("DEPRECATION")
+                    val f = java.io.File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), backupName)
+                    if (f.exists()) f.readText() else null
+                }
+            } catch (_: Exception) { null }
+            handler.post {
+                if (text == null) {
+                    dialog().setTitle(t("No backup found", "لم يتم العثور على نسخة"))
+                        .setMessage(t("Put $backupName in the TV's Download folder first:\nadb push $backupName /sdcard/Download/",
+                                      "ضع الملف $backupName في مجلد Download على التلفاز أولًا:\nadb push $backupName /sdcard/Download/"))
+                        .setPositiveButton(t("OK", "حسنًا"), null).show()
+                    return@post
+                }
+                try {
+                    val data = org.json.JSONObject(text).getJSONObject("settings")
+                    val e = prefs.edit().clear()
+                    for (k in data.keys()) {
+                        val o = data.getJSONObject(k)
+                        when (o.getString("t")) {
+                            "b" -> e.putBoolean(k, o.getBoolean("v"))
+                            "i" -> e.putInt(k, o.getInt("v"))
+                            else -> e.putString(k, o.getString("v"))
+                        }
+                    }
+                    e.apply()
+                    toast(t("✓ Settings restored", "✓ تمت استعادة الإعدادات"))
+                    recreate()
+                } catch (_: Exception) { toast(t("That backup file can't be read", "تعذّرت قراءة ملف النسخة")) }
+            }
         }
     }
 
@@ -678,6 +983,9 @@ class MainActivity : Activity() {
             t("Auto clean when memory is low: ", "التنظيف التلقائي عند انخفاض الذاكرة: ") + onOff(autoClean) + ch,
             t("🔒  PIN & locks", "🔒  الرمز السري والأقفال") + (if (pinSet) t("  (${locked.size} apps locked)", "  (${locked.size} تطبيقات مقفلة)") else t("  (no PIN set)", "  (لا يوجد رمز)")),
             t("Show hidden apps (${hidden.size})", "إظهار التطبيقات المخفية (${hidden.size})"),
+            t("Clock screensaver: ", "شاشة توقف الساعة: ") + (if (saverMin == 0) t("Off", "متوقفة") else t("after $saverMin min", "بعد $saverMin دقائق")) + ch,
+            t("Now playing controls: ", "التحكم بالتشغيل الحالي: ") + onOff(nowOn) + (if (nowOn && !mediaAllowed) t("  (needs setup)", "  (يحتاج إعدادًا)") else ""),
+            t("💾  Backup & restore settings", "💾  نسخ الإعدادات احتياطيًا واستعادتها"),
             t("About Sahl TV", "حول سهل TV")
         )
         dialog().setTitle(t("Launcher", "الواجهة")).setItems(items) { _, which ->
@@ -690,7 +998,14 @@ class MainActivity : Activity() {
                 5 -> { prefs.edit().putBoolean("autoClean", !autoClean).apply(); toast(t("Auto clean: ", "التنظيف التلقائي: ") + onOff(autoClean)) }
                 6 -> pinMenu()
                 7 -> guarded { hiddenMenu() }
-                8 -> dialog().setTitle("Sahl TV  ·  سهل")
+                8 -> {
+                    val next = when (saverMin) { 0 -> 3; 3 -> 5; 5 -> 10; else -> 0 }
+                    prefs.edit().putInt("saverMin", next).apply()
+                    toast(t("Clock screensaver: ", "شاشة توقف الساعة: ") + if (next == 0) t("Off", "متوقفة") else t("after $next min", "بعد $next دقائق"))
+                }
+                9 -> nowMenu()
+                10 -> backupMenu()
+                11 -> dialog().setTitle("Sahl TV  ·  سهل")
                     .setMessage(t("A fast, ad-free home screen for Android TV.\n\nNo tracking, no background services. Internet is used only to download preview pictures when you turn App previews on.\n\nPrayer times are calculated on the TV (Qatar method: Fajr 18°, Asr Shafi'i, Isha 90 min after Maghrib). Please compare with the official Awqaf timetable.\n\nTip: hold OK on an app (or press Menu) for options.\n\nFree & open source (MIT).\nContact: alysherif1309@gmail.com",
                                   "واجهة رئيسية سريعة وبلا إعلانات لأجهزة Android TV.\n\nبلا تتبّع وبلا خدمات تعمل في الخلفية. يُستخدم الإنترنت فقط لتنزيل صور المعاينات عند تفعيل «معاينات التطبيقات».\n\nتُحسب مواقيت الصلاة على التلفاز (طريقة قطر: الفجر 18°، العصر شافعي، العشاء بعد المغرب بـ 90 دقيقة). يُرجى مقارنتها بتقويم الأوقاف الرسمي.\n\nنصيحة: اضغط مطولًا على OK فوق تطبيق (أو زر القائمة) لعرض الخيارات.\n\nمجاني ومفتوح المصدر (MIT).\nللتواصل: alysherif1309@gmail.com"))
                     .setPositiveButton(t("OK", "حسنًا"), null).show()
