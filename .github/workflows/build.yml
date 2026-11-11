@@ -1,0 +1,44 @@
+name: Build APK
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.7"
+      - name: Build signed release APK
+        env:
+          KEYSTORE_B64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
+          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE_B64" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.jks"
+            export SIGNING_KEYSTORE_PATH="$RUNNER_TEMP/release.jks"
+          fi
+          gradle assembleRelease --no-daemon
+          cp app/build/outputs/apk/release/app-release.apk SahlTV.apk
+          rm -f "$RUNNER_TEMP/release.jks"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SahlTV.apk
+          path: SahlTV.apk
+      - name: Publish as the "latest" release (direct download on the phone)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release delete latest --yes --cleanup-tag || true
+          gh release create latest SahlTV.apk --title "Sahl TV launcher (latest build)" \
+            --notes "Build ${GITHUB_RUN_NUMBER} (${GITHUB_SHA::7}). Download **SahlTV.apk** on your PC, then install it on the TV with ADB (see README)."
