@@ -33,6 +33,7 @@
         </intent>
         <package android:name="com.aly.sahlquran" />
         <package android:name="com.aly.sahlpdf" />
+        <package android:name="com.aly.sahlfiles" />
     </queries>
 
     <application

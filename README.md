@@ -124,3 +124,19 @@ Updates come from this repository's "latest" release. Android only installs an u
 - Timer: pause / resume (also the ⏯ key), stop with a summary; time is saved as you read.
 - Daily goal (minutes), auto-start timer, readers (4 family members with their own place, bookmarks and totals).
 - One large page (▲ ▼), night paper (automatic 7 pm – 5 am), go to hizb, ۞ quarter marker, sajdah reminder, pure page.
+
+## 📚 Sahl PDF 2.0 and 📁 Sahl Files (v1.12)
+Two small companion apps, built here with no external libraries and offered by ⬆ Updates in Sahl TV.
+
+**Sahl PDF (SahlPDF.apk)**: a simple book reader in the Sahl style. It replaces the earlier MJ PDF based edition and installs over it, keeping the books in `Download/Sahl PDF`.
+- Library: *Continue reading* first, then all books with big covers (sort by name or recent).
+- Reader: one or two pages, right-to-left books, zoom and move with the arrows, white / warm / dark paper, bookmarks, go to page. It remembers where you stopped.
+- *Send from phone*: open the address shown on the TV, type the 6-digit code, pick PDFs. They are sent once and stay on the TV.
+
+**Sahl Files (SahlFiles.apk)**: a simple file manager.
+- Places on the left: Internal storage, Download, Movies, Pictures, Music, Documents, the books folder, and USB drives.
+- OK opens a file: PDFs open in Sahl PDF, pictures and text in the built-in viewer (with a slideshow), videos and music in your player, APKs in the installer.
+- Hold OK or press Menu on a file for Copy, Move, Rename, Delete and Details.
+- *Receive from phone*: the same address-and-code page, saving into the folder you are in.
+
+Both apps ask once for access to files (Android 10 shows a normal Allow window).

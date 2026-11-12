@@ -1,13 +1,15 @@
 {
- "version": "1.11",
+ "version": "1.12",
  "en": [
-  "Sahl PDF is here: read your books on the TV — press ⬆ Updates to install it",
-  "Send PDFs from your phone to Sahl PDF once; they stay in its library",
-  "⬆ Updates now also keeps Sahl PDF up to date"
+  "New Sahl PDF 2.0: our own simpler reader in the Sahl style — Continue reading, big covers, two pages, warm or dark paper",
+  "New Sahl Files: browse the TV and USB drives, open videos, photos and PDFs, and receive files from your phone with an address and code",
+  "Fixed: the gold ring around a selected app is no longer cut at the top and bottom",
+  "Press ⬆ Updates to install Sahl PDF 2.0 and Sahl Files"
  ],
  "ar": [
-  "وصل سهل PDF: اقرأ كتبك على التلفاز — اضغط زر التحديثات لتثبيته",
-  "أرسل ملفات PDF من هاتفك إلى سهل PDF مرة واحدة؛ تبقى في مكتبته",
-  "زر التحديثات يحدّث سهل PDF أيضًا"
+  "سهل PDF 2.0 الجديد: قارئ أبسط من تصميمنا — متابعة القراءة، أغلفة كبيرة، صفحتان، ورق دافئ أو داكن",
+  "سهل · الملفات الجديد: تصفّح التلفاز وذاكرة USB، وافتح الفيديو والصور وملفات PDF، واستلم الملفات من هاتفك بعنوان ورمز",
+  "إصلاح: الإطار الذهبي حول التطبيق المحدد لم يعد مقطوعًا من الأعلى والأسفل",
+  "اضغط زر التحديثات لتثبيت سهل PDF 2.0 وسهل · الملفات"
  ]
 }

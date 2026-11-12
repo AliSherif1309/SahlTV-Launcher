@@ -519,7 +519,8 @@ class MainActivity : Activity(), RemoteServer.Host {
     }
 
     private fun hRow(row: String, list: List<App>, big: Boolean): View {
-        val line = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(dp(6), dp(6), dp(6), dp(6)) }
+        // room around the tiles + no clipping, so the grown (focused) tile and its gold ring are never cut
+        val line = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(dp(12), dp(12), dp(12), dp(12)); clipChildren = false; clipToPadding = false }
         for (a in list) line.addView(tile(a, row, big))
         return HorizontalScrollView(this).apply {
             isHorizontalScrollBarEnabled = false; clipToPadding = false; clipChildren = false
@@ -619,7 +620,8 @@ class MainActivity : Activity(), RemoteServer.Host {
             if (r.key in off || (r.pkg.isNotEmpty() && r.pkg in hidden)) continue
             if (r.items.isEmpty()) continue
             content.addView(rowTitle(rowTitleFor(r)))
-            val line = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(dp(6), dp(6), dp(6), dp(6)) }
+            // room around the tiles + no clipping, so the grown (focused) tile and its gold ring are never cut
+        val line = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(dp(12), dp(12), dp(12), dp(12)); clipChildren = false; clipToPadding = false }
             r.items.forEachIndexed { i, it -> line.addView(previewTile(r, i, it)) }
             content.addView(HorizontalScrollView(this).apply {
                 isHorizontalScrollBarEnabled = false; clipToPadding = false; clipChildren = false; addView(line)

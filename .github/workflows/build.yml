@@ -61,6 +61,8 @@ jobs:
           gradle assembleRelease --no-daemon
           cp app/build/outputs/apk/release/app-release.apk SahlTV.apk
           cp quran/build/outputs/apk/release/quran-release.apk SahlQuran.apk
+          cp pdf/build/outputs/apk/release/pdf-release.apk SahlPDF.apk
+          cp files/build/outputs/apk/release/files-release.apk SahlFiles.apk
           rm -f "$RUNNER_TEMP/release.jks"
       - uses: actions/upload-artifact@v4
         with:
@@ -68,6 +70,8 @@ jobs:
           path: |
             SahlTV.apk
             SahlQuran.apk
+            SahlPDF.apk
+            SahlFiles.apk
       - name: Publish as the "latest" release (direct download on the phone)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -77,10 +81,12 @@ jobs:
           import json, os, re, subprocess
           name = lambda f: re.search(r'versionName = "([^"]+)"', open(f).read()).group(1)
           notes = subprocess.run(["git", "log", "-1", "--format=%s"], capture_output=True, text=True).stdout.strip()
-          json.dump({"code": 100 + int(os.environ["GITHUB_RUN_NUMBER"]), "sahltv": name("app/build.gradle.kts"),
-                     "quran": name("quran/build.gradle.kts"), "notes": notes}, open("version.json", "w"))
+          run = int(os.environ["GITHUB_RUN_NUMBER"])
+          json.dump({"code": 100 + run, "sahltv": name("app/build.gradle.kts"), "quran": name("quran/build.gradle.kts"),
+                     "pdfCode": 2100 + run, "pdf": name("pdf/build.gradle.kts"),
+                     "filesCode": 100 + run, "files": name("files/build.gradle.kts"), "notes": notes}, open("version.json", "w"))
           PY
           cat version.json
           gh release delete latest --yes --cleanup-tag || true
-          gh release create latest SahlTV.apk SahlQuran.apk version.json --title "Sahl TV launcher (latest build)" \
-            --notes "Build ${GITHUB_RUN_NUMBER} (${GITHUB_SHA::7}). On the TV: ☰ Launcher → Check for updates. First install: download **SahlTV.apk** / **SahlQuran.apk** and install with ADB (see README)."
+          gh release create latest SahlTV.apk SahlQuran.apk SahlPDF.apk SahlFiles.apk version.json --title "Sahl TV launcher (latest build)" \
+            --notes "Build ${GITHUB_RUN_NUMBER} (${GITHUB_SHA::7}). On the TV: ☰ Launcher → Check for updates. First install: download **SahlTV.apk** / **SahlQuran.apk** / **SahlPDF.apk** / **SahlFiles.apk** and install with ADB (see README)."

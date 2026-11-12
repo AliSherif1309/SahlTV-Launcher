@@ -26,10 +26,9 @@ import java.net.URL
 object Updater {
     private const val BASE = "https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/"
 
-    /** Sahl PDF lives in its own repository (a TV edition of MJ PDF). */
-    private const val PDF_BASE = "https://github.com/AliSherif1309/SahlPDF/releases/download/latest/"
-
-    class Info(val code: Long, val tv: String, val quran: String, val notes: String, val pdfCode: Long = 0, val pdfName: String = "", val pdfNotes: String = "")
+    /** Every app comes from the one release: Sahl TV, Sahl Quran, Sahl PDF and Sahl Files. */
+    class Info(val code: Long, val tv: String, val quran: String, val notes: String,
+               val pdfCode: Long = 0, val pdfName: String = "", val filesCode: Long = 0, val filesName: String = "")
     private class Item(val pkg: String, val file: String, val name: String, val from: String, val to: String, val url: String, val code: Long)
 
     private val main = Handler(Looper.getMainLooper())
@@ -45,16 +44,9 @@ object Updater {
     fun fetch(): Info? = try {
         val c = get(BASE + "version.json")
         val o = org.json.JSONObject(c.inputStream.bufferedReader().use { it.readText() })
-        val pdf = try { org.json.JSONObject(get(PDF_BASE + "version.json").inputStream.bufferedReader().use { it.readText() }) } catch (_: Exception) { null }
         Info(o.getLong("code"), o.optString("sahltv"), o.optString("quran"), o.optString("notes"),
-             pdf?.optLong("code") ?: 0L, pdf?.optString("sahlpdf") ?: "", pdf?.optString("notes") ?: "")
+             o.optLong("pdfCode"), o.optString("pdf"), o.optLong("filesCode"), o.optString("files"))
     } catch (_: Exception) { null }
-
-    /** The Sahl PDF file that matches this TV's processor (smaller than the all-in-one file). */
-    private fun pdfFile(): String {
-        val abis = Build.SUPPORTED_ABIS.toList()
-        return when { "arm64-v8a" in abis -> "SahlPDF-arm64-v8a.apk"; "armeabi-v7a" in abis -> "SahlPDF-armeabi-v7a.apk"; else -> "SahlPDF.apk" }
-    }
 
     @Suppress("DEPRECATION")
     private fun installed(ctx: Context, pkg: String): Pair<Long, String>? = try {
@@ -73,13 +65,17 @@ object Updater {
             if (have == null) { if (pkg != ctx.packageName) out.add(Item(pkg, file, nv.first, "", nv.second, BASE + file, info.code)) }
             else if (have.first < info.code) out.add(Item(pkg, file, nv.first, have.second, nv.second, BASE + file, info.code))
         }
-        // Sahl PDF (offered by the launcher only)
-        if (ctx.packageName == "com.aly.sahltv" && info.pdfCode > 0) {
-            val have = installed(ctx, "com.aly.sahlpdf")
-            val file = pdfFile()
-            val name = if (ar) "سهل PDF" else "Sahl PDF"
-            if (have == null) out.add(0, Item("com.aly.sahlpdf", file, name, "", info.pdfName, PDF_BASE + file, info.pdfCode))
-            else if (have.first < info.pdfCode) out.add(0, Item("com.aly.sahlpdf", file, name, have.second, info.pdfName, PDF_BASE + file, info.pdfCode))
+        // Sahl PDF and Sahl Files (offered by the launcher only); they install before the launcher updates itself
+        if (ctx.packageName == "com.aly.sahltv") {
+            for ((pkg, file, nv) in listOf(
+                Triple("com.aly.sahlfiles", "SahlFiles.apk", Triple(if (ar) "سهل · الملفات" else "Sahl Files", info.filesName, info.filesCode)),
+                Triple("com.aly.sahlpdf", "SahlPDF.apk", Triple(if (ar) "سهل PDF" else "Sahl PDF", info.pdfName, info.pdfCode)))) {
+                val (name, ver, code) = nv
+                if (code <= 0) continue
+                val have = installed(ctx, pkg)
+                if (have == null) out.add(0, Item(pkg, file, name, "", ver, BASE + file, code))
+                else if (have.first < code) out.add(0, Item(pkg, file, name, have.second, ver, BASE + file, code))
+            }
         }
         return out
     }
@@ -117,8 +113,7 @@ object Updater {
                 val msg = StringBuilder()
                 for (it in list) msg.append("• ").append(it.name).append("   ")
                     .append(if (it.from.isEmpty()) t("not installed → ${it.to}", "غير مثبّت ← ${it.to}") else "${it.from} → ${it.to}").append("\n")
-                if (info.notes.isNotBlank() && list.any { it.pkg != "com.aly.sahlpdf" }) msg.append("\n").append(t("What's new: ", "الجديد: ")).append(info.notes)
-                if (info.pdfNotes.isNotBlank() && list.any { it.pkg == "com.aly.sahlpdf" }) msg.append("\n").append(t("Sahl PDF: ", "سهل PDF: ")).append(info.pdfNotes)
+                if (info.notes.isNotBlank()) msg.append("\n").append(t("What's new: ", "الجديد: ")).append(info.notes)
                 dialog(a).setTitle(t("Update available", "يتوفّر تحديث")).setMessage(msg.toString())
                     .setPositiveButton(t("Update now", "تحديث الآن")) { _, _ -> start(a, list, ar) }
                     .setNegativeButton(t("Later", "لاحقًا"), null).show()
