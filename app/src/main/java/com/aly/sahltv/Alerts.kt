@@ -47,6 +47,14 @@ object Alerts {
     private fun epochAt(day: LocalDate, hours: Double) =
         day.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli() + Math.round(hours * 3_600_000.0)
 
+    /** Suhoor reminder: 30 minutes before Fajr on fasting days (Ramadan, and Sunnah fasts when those reminders are on). */
+    private fun suhoorOn(ctx: Context) = prefs(ctx).getBoolean("suhoorOn", true)
+    private fun fastDay(ctx: Context, day: LocalDate): Boolean {
+        val h = Islamic.hijri(day, prefs(ctx).getInt("hijriAdj", 0))
+        return h.m == 8 || (prefs(ctx).getBoolean("fastOn", true) && Islamic.sunnahFast(day, h, false) != null)
+    }
+    private const val SUHOOR_MIN = 30
+
     /** Sets one alarm for the next banner. Called by the launcher and again after every banner. */
     fun schedule(ctx: Context) {
         val am = ctx.getSystemService(Context.ALARM_SERVICE) as AlarmManager
@@ -56,7 +64,8 @@ object Alerts {
         val city = prefs(ctx).getInt("city", 0)
         Prayer.load(ctx)
         am.cancel(pi)
-        if (mode == OFF || city !in CITIES.indices) return
+        val suhoor = suhoorOn(ctx)
+        if ((mode == OFF && !suhoor) || city !in CITIES.indices) return
         val (_, la, lo) = CITIES[city]
         val tz = ZonedDateTime.now().offset.totalSeconds / 3600.0
         val now = System.currentTimeMillis()
@@ -64,7 +73,11 @@ object Alerts {
         for (k in 0..1) {
             val day = LocalDate.now().plusDays(k.toLong())
             val t = Prayer.compute(day, la, lo, tz)
-            for (hrs in listOf(t.fajr, t.dhuhr, t.asr, t.maghrib, t.isha)) {
+            if (suhoor && fastDay(ctx, day)) {
+                val s = epochAt(day, t.fajr) - SUHOOR_MIN * 60_000L
+                if (s > now + 1000 && s < best) best = s
+            }
+            if (mode != OFF) for (hrs in listOf(t.fajr, t.dhuhr, t.asr, t.maghrib, t.isha)) {
                 val at = epochAt(day, hrs)
                 if (at > now + 1000 && at < best) best = at
                 val pre = at - 10 * 60_000L
@@ -79,7 +92,7 @@ object Alerts {
     /** Works out which prayer is now (or in 10 minutes) and shows its banner. */
     fun fire(ctx: Context) {
         val city = prefs(ctx).getInt("city", 0)
-        if (city !in CITIES.indices || mode(ctx) == OFF) return
+        if (city !in CITIES.indices || (mode(ctx) == OFF && !suhoorOn(ctx))) return
         Prayer.load(ctx)
         val (_, la, lo) = CITIES[city]
         val tz = ZonedDateTime.now().offset.totalSeconds / 3600.0
@@ -91,6 +104,18 @@ object Alerts {
         val names = if (ar) listOf("الفجر", if (friday) "الجمعة" else "الظهر", "العصر", "المغرب", "العشاء")
                     else listOf("Fajr", if (friday) "Jumu'ah" else "Dhuhr", "Asr", "Maghrib", "Isha")
         val hours = listOf(t.fajr, t.dhuhr, t.asr, t.maghrib, t.isha)
+        if (suhoorOn(ctx) && fastDay(ctx, today)) {
+            val s = epochAt(today, t.fajr) - SUHOOR_MIN * 60_000L
+            if ((now - s) in -60_000L..5 * 60_000L) {
+                if (!once(ctx, "s$s")) return
+                val ramadan = Islamic.hijri(today, prefs(ctx).getInt("hijriAdj", 0)).m == 8
+                show(ctx, if (ar) "وقت السحور · الفجر بعد $SUHOOR_MIN دقيقة" else "Suhoor time · Fajr in $SUHOOR_MIN minutes",
+                    if (ar) "الفجر ${Prayer.hm(t.fajr)}  ·  «تسحّروا فإن في السحور بركة»" + (if (ramadan) "" else "  ·  صيام سنة")
+                    else "Fajr ${Prayer.hm(t.fajr)}  ·  \"Take suhoor, for in suhoor there is blessing\"", 60_000L)
+                return
+            }
+        }
+        if (mode(ctx) == OFF) return
         for (i in 0 until 5) {
             val at = epochAt(today, hours[i])
             val diff = now - at

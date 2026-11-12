@@ -566,6 +566,12 @@ class MainActivity : Activity(), RemoteServer.Host {
             frame.addView(TextView(this).apply { text = "🔒"; textSize = 12f; setPadding(dp(5), dp(3), dp(5), dp(3)) },
                 FrameLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT, Gravity.TOP or Gravity.END))
         }
+        // Recent: a small star shows on the selected tile; the Menu key (≡) adds it to / removes it from Favorites in one press
+        val star = if (row == "rec") TextView(this).apply {
+            text = if (a.pkg in favorites) "★" else "☆ ≡"; textSize = 12f; setTextColor(Color.parseColor("#0B1E1A")); typeface = Fonts.get(2)
+            background = GradientDrawable().apply { setColor(GOLD); cornerRadius = dp(10).toFloat() }
+            setPadding(dp(7), dp(1), dp(7), dp(2)); alpha = 0f
+        }.also { frame.addView(it, FrameLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT, Gravity.TOP or Gravity.START).apply { setMargins(dp(5), dp(5), dp(5), dp(5)) }) } else null
         // focus ring drawn on top
         val ring = View(this).apply {
             background = GradientDrawable().apply { setColor(Color.TRANSPARENT); setStroke(dp(3), FOCUS); cornerRadius = radius }
@@ -578,12 +584,21 @@ class MainActivity : Activity(), RemoteServer.Host {
             v.animate().scaleX(if (has) 1.1f else 1f).scaleY(if (has) 1.1f else 1f).translationZ(if (has) dp(10).toFloat() else 0f)
                 .setInterpolator(ease).setDuration(150).withLayer().start()
             nameStrip?.animate()?.alpha(if (has) 1f else 0f)?.setDuration(150)?.start()
+            star?.animate()?.alpha(if (has) 1f else 0f)?.setDuration(150)?.start()
             if (has) { focusPkg = a.pkg; focusRow = row; if (row == "fav") scroll.smoothScrollTo(0, 0) }
         }
         frame.setOnClickListener { launch(a) }
         frame.setOnLongClickListener { appMenu(a, row); true }
         frame.setOnKeyListener { _, code, ev ->
-            if (code == KeyEvent.KEYCODE_MENU && ev.action == KeyEvent.ACTION_UP) { appMenu(a, row); true } else false
+            if (code == KeyEvent.KEYCODE_MENU && ev.action == KeyEvent.ACTION_UP) {
+                if (row == "rec") {
+                    val fav = favorites
+                    if (a.pkg in fav) { fav.remove(a.pkg); toast(t("Removed from Favorites", "أُزيل من المفضلة")) }
+                    else { fav.add(a.pkg); toast(t("★  Added to Favorites", "★  أُضيف إلى المفضلة")) }
+                    saveList("fav", fav); focusRow = "rec"; render(true)
+                } else appMenu(a, row)
+                true
+            } else false
         }
         val lp = if (row == "all") GridLayout.LayoutParams().apply { width = w; height = h; setMargins(dp(6), dp(6), dp(6), dp(6)) }
                  else LinearLayout.LayoutParams(w, h).apply { setMargins(dp(6), 0, dp(6), 0) }
@@ -1119,6 +1134,8 @@ class MainActivity : Activity(), RemoteServer.Host {
                 25 -> { prefs.edit().putBoolean("nightStyle", !nightStyle).commit(); Fonts.night = PrefsProvider.isNight(this); recreate() }
                 26 -> { prefs.edit().putBoolean("arDigits", !arDigits).apply(); updateClock(); tickCountdowns() }
                 27 -> greetingMenu()
+                28 -> { prefs.edit().putBoolean("suhoorOn", !prefs.getBoolean("suhoorOn", true)).apply(); Alerts.schedule(this)
+                        toast(t("Suhoor reminder: ", "تذكير السحور: ") + onOff(prefs.getBoolean("suhoorOn", true))) }
                 17 -> dialog().setTitle("Sahl TV  ·  سهل")
                     .setMessage(t("A fast, ad-free home screen for Android TV.\n\nNo tracking, no background services. Internet is used only for preview pictures, the weather, and checking for updates. Nothing about you is sent anywhere.\n\nPrayer times are calculated on the TV (Qatar method: Fajr 18°, Asr Shafi'i, Isha 90 min after Maghrib). Please compare with the official Awqaf timetable.\n\nTip: hold OK on an app (or press Menu) for options.\n\nFree & open source (MIT).\n" + photoCredits() + "Weather: Open-Meteo.com (CC BY 4.0). Ayah of the day: Tanzil Quran text (CC BY 3.0), Amiri Quran font (SIL OFL).\nContact: alysherif1309@gmail.com",
                                   "واجهة رئيسية سريعة وبلا إعلانات لأجهزة Android TV.\n\nبلا تتبّع وبلا خدمات تعمل في الخلفية. يُستخدم الإنترنت فقط لصور المعاينات والطقس والبحث عن تحديثات. لا يُرسل أي شيء عنك.\n\nتُحسب مواقيت الصلاة على التلفاز (طريقة قطر: الفجر 18°، العصر شافعي، العشاء بعد المغرب بـ 90 دقيقة). يُرجى مقارنتها بتقويم الأوقاف الرسمي.\n\nنصيحة: اضغط مطولًا على OK فوق تطبيق (أو زر القائمة) لعرض الخيارات.\n\nمجاني ومفتوح المصدر (MIT).\n" + photoCredits() + "الطقس: Open-Meteo.com (CC BY 4.0). آية اليوم: نص القرآن من مشروع تنزيل (CC BY 3.0) وخط Amiri Quran (SIL OFL).\nللتواصل: alysherif1309@gmail.com"))
@@ -1464,6 +1481,8 @@ class MainActivity : Activity(), RemoteServer.Host {
             if (!fastCard.hasFocus()) fastCard.background = cardBg(false, false, fastCard.tag == "glow")
         }
         for (tv in listOf(ramTitle, ramSub, fastTitle, fastSub)) { val d = digits(tv.text.toString()); if (d != tv.text.toString()) tv.text = d }
+        // ordinary days: one slim line per card; Ramadan, Eid, Arafah and fasting days: full cards
+        slimIslamic(ramCard.tag != "glow" && fastCard.tag != "glow")
         updateAyah(); updateNews(); updateGreeting(); refreshWeather()
         refreshBackground()
         // calm mode: soften the whole home screen from an hour after Isha until Fajr
@@ -1641,6 +1660,15 @@ class MainActivity : Activity(), RemoteServer.Host {
         "${pi.versionName}  ·  " + t("build ", "رقم ") + (if (Build.VERSION.SDK_INT >= 28) pi.longVersionCode else @Suppress("DEPRECATION") pi.versionCode.toLong())
     } catch (_: Exception) { "" }
 
+    private var slim: Boolean? = null
+    private fun slimIslamic(on: Boolean) {
+        if (slim == on) return
+        slim = on
+        for (sub in listOf(ramSub, fastSub)) sub.visibility = if (on) View.GONE else View.VISIBLE
+        for (tt in listOf(ramTitle, fastTitle)) tt.textSize = if (on) 16f else 18f
+        for (c in listOf(ramCard, fastCard)) { c.minimumHeight = dp(if (on) 46 else 64); c.setPadding(c.paddingLeft, dp(if (on) 6 else 10), c.paddingRight, dp(if (on) 6 else 10)) }
+    }
+
     // ------------------------------------------------------------------ seasonal greeting card
 
     private val greetOn get() = prefs.getBoolean("greetOn", true)
@@ -1736,6 +1764,8 @@ class MainActivity : Activity(), RemoteServer.Host {
                 SRow(GoldIcon.CLOCK, t("Adjust prayer times", "ضبط مواقيت الصلاة"), t("Matches the Qatar Calendar House; fine-tune any prayer by a few minutes", "مطابقة لدار التقويم القطري؛ عدّل أي صلاة بدقائق"),
                     if (Prayer.user.any { it != 0 }) t("Adjusted", "معدّلة") else t("Qatar calendar", "تقويم قطر"), 21),
                 SRow(GoldIcon.BELL, t("Prayer-time banner", "تنبيه وقت الصلاة"), t("A quiet card at each prayer time, even over videos. No sound", "بطاقة هادئة عند كل صلاة حتى فوق الفيديو، بدون صوت"), alert, 8),
+                SRow(GoldIcon.HOURGLASS, t("Suhoor reminder", "تذكير السحور"), t("A quiet banner 30 minutes before Fajr on fasting days (Ramadan and Sunnah fasts), even over videos", "تنبيه هادئ قبل الفجر بـ 30 دقيقة في أيام الصيام (رمضان وصيام السنة)، حتى فوق الفيديو"),
+                    onOff(prefs.getBoolean("suhoorOn", true)) + if (prefs.getBoolean("suhoorOn", true) && !Alerts.canShow(this)) t(" · needs setup", " · يحتاج إعدادًا") else "", 28),
                 SRow(GoldIcon.CRESCENT, t("Hijri date & fasting", "التاريخ الهجري والصيام"), t("Adjust the Hijri date, Sunnah fast reminders, Islamic dates", "ضبط التاريخ الهجري، تذكير صيام السنة، المناسبات"), hijriText(LocalDate.now()), 6)),
             t("Look & comfort", "المظهر والراحة") to listOf(
                 SRow(GoldIcon.GLOBE, t("Language", "اللغة"), t("Language of the home screen and menus", "لغة الشاشة الرئيسية والقوائم"), if (ar) "العربية" else "English", 0),

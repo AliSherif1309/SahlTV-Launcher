@@ -1,15 +1,15 @@
 {
- "version": "1.16",
+ "version": "1.17",
  "en": [
-  "Fixed: the clock stays on one line (smaller), and the cards no longer cut their second line",
-  "Your apps now show without scrolling: no empty Favorites section, Recent comes right after the cards",
-  "New: seasonal greeting card (Ramadan, Eid, Arafah, Hijri new year, Qatar National Day) — preview in Settings",
-  "New: the screensaver clock in Thmanyah Display, with the day name in a swash"
+  "One press to Favorites: on a Recent app, press the Menu key (≡) — a small ☆ shows which app",
+  "Slimmer Islamic cards on ordinary days; full cards in Ramadan, Eid, Arafah and fasting days",
+  "New: Suhoor reminder — a quiet banner 30 minutes before Fajr on fasting days, even over videos (Settings → Prayer)",
+  "Seasonal greeting card and the swash screensaver clock"
  ],
  "ar": [
-  "إصلاح: الساعة في سطر واحد (أصغر)، والبطاقات لم تعد تقطع سطرها الثاني",
-  "تطبيقاتك تظهر الآن دون نزول: لا قسم مفضلة فارغ، والمستخدمة مؤخرًا بعد البطاقات مباشرة",
-  "جديد: بطاقة تهاني المناسبات (رمضان، العيدان، عرفة، رأس السنة الهجرية، اليوم الوطني) — معاينة من الإعدادات",
-  "جديد: ساعة شاشة التوقف بخط ثمانية للعناوين، واسم اليوم بحرف مُرسل"
+  "ضغطة واحدة للمفضلة: على تطبيق في «المستخدمة مؤخرًا» اضغط زر القائمة (≡) — تظهر نجمة ☆ صغيرة",
+  "بطاقات إسلامية أنحف في الأيام العادية، وكاملة في رمضان والعيدين وعرفة وأيام الصيام",
+  "جديد: تذكير السحور — تنبيه هادئ قبل الفجر بـ 30 دقيقة في أيام الصيام، حتى فوق الفيديو (الإعدادات ← الصلاة)",
+  "بطاقة تهاني المناسبات وساعة شاشة التوقف بالحرف المُرسل"
  ]
 }
