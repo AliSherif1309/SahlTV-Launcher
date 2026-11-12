@@ -374,12 +374,7 @@ class QuranActivity : Activity() {
 
     /** Ayah text as shown: for ayah 1 of surahs that carry the basmala inside the text, the basmala is shown as the header instead. */
     private fun shownAyah(d: QuranData, s: Int, a: Int): String {
-        val txt = d.ayahs[s - 1][a - 1]
-        if (a == 1 && s != 1 && s != 9) {
-            val b = basmala(d)
-            if (txt.startsWith(b)) return txt.substring(b.length).trimStart()
-        }
-        return txt
+        return d.withoutBasmala(s, a, d.ayahs[s - 1][a - 1])
     }
 
     private fun arabicNum(n: Int) = n.toString().map { "٠١٢٣٤٥٦٧٨٩"[it - '0'] }.joinToString("")

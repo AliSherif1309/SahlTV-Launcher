@@ -4,7 +4,7 @@ The verse text is copied character-for-character from the verified Tanzil Uthman
 (downloaded and checked earlier in the build); nothing is typed by hand.
 Only short verses are kept so they fit the card.
 """
-import json, re, sys
+import json, re, sys, unicodedata
 
 TEXT = "quran/src/main/assets/quran-uthmani.txt"
 META = "quran/src/main/assets/quran-data.js"
@@ -43,8 +43,9 @@ for s, a in REFS:
     if (s, a) in seen: continue
     seen.add((s, a))
     txt = ayat[(s, a)]
-    if s != 1 and s != 9 and a == 1 and txt.startswith(ayat[(1, 1)]):
-        txt = txt[len(ayat[(1, 1)]):].strip()          # verse 1 of a surah carries the basmala in this file
+    if s != 1 and s != 9 and a == 1:                    # verse 1 of a surah carries the basmala in this file
+        w = txt.split(" ")
+        if "".join(c for c in w[0] if not unicodedata.combining(c)) == "بسم" and len(w) > 4: txt = " ".join(w[4:])
     if len(txt) > MAX: continue
     ar_name, en_name = names.get(s, ("", ""))
     out.append({"s": s, "a": a, "text": txt, "ar": ar_name, "en": en_name})

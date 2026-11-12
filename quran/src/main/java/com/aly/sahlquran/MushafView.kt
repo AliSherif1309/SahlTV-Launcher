@@ -88,9 +88,7 @@ class MushafPage(ctx: Context, private val font: Typeface?) : View(ctx) {
     private fun basmalaText(q: QuranData) = q.ayahs[0][0]
 
     private fun ayahText(q: QuranData, s: Int, a: Int): String {
-        val t = q.ayahs[s - 1][a - 1]
-        if (a == 1 && s != 1 && s != 9) { val b = basmalaText(q); if (t.startsWith(b)) return t.substring(b.length).trimStart() }
-        return t
+        return q.withoutBasmala(s, a, q.ayahs[s - 1][a - 1])
     }
 
     private fun paint(size: Float): TextPaint { val st = style; return TextPaint(Paint.ANTI_ALIAS_FLAG).apply { textSize = size; color = st.ink; font?.let { typeface = it } } }

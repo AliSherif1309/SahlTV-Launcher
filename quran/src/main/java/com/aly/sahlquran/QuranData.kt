@@ -106,6 +106,17 @@ class QuranData private constructor(
 
     fun ayahCount(s: Int) = ayahs[s - 1].size
 
+    /**
+     * Verse 1 of every surah except Al-Fatihah and At-Tawbah carries the basmala in this text; it is shown as its own line instead.
+     * Compared without diacritics, because in some surahs (At-Tin, Al-Qadr) its first letter carries an extra shadda.
+     */
+    fun withoutBasmala(s: Int, a: Int, t: String): String {
+        if (a != 1 || s == 1 || s == 9) return t
+        val w = t.split(' ')
+        val first = w[0].filter { Character.getType(it) != Character.NON_SPACING_MARK.toInt() }
+        return if (first == "بسم" && w.size > 4) w.drop(4).joinToString(" ") else t
+    }
+
     private fun ordinal(s: Int, a: Int) = s * 1000 + a
 
     /** 1-based juz' that contains (s, a) */
