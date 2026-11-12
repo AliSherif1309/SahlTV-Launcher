@@ -107,3 +107,9 @@ Updates come from this repository's "latest" release. Android only installs an u
   Photos come from Wikimedia Commons; the build checks each licence (only CC BY / CC BY-SA / public domain are used) and lists the credits in About.
 - Photo brightness (5 levels), Auto update (Off / Tell me / Download & install), round gold icon buttons, larger clock.
 - Phone remote: a new code is made after 10 wrong tries. The background photo is prepared in the background (no stall).
+
+## v1.10
+- Prayer times follow the Qatar Calendar House (Fajr −1, Dhuhr +1, Asr +1, Maghrib +2 min, Isha = Maghrib + 90), checked against its Doha timetable; Sunrise (Shorouq) added; fine-tune in Settings.
+- Ayah of the day (verses copied unchanged from the verified Tanzil text at build time); press OK to open it in Sahl Quran.
+- Weather (Open-Meteo, fetched in the background) and the next Qatar occasion next to the clock.
+- "What's new" card for two days after each update.

@@ -15,8 +15,25 @@ import kotlin.math.tan
  * Offline prayer times (PrayTimes.org algorithm), Qatar method:
  * Fajr: sun 18° below the horizon · Asr: shadow = object length (Shafi'i) ·
  * Maghrib: sunset · Isha: 90 minutes after Maghrib.
+ * Then the Qatar Calendar House adjustments (minutes), checked against its Doha timetable:
+ * Fajr −1, Sunrise 0, Dhuhr +1, Asr +1, Maghrib +2, Isha = Maghrib + 90. Each time is rounded to the minute.
  */
 object Prayer {
+    /** Qatar calendar adjustments in minutes: fajr, sunrise, dhuhr, asr, maghrib. */
+    private val QATAR = intArrayOf(-1, 0, 1, 1, 2)
+    /** Your own extra minutes per prayer (Settings → Adjust prayer times). */
+    @Volatile var user = IntArray(5)
+    val labels = 5
+
+    fun load(ctx: android.content.Context) {
+        val s = ctx.getSharedPreferences("sahl", android.content.Context.MODE_PRIVATE).getString("padj", "") ?: ""
+        val parts = s.split(",").mapNotNull { it.trim().toIntOrNull() }
+        user = IntArray(5) { parts.getOrElse(it) { 0 } }
+    }
+    fun save(ctx: android.content.Context) =
+        ctx.getSharedPreferences("sahl", android.content.Context.MODE_PRIVATE).edit().putString("padj", user.joinToString(",")).apply()
+
+    private fun minute(h: Double, i: Int) = Math.round(h * 60.0 + QATAR[i] + user[i]) / 60.0
     private const val D2R = Math.PI / 180.0
     private const val R2D = 180.0 / Math.PI
 
@@ -72,8 +89,8 @@ object Prayer {
             f = nf; sr = nsr; dh = ndh; asr = nasr; ss = nss
         }
         val adj = tzHours - lon / 15.0
-        val mg = ss + adj
-        return Times(f + adj, sr + adj, dh + adj, asr + adj, mg, mg + 1.5)
+        val mg = minute(ss + adj, 4)
+        return Times(minute(f + adj, 0), minute(sr + adj, 1), minute(dh + adj, 2), minute(asr + adj, 3), mg, mg + 1.5)
     }
 
     /** "HH:mm", rounded to the nearest minute. */

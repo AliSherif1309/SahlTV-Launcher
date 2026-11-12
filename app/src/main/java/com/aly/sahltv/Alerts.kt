@@ -54,6 +54,7 @@ object Alerts {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         val mode = mode(ctx)
         val city = prefs(ctx).getInt("city", 0)
+        Prayer.load(ctx)
         am.cancel(pi)
         if (mode == OFF || city !in CITIES.indices) return
         val (_, la, lo) = CITIES[city]
@@ -79,6 +80,7 @@ object Alerts {
     fun fire(ctx: Context) {
         val city = prefs(ctx).getInt("city", 0)
         if (city !in CITIES.indices || mode(ctx) == OFF) return
+        Prayer.load(ctx)
         val (_, la, lo) = CITIES[city]
         val tz = ZonedDateTime.now().offset.totalSeconds / 3600.0
         val today = LocalDate.now()

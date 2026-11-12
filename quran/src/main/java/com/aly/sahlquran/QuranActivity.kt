@@ -103,8 +103,10 @@ class QuranActivity : Activity() {
         setContentView(root)
         applyTheme()
 
-        surah = prefs.getInt("s", 1).coerceIn(1, 114)
-        val startAyah = prefs.getInt("a", 1)
+        // opened from the launcher's "Ayah of the day": go straight to that verse
+        val askedSurah = intent?.getIntExtra("surah", 0) ?: 0
+        surah = (if (askedSurah in 1..114) askedSurah else prefs.getInt("s", 1)).coerceIn(1, 114)
+        val startAyah = if (askedSurah in 1..114) (intent?.getIntExtra("ayah", 1) ?: 1) else prefs.getInt("a", 1)
         textTv.text = t("Loading…", "جارٍ التحميل…")
         worker.execute {
             val d = QuranData.load(this)

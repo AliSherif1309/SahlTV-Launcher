@@ -42,6 +42,11 @@ jobs:
           cp "$F" $A/AmiriQuran.ttf
           L=$(find /tmp/amiri/x -name "OFL.txt" | head -1); [ -n "$L" ] && cp "$L" $A/Amiri-OFL.txt || true
           ls -la $A
+      - name: Ayah of the day (verses copied from the verified text) and the Quran font for the launcher
+        run: |
+          mkdir -p app/src/main/assets
+          cp quran/src/main/assets/AmiriQuran.ttf app/src/main/assets/AmiriQuran.ttf; cp quran/src/main/assets/Amiri-OFL.txt app/src/main/assets/ 2>/dev/null || true
+          python3 tools/make_ayat.py
       - name: Build signed release APK
         env:
           KEYSTORE_B64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}

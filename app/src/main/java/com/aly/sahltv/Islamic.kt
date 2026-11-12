@@ -214,14 +214,16 @@ class IslamicBackdrop(private val density: Float, private val rtl: Boolean = fal
 }
 
 /** Small line icons drawn in one colour, so every icon matches (no mixed emoji styles). */
-class GoldIcon(ctx: android.content.Context, private val kind: Int, color: Int) : android.view.View(ctx) {
+class GoldIcon(ctx: android.content.Context, kind: Int, color: Int) : android.view.View(ctx) {
+    var kind: Int = kind
+        set(v) { field = v; invalidate() }
     var color: Int = color
         set(v) { field = v; invalidate() }
     companion object { const val FAJR = 0; const val DHUHR = 1; const val ASR = 2; const val MAGHRIB = 3; const val ISHA = 4
         const val MOSQUE = 5; const val HOURGLASS = 6; const val LANTERN = 7; const val DATES = 8; const val CRESCENT = 9
         const val GLOBE = 10; const val BELL = 11; const val LOCK = 12; const val PHONE = 13; const val CLOCK = 14; const val EYE = 15
         const val PLAY = 16; const val SORT = 17; const val EYE_OFF = 18; const val SAVE = 19; const val UPDATE = 20; const val INFO = 21
-        const val STAR = 22; const val BROOM = 23; const val SCREEN = 24; const val GEAR = 25; const val SLIDERS = 26; const val IMAGE = 27; const val SUN = 28 }
+        const val STAR = 22; const val BROOM = 23; const val SCREEN = 24; const val GEAR = 25; const val SLIDERS = 26; const val IMAGE = 27; const val SUN = 28; const val CLOUD = 29; const val RAIN = 30; const val BOOK = 31 }
     private val p = Paint(Paint.ANTI_ALIAS_FLAG)
 
     private fun crescent(c: Canvas, x: Float, y: Float, r: Float) {
@@ -301,6 +303,15 @@ class GoldIcon(ctx: android.content.Context, private val kind: Int, color: Int) 
                 c.drawPath(Path().apply { moveTo(cx - s * 0.32f, cy + s * 0.22f); lineTo(cx - s * 0.1f, cy - s * 0.04f); lineTo(cx + s * 0.06f, cy + s * 0.12f); lineTo(cx + s * 0.16f, cy + s * 0.02f); lineTo(cx + s * 0.32f, cy + s * 0.22f) }, p)
                 p.style = Paint.Style.FILL; c.drawCircle(cx + s * 0.2f, cy - s * 0.14f, s * 0.05f, p) }
             SUN -> { c.drawCircle(cx, cy, s * 0.15f, p); rays(c, cx, cy, s * 0.25f, s * 0.38f, 0, 7) }
+            CLOUD, RAIN -> { val yb = if (kind == RAIN) cy + s * 0.08f else cy + s * 0.22f
+                c.drawPath(Path().apply { moveTo(cx - s * 0.3f, yb); lineTo(cx + s * 0.3f, yb)
+                    addArc(RectF(cx - s * 0.42f, yb - s * 0.26f, cx - s * 0.14f, yb + s * 0.02f), 90f, 180f)
+                    addArc(RectF(cx - s * 0.2f, yb - s * 0.42f, cx + s * 0.18f, yb - s * 0.04f), 180f, 180f)
+                    addArc(RectF(cx + s * 0.1f, yb - s * 0.28f, cx + s * 0.42f, yb + s * 0.0f), 270f, 180f) }, p)
+                if (kind == RAIN) for (i in -1..1) c.drawLine(cx + i * s * 0.16f, yb + s * 0.12f, cx + i * s * 0.16f - s * 0.06f, yb + s * 0.3f, p) }
+            BOOK -> { c.drawPath(Path().apply { moveTo(cx, cy - s * 0.24f); quadTo(cx - s * 0.2f, cy - s * 0.34f, cx - s * 0.42f, cy - s * 0.28f); lineTo(cx - s * 0.42f, cy + s * 0.3f)
+                    quadTo(cx - s * 0.2f, cy + s * 0.24f, cx, cy + s * 0.34f); quadTo(cx + s * 0.2f, cy + s * 0.24f, cx + s * 0.42f, cy + s * 0.3f); lineTo(cx + s * 0.42f, cy - s * 0.28f)
+                    quadTo(cx + s * 0.2f, cy - s * 0.34f, cx, cy - s * 0.24f); lineTo(cx, cy + s * 0.34f) }, p) }
             DATES -> { p.style = Paint.Style.FILL
                 for (i in -1..1) c.drawOval(RectF(cx + i * s * 0.17f - s * 0.08f, cy - s * 0.24f, cx + i * s * 0.17f + s * 0.08f, cy + s * 0.02f), p)
                 p.style = Paint.Style.STROKE
