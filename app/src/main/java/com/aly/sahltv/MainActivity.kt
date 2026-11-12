@@ -523,6 +523,8 @@ class MainActivity : Activity(), RemoteServer.Host {
         return HorizontalScrollView(this).apply {
             isHorizontalScrollBarEnabled = false; clipToPadding = false; clipChildren = false
             addView(line)
+            // Arabic: rows start at the right edge (the first app is on the right, under the row title)
+            if (ar) post { scrollTo(line.width, 0) }
         }
     }
 
@@ -638,6 +640,7 @@ class MainActivity : Activity(), RemoteServer.Host {
             r.items.forEachIndexed { i, it -> line.addView(previewTile(r, i, it)) }
             content.addView(HorizontalScrollView(this).apply {
                 isHorizontalScrollBarEnabled = false; clipToPadding = false; clipChildren = false; addView(line)
+                if (ar) post { scrollTo(line.width, 0) }
             })
         }
     }
@@ -739,7 +742,7 @@ class MainActivity : Activity(), RemoteServer.Host {
     private fun buildNowBar(): View {
         nowBar = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(14), dp(8), dp(8), dp(8))
+            setPaddingRelative(dp(14), dp(8), dp(8), dp(8))
             background = GradientDrawable().apply { setColor(Color.parseColor("#22FFFFFF")); cornerRadius = dp(14).toFloat() }
             visibility = View.GONE
         }

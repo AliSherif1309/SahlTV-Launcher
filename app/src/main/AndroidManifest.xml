@@ -38,6 +38,7 @@
 
     <application
         android:name=".SahlApp"
+        android:supportsRtl="true"
         android:allowBackup="true"
         android:banner="@drawable/banner"
         android:icon="@mipmap/ic_launcher"
