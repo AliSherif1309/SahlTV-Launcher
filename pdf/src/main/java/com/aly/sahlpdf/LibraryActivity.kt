@@ -73,7 +73,7 @@ class LibraryActivity : Activity() {
     private fun header() {
         val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; clipChildren = false; clipToPadding = false; setPadding(0, 0, 0, dp(6)) }
         val titles = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        titles.addView(label(t("Sahl PDF", "سهل · كتب"), 32f, C.TEXT, true).apply { typeface = Fonts.display(true) })
+        titles.addView(label(t("Sahl PDF", "سهل · كتب"), 32f, C.TEXT, true).apply { typeface = Fonts.display(true); Fonts.heading(this) })
         titles.addView(label(if (files.isEmpty()) t("Your books on the TV", "كتبك على التلفاز") else t("${files.size} books", "${files.size} كتاب"), 15f, C.MUTED))
         row.addView(titles, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
         val send = pill(t("📲  Send from phone", "📲  إرسال من الهاتف")) { sendFromPhone() }.apply { tag = "btn/send" }
@@ -84,7 +84,7 @@ class LibraryActivity : Activity() {
         col.addView(row)
     }
 
-    private fun section(text: String) = col.addView(label(text, 20f, C.GOLD).apply { typeface = Fonts.display(false); setPadding(dp(2), dp(22), 0, dp(4)) })
+    private fun section(text: String) = col.addView(label(text, 20f, C.GOLD).apply { typeface = Fonts.display(false); Fonts.heading(this); setPadding(dp(2), dp(22), 0, dp(4)) })
 
     private fun build() {
         col.removeAllViews()

@@ -1,15 +1,15 @@
 {
- "version": "1.14",
+ "version": "1.15",
  "en": [
-  "Thmanyah font everywhere: Serif Display for titles, Serif Text for reading, Sans for screens and numbers",
-  "Bigger, bolder clock; a larger calm clock on the screensaver",
-  "New setting: Text size (Normal, Large, Extra large) for all Sahl apps",
-  "New TV banners for Sahl Quran, Sahl PDF and Sahl Files, with their names"
+  "Night style: from Isha until Fajr, warmer and softer colours with the reading font, in all Sahl apps (Settings → Look & comfort)",
+  "Headings follow Thmanyah's own guide: one swash ending or one slanted kashida on the last word",
+  "New: numbers as 123 or ١٢٣ for the clock, prayer times and countdown",
+  "Text size for all Sahl apps; bigger clock"
  ],
  "ar": [
-  "خط ثمانية في كل مكان: ثمانية للعناوين للعناوين، وثمانية للنصوص للقراءة، وثمانية الرقمي للشاشة والأرقام",
-  "ساعة أكبر وأوضح، وساعة أكبر وهادئة في شاشة التوقف",
-  "إعداد جديد: حجم الخط (عادي، كبير، كبير جدًا) لكل تطبيقات سهل",
-  "صور جديدة للتطبيقات على التلفاز تحمل أسماءها: سهل القرآن، سهل PDF، سهل الملفات"
+  "النمط الليلي: من العشاء حتى الفجر ألوان أدفأ وأهدأ مع خط القراءة، في كل تطبيقات سهل (الإعدادات ← المظهر والراحة)",
+  "العناوين تتبع دليل خط ثمانية: حرف مُرسل أو كشيدة مائلة واحدة في الكلمة الأخيرة",
+  "جديد: الأرقام 123 أو ١٢٣ للساعة ومواقيت الصلاة والعدّ التنازلي",
+  "حجم الخط لكل تطبيقات سهل، وساعة أكبر"
  ]
 }

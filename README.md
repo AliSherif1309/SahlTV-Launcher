@@ -144,6 +144,12 @@ Both apps ask once for access to files (Android 10 shows a normal Allow window).
 ## ✍ Thmanyah font (v1.13)
 All four apps use the Thmanyah family (ثمانية), following its own guide: **Serif Display** for titles and headings, **Serif Text** for text you read (messages, notes, book titles, text files), and **Sans** for the screen, buttons and numbers (the clock uses Sans Bold; the screensaver clock uses Sans Light). Quran pages keep the Amiri Quran Mushaf font.
 
+**Headings follow Thmanyah's guide**: each short heading gets one touch on its last word only: a swash ending (the font's alternate letter) when the word ends in ب ت ث س ش ص ض ف ق ك م ن ي ى ئ, otherwise one slanted kashida between the last two letters when they join. Never in long text.
+
+**Night style** (on by default): from Isha until Fajr, all four apps turn warmer and softer (less blue light) and switch to the reading font, Serif Text. Sahl TV keeps the prayer times; the other apps ask it.
+
+**Numbers**: 123 or ١٢٣ for the clock, prayer times and countdown.
+
 **Text size** (Sahl TV → Settings → Look & comfort): Normal, Large or Extra large, for all four apps. The other apps read it from Sahl TV.
 The font's licence allows using it inside apps but not sharing the font files. So this repository keeps only an encrypted copy (`fonts-locked/`). The cloud build unlocks it with the `FONT_KEY` secret and packs it scrambled into each app (`tools/pack_fonts.py`, `Fonts.kt`). Without the secret, the apps build with the TV's normal font.
 Font © thmanyah Publishing and Distribution, used under thmanyah's Font License.

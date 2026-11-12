@@ -32,6 +32,9 @@ object Fonts {
 
     /** Text size for all Sahl apps (set in Sahl TV → Settings → Text size): 1.0, 1.1 or 1.2. */
     @Volatile var scale = 1f
+    /** Night style (after Isha until Fajr, set in Sahl TV): warmer colours and the reading font (Serif Text). */
+    @Volatile var night = false
+    private var nightMap: Map<Typeface, Typeface> = emptyMap()
     private val sizes = java.util.WeakHashMap<TextView, Pair<Float, Float>>()
     private var map: Map<Typeface, Typeface> = emptyMap()
     private var ours: Set<Typeface> = emptySet()
@@ -55,6 +58,8 @@ object Fonts {
         // these are other font families on this TV; never replace them (monospace stays for codes)
         for (k in listOf(Typeface.MONOSPACE, Typeface.SERIF)) mm.remove(k)
         map = mm; ours = setOfNotNull(r, l, m, b, dispMed, dispBold, textReg, textBold)
+        val tr = textReg ?: r; val tb = textBold ?: b
+        nightMap = mm.mapValues { (_, v) -> if (v === b || v === m) tb else tr }
     }
 
     private fun load(ctx: Context, name: String): Typeface? = try {
@@ -71,6 +76,42 @@ object Fonts {
     /** The font for a weight, for code that needs it directly (falls back to the TV font). */
     fun get(boldOrMedium: Int = 0): Typeface = when (boldOrMedium) { 2 -> bold; 1 -> medium; -1 -> light; else -> regular } ?: Typeface.DEFAULT
 
+    // ---------------------------------------------------------------- Thmanyah's guide for headings
+    // One touch per heading, on its LAST word only (never in long text):
+    //  • a swash ending (the font's alternate letter, "salt") when the word ends in a letter that has one;
+    //  • otherwise one slanted kashida (ـ) between the last letter and the one before it, when they join.
+    private const val SWASH = "بتثسشصضفقكمنيىئ"
+    private const val JOINS = "بتثجحخسشصضطظعغفقكلمنهيئى"
+    private val heads = java.util.WeakHashMap<TextView, String>()
+
+    private class Feature(val f: String) : android.text.style.MetricAffectingSpan() {
+        override fun updateDrawState(tp: android.text.TextPaint) { tp.fontFeatureSettings = f }
+        override fun updateMeasureState(tp: android.text.TextPaint) { tp.fontFeatureSettings = f }
+    }
+
+    /** Marks a TextView as a heading: its text (now and later) gets the Thmanyah heading touch. */
+    fun heading(tv: TextView) { if (dispBold != null) { heads[tv] = ""; applyTree(tv) } }
+
+    fun headline(text: CharSequence): CharSequence {
+        val s = text.toString()
+        if (dispBold == null || s.isBlank() || s.contains('\n') || s.contains('\u0640')) return text
+        val words = s.trim().split(Regex("\\s+"))
+        if (words.size > 4) return text                                 // headings only, never long text
+        val end = s.trimEnd().length
+        var start = end
+        while (start > 0 && !s[start - 1].isWhitespace()) start--
+        val word = s.substring(start, end)
+        var li = word.length - 1                                         // last Arabic letter of the word (skip ؟ ! . etc.)
+        while (li >= 0 && word[li] !in '\u0621'..'\u064A') li--
+        if (li < 1 || word.count { it in '\u0621'..'\u064A' } < 3) return text
+        val last = word[li]; val before = word[li - 1]
+        return if (last in SWASH) {
+            android.text.SpannableString(s).apply { setSpan(Feature("'salt' 1"), start, end, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE) }
+        } else if (before in JOINS) {
+            s.substring(0, start + li) + "\u0640" + s.substring(start + li)
+        } else text
+    }
+
     /** Serif Display, for titles and headings. */
     fun display(bold: Boolean = true): Typeface = (if (bold) dispBold else dispMed) ?: get(if (bold) 2 else 1)
     /** Serif Text, for text you read. */
@@ -82,9 +123,11 @@ object Fonts {
         if (v is TextView) {
             if (map.isNotEmpty()) {
                 val tf = v.typeface
-                if (tf == null) v.typeface = regular
-                else if (tf !in ours) map[tf]?.let { v.typeface = it }
+                val mp = if (night) nightMap else map
+                if (tf == null) v.typeface = if (night) (textReg ?: regular) else regular
+                else if (tf !in ours) mp[tf]?.let { v.typeface = it }
             }
+            heads[v]?.let { last -> val cur = v.text; if (cur != null && cur.toString() != last) { val out = headline(cur); heads[v] = out.toString(); if (out.toString() != cur.toString() || out is android.text.Spanned) v.text = out } }
             // text size: remember the app's own size, so it is scaled once (and again only if the app changes it)
             val rec = sizes[v]
             if (scale != 1f || rec != null) {
@@ -101,9 +144,17 @@ object Fonts {
     /** Keeps every text in this window (now and later) in the Sahl font. */
     private val watched = java.util.WeakHashMap<Window, Boolean>()
 
+    /** Night colours: a little dimmer and warmer (less blue light), like a night lamp. */
+    val WARM = android.graphics.ColorMatrixColorFilter(floatArrayOf(
+        0.96f, 0f, 0f, 0f, 0f,
+        0f, 0.86f, 0f, 0f, 0f,
+        0f, 0f, 0.66f, 0f, 0f,
+        0f, 0f, 0f, 1f, 0f))
+
     fun watch(w: Window?) {
-        if (w == null || (map.isEmpty() && scale == 1f) || watched.put(w, true) != null) return
+        if (w == null || (map.isEmpty() && scale == 1f && !night) || watched.put(w, true) != null) return
         val d = w.decorView
+        if (night) d.setLayerType(View.LAYER_TYPE_HARDWARE, android.graphics.Paint().apply { colorFilter = WARM })
         d.viewTreeObserver.addOnGlobalLayoutListener { applyTree(d) }
         applyTree(d)
     }
@@ -126,11 +177,14 @@ class SahlApp : Application() {
         })
     }
 
-    /** The text size chosen in Sahl TV (shared with all Sahl apps through Sahl TV). */
+    /** The text size and night style from Sahl TV (shared with all Sahl apps through Sahl TV). */
     private fun readScale() {
         try {
             contentResolver.query(android.net.Uri.parse("content://com.aly.sahltv.prefs/scale"), null, null, null, null)?.use { c ->
-                if (c.moveToFirst()) Fonts.scale = c.getFloat(0).coerceIn(1f, 1.25f)
+                if (c.moveToFirst()) {
+                    Fonts.scale = c.getFloat(0).coerceIn(1f, 1.25f)
+                    if (c.columnCount > 1) Fonts.night = c.getInt(1) == 1
+                }
             }
         } catch (_: Exception) {}
     }
@@ -145,7 +199,7 @@ class FontDialog(ctx: Context, theme: Int) : AlertDialog.Builder(ctx, theme) {
         val check = object : Runnable { override fun run() {
             if (!d.isShowing) { if (++tries < 50) h.postDelayed(this, 100); return }
             val res = d.context.resources
-            (d.findViewById<View>(res.getIdentifier("alertTitle", "id", "android")) as? TextView)?.typeface = Fonts.display(true)
+            (d.findViewById<View>(res.getIdentifier("alertTitle", "id", "android")) as? TextView)?.let { it.typeface = Fonts.display(true); Fonts.heading(it) }
             (d.findViewById<View>(android.R.id.message) as? TextView)?.let { it.typeface = Fonts.text(); it.setLineSpacing(0f, 1.2f) }
             Fonts.watch(d.window)
         } }

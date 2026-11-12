@@ -94,7 +94,7 @@ object Dlg {
             layoutDirection = if (isAr) View.LAYOUT_DIRECTION_RTL else View.LAYOUT_DIRECTION_LTR
             clipChildren = false; clipToPadding = false
         }
-        if (title != null) panel.addView(a.label(title, 21f, C.GOLD, true).apply { typeface = Fonts.display(true); setPadding(a.dp(4), 0, a.dp(4), a.dp(10)) })
+        if (title != null) panel.addView(a.label(title, 21f, C.GOLD, true).apply { typeface = Fonts.display(true); Fonts.heading(this); setPadding(a.dp(4), 0, a.dp(4), a.dp(10)) })
         panel.addView(body)
         d.setContentView(panel)
         Fonts.watch(d.window)

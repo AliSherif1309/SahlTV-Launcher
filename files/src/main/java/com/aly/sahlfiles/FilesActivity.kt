@@ -69,7 +69,7 @@ class FilesActivity : Activity() {
         }
         // ---- places
         val side = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; clipChildren = false; clipToPadding = false }
-        side.addView(label(t("Sahl Files", "سهل · الملفات"), 28f, C.TEXT, true).apply { typeface = Fonts.display(true); setPadding(dp(8), 0, 0, dp(14)) })
+        side.addView(label(t("Sahl Files", "سهل · الملفات"), 28f, C.TEXT, true).apply { typeface = Fonts.display(true); Fonts.heading(this); setPadding(dp(8), 0, 0, dp(14)) })
         places = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; clipChildren = false; clipToPadding = false; setPadding(dp(6), dp(4), dp(6), dp(4)) }
         side.addView(ScrollView(this).apply { isVerticalScrollBarEnabled = false; clipChildren = false; clipToPadding = false; addView(places) }, LinearLayout.LayoutParams(MATCH_PARENT, 0, 1f))
         root.addView(side, LinearLayout.LayoutParams(dp(250), MATCH_PARENT))

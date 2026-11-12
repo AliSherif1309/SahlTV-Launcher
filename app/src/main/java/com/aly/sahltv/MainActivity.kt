@@ -334,7 +334,7 @@ class MainActivity : Activity(), RemoteServer.Host {
 
     private fun updateClock() {
         val now = Date()
-        clockTv.text = SimpleDateFormat(if (clock24) "HH:mm" else "h:mm a", Locale.US).format(now)
+        clockTv.text = digits(SimpleDateFormat(if (clock24) "HH:mm" else "h:mm a", if (ar) Locale.forLanguageTag("ar") else Locale.US).format(now))
         dateTv.text = SimpleDateFormat("EEEE d MMMM yyyy", if (ar) Locale.forLanguageTag("ar") else Locale.US).format(now)
         hijriTv.text = hijriText(LocalDate.now())
         updatePrayer()
@@ -1117,6 +1117,8 @@ class MainActivity : Activity(), RemoteServer.Host {
                 22 -> { prefs.edit().putBoolean("wxOn", !wxOn).putLong("wxTry", 0L).apply(); updateClock() }
                 23 -> { prefs.edit().putBoolean("ayahOn", !ayahOn).apply(); ayahToday = null; updateClock() }
                 24 -> textSizeMenu()
+                25 -> { prefs.edit().putBoolean("nightStyle", !nightStyle).commit(); Fonts.night = PrefsProvider.isNight(this); recreate() }
+                26 -> { prefs.edit().putBoolean("arDigits", !arDigits).apply(); updateClock(); tickCountdowns() }
                 17 -> dialog().setTitle("Sahl TV  ·  سهل")
                     .setMessage(t("A fast, ad-free home screen for Android TV.\n\nNo tracking, no background services. Internet is used only for preview pictures, the weather, and checking for updates. Nothing about you is sent anywhere.\n\nPrayer times are calculated on the TV (Qatar method: Fajr 18°, Asr Shafi'i, Isha 90 min after Maghrib). Please compare with the official Awqaf timetable.\n\nTip: hold OK on an app (or press Menu) for options.\n\nFree & open source (MIT).\n" + photoCredits() + "Weather: Open-Meteo.com (CC BY 4.0). Ayah of the day: Tanzil Quran text (CC BY 3.0), Amiri Quran font (SIL OFL).\nContact: alysherif1309@gmail.com",
                                   "واجهة رئيسية سريعة وبلا إعلانات لأجهزة Android TV.\n\nبلا تتبّع وبلا خدمات تعمل في الخلفية. يُستخدم الإنترنت فقط لصور المعاينات والطقس والبحث عن تحديثات. لا يُرسل أي شيء عنك.\n\nتُحسب مواقيت الصلاة على التلفاز (طريقة قطر: الفجر 18°، العصر شافعي، العشاء بعد المغرب بـ 90 دقيقة). يُرجى مقارنتها بتقويم الأوقاف الرسمي.\n\nنصيحة: اضغط مطولًا على OK فوق تطبيق (أو زر القائمة) لعرض الخيارات.\n\nمجاني ومفتوح المصدر (MIT).\n" + photoCredits() + "الطقس: Open-Meteo.com (CC BY 4.0). آية اليوم: نص القرآن من مشروع تنزيل (CC BY 3.0) وخط Amiri Quran (SIL OFL).\nللتواصل: alysherif1309@gmail.com"))
@@ -1242,7 +1244,7 @@ class MainActivity : Activity(), RemoteServer.Host {
         val a = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         val lbl = iconLabel(GoldIcon.MOSQUE, t("Next prayer", "الصلاة القادمة")); nextLabelTv = lbl.getChildAt(1) as TextView
         a.addView(lbl)
-        nextNameTv = TextView(this).apply { textSize = 28f; setTextColor(TEXT); typeface = Fonts.display(true); maxLines = 1; includeFontPadding = false }
+        nextNameTv = TextView(this).apply { textSize = 28f; setTextColor(TEXT); typeface = Fonts.display(true); maxLines = 1; includeFontPadding = false; Fonts.heading(this) }
         a.addView(nextNameTv)
         hero.addView(a, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
         hero.addView(View(this).apply { setBackgroundColor(Color.argb(90, 227, 184, 92)) }, LinearLayout.LayoutParams(dp(1), dp(46)).apply { setMargins(dp(12), 0, dp(12), 0) })
@@ -1275,7 +1277,7 @@ class MainActivity : Activity(), RemoteServer.Host {
         ramCard = card(false) { islamicDatesDialog() }
         ramCard.addView(GoldIcon(this, GoldIcon.LANTERN, GOLD), LinearLayout.LayoutParams(dp(34), dp(34)).apply { marginEnd = dp(14) })
         val rc = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        ramTitle = TextView(this).apply { textSize = 18f; setTextColor(TEXT); typeface = Fonts.display(true); maxLines = 1 }
+        ramTitle = TextView(this).apply { textSize = 18f; setTextColor(TEXT); typeface = Fonts.display(true); maxLines = 1; Fonts.heading(this) }
         ramSub = TextView(this).apply { textSize = 14f; setTextColor(GOLD); maxLines = 1; fontFeatureSettings = "tnum" }
         rc.addView(ramTitle); rc.addView(ramSub)
         ramCard.addView(rc, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
@@ -1284,7 +1286,7 @@ class MainActivity : Activity(), RemoteServer.Host {
         fastCard = card(false) { fastDialog() }
         fastCard.addView(GoldIcon(this, GoldIcon.DATES, GOLD), LinearLayout.LayoutParams(dp(34), dp(34)).apply { marginEnd = dp(14) })
         val fc = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        fastTitle = TextView(this).apply { textSize = 18f; setTextColor(TEXT); typeface = Fonts.display(true); maxLines = 1 }
+        fastTitle = TextView(this).apply { textSize = 18f; setTextColor(TEXT); typeface = Fonts.display(true); maxLines = 1; Fonts.heading(this) }
         fastSub = TextView(this).apply { textSize = 14f; setTextColor(MUTED); maxLines = 1 }
         fc.addView(fastTitle); fc.addView(fastSub)
         fastCard.addView(fc, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
@@ -1371,7 +1373,7 @@ class MainActivity : Activity(), RemoteServer.Host {
             nextLabelTv.text = if (nextI == 1) t("Coming up", "التالي") else t("Next prayer", "الصلاة القادمة")
             for (i in 0 until 6) {
                 cellNames[i].text = names[i]
-                cellTimes[i].text = Prayer.hm(if (i == 0 && epochAt(today, tt.isha) < now) tm.fajr else hours[i])
+                cellTimes[i].text = digits(Prayer.hm(if (i == 0 && epochAt(today, tt.isha) < now) tm.fajr else hours[i]))
                 val on = i == nextI
                 cellBoxes[i].background = if (on) GradientDrawable().apply {
                     setColor(Color.parseColor("#1C4337")); cornerRadius = dp(12).toFloat(); setStroke(dp(1), GOLD)
@@ -1447,6 +1449,13 @@ class MainActivity : Activity(), RemoteServer.Host {
         val night = if (tt != null) now > epochAt(today, tt.isha) + 3_600_000L || now < epochAt(today, tt.fajr)
                     else java.time.LocalTime.now().let { it.hour >= 21 || it.hour < 5 }
         dimView.animate().alpha(if (calm && night) 0.35f else 0f).setDuration(1500).start()
+        // night style (all Sahl apps): from Isha until Fajr. The other apps ask Sahl TV, so keep the times of day here.
+        if (tt != null) {
+            val im = ((tt.isha * 60).toInt() % 1440); val fm = ((tt.fajr * 60).toInt() % 1440)
+            if (prefs.getInt("ishaMin", -1) != im || prefs.getInt("fajrMin", -1) != fm) prefs.edit().putInt("ishaMin", im).putInt("fajrMin", fm).apply()
+        }
+        val nightNow = PrefsProvider.isNight(this)
+        if (nightNow != Fonts.night) { Fonts.night = nightNow; if (!isFinishing) handler.post { recreate() } }
         panel.visibility = if (prayRow.visibility == View.GONE && ramCard.visibility == View.GONE && fastCard.visibility == View.GONE) View.GONE else View.VISIBLE
         tickCountdowns()
     }
@@ -1457,7 +1466,7 @@ class MainActivity : Activity(), RemoteServer.Host {
         if ((nextAt in 1..now) || (ramAt in 1..now)) { updateClock(); return }
         if (nextAt > 0) {
             val left = nextAt - now
-            nextCountTv.text = fmtLeft(left)
+            nextCountTv.text = digits(fmtLeft(left))
         }
         if (ramAt > 0) ramSub.text = "$ramLabel  ${fmtLeft(ramAt - now)}"
     }
@@ -1614,6 +1623,12 @@ class MainActivity : Activity(), RemoteServer.Host {
     // ------------------------------------------------------------------ text size (shared with all Sahl apps)
 
     private val textScale get() = prefs.getFloat("textScale", 1f)
+    /** Numbers as 123 or ١٢٣ (Thmanyah's Arabic numerals) for the clock, prayer times and countdown. */
+    private val arDigits get() = prefs.getBoolean("arDigits", false)
+    private fun digits(s: String): String = if (!arDigits) s.map { if (it in '٠'..'٩') '0' + (it - '٠') else it }.joinToString("")
+        else s.map { if (it in '0'..'9') '٠' + (it - '0') else it }.joinToString("")
+    private val nightStyle get() = prefs.getBoolean("nightStyle", true)
+
     private fun textSizeName() = when { textScale >= 1.19f -> t("Extra large", "كبير جدًا"); textScale >= 1.09f -> t("Large", "كبير"); else -> t("Normal", "عادي") }
 
     private fun textSizeMenu() {
@@ -1646,6 +1661,8 @@ class MainActivity : Activity(), RemoteServer.Host {
                 SRow(GoldIcon.IMAGE, t("Background", "الخلفية"), t("The Kaaba, the Prophet's Mosque, Al-Aqsa — or automatic day / night", "الكعبة أو المسجد النبوي أو الأقصى — أو تلقائي نهار / ليل"), if (islamic) bgName() else t("Classic theme", "المظهر الكلاسيكي"), 18),
                 SRow(GoldIcon.SUN, t("Photo brightness", "سطوع الصورة"), t("Darker is calmer and easier to read", "الأغمق أهدأ وأسهل للقراءة"), dimName(), 19),
                 SRow(GoldIcon.EYE, t("Calm mode", "الوضع الهادئ"), t("Gentle for little eyes: minute countdown, soft focus, dims at night", "لطيف لعيون الصغار: عدّ بالدقائق، تركيز هادئ، تعتيم ليلًا"), onOff(calm), 7),
+                SRow(GoldIcon.CRESCENT, t("Night style", "النمط الليلي"), t("From Isha until Fajr: warmer, softer colours and the reading font, in all Sahl apps", "من العشاء حتى الفجر: ألوان أدفأ وأهدأ وخط القراءة، في كل تطبيقات سهل"), onOff(nightStyle), 25),
+                SRow(GoldIcon.CLOCK, t("Numbers", "الأرقام"), t("Clock, prayer times and countdown", "الساعة ومواقيت الصلاة والعدّ التنازلي"), if (arDigits) "١٢٣" else "123", 26),
                 SRow(GoldIcon.EYE, t("Text size", "حجم الخط"), t("For all Sahl apps: Sahl TV, Quran, PDF and Files", "لكل تطبيقات سهل: سهل TV والقرآن وPDF والملفات"), textSizeName(), 24),
                 SRow(GoldIcon.CLOCK, t("Clock", "الساعة"), t("Show time as 24-hour or 12-hour", "عرض الوقت بنظام 24 أو 12 ساعة"), if (clock24) t("24-hour", "24 ساعة") else t("12-hour", "12 ساعة"), 3),
                 SRow(GoldIcon.SCREEN, t("Clock screensaver", "شاشة توقف الساعة"), t("A dim moving clock when the TV sits idle", "ساعة خافتة متحركة عند عدم الاستخدام"), if (saverMin == 0) t("Off", "متوقفة") else t("After $saverMin min", "بعد $saverMin د"), 12)),
@@ -1709,7 +1726,7 @@ class MainActivity : Activity(), RemoteServer.Host {
         val head = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(dp(4), 0, dp(4), dp(14)) }
         head.addView(GoldIcon(this, GoldIcon.STAR, GOLD), LinearLayout.LayoutParams(dp(30), dp(30)).apply { marginEnd = dp(12) })
         val ht = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        ht.addView(TextView(this).apply { text = t("Settings", "الإعدادات"); textSize = 30f; setTextColor(TEXT); typeface = Fonts.display(true) })
+        ht.addView(TextView(this).apply { text = t("Settings", "الإعدادات"); textSize = 30f; setTextColor(TEXT); typeface = Fonts.display(true); Fonts.heading(this) })
         ht.addView(TextView(this).apply { text = t("Sahl TV  ·  press Back to return home", "سهل TV  ·  اضغط رجوع للعودة"); textSize = 13f; setTextColor(MUTED) })
         head.addView(ht, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
         list.addView(head)
@@ -1723,7 +1740,7 @@ class MainActivity : Activity(), RemoteServer.Host {
         var focusView: View? = null
         for ((title, rows) in settingsSections()) {
             list.addView(TextView(this).apply {
-                text = title; textSize = 17f; setTextColor(GOLD); typeface = Fonts.display(false)
+                text = title; textSize = 17f; setTextColor(GOLD); typeface = Fonts.display(false); Fonts.heading(this)
                 setPadding(dp(6), dp(20), dp(6), dp(8))
             })
             for (r in rows) { val v = settingsRow(r, false); list.addView(v); if (r.action == settingsFocus) focusView = v }
