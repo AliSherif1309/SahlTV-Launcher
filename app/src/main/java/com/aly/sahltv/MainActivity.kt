@@ -483,7 +483,7 @@ class MainActivity : Activity(), RemoteServer.Host {
             content.addView(rowTitle(t("Recent", "المستخدمة مؤخرًا")))
             content.addView(hRow("rec", rec.mapNotNull { apps[it] }, big = false))
         }
-        content.addView(rowTitle(t("All apps  ·  ${all.size}", "كل التطبيقات  ·  ${all.size}")))
+        content.addView(rowTitle(digits(t("All apps  ·  ${all.size}", "كل التطبيقات  ·  ${all.size}"))))
         // as many 142 dp columns as fit inside the TV safe area (48 dp each side)
         val cols = maxOf(4, (resources.configuration.screenWidthDp - 96) / 142)
         val grid = GridLayout(this).apply { columnCount = cols; useDefaultMargins = false; clipChildren = false; clipToPadding = false }
@@ -1132,7 +1132,7 @@ class MainActivity : Activity(), RemoteServer.Host {
                 23 -> { prefs.edit().putBoolean("ayahOn", !ayahOn).apply(); ayahToday = null; updateClock() }
                 24 -> textSizeMenu()
                 25 -> { prefs.edit().putBoolean("nightStyle", !nightStyle).commit(); Fonts.night = PrefsProvider.isNight(this); recreate() }
-                26 -> { prefs.edit().putBoolean("arDigits", !arDigits).apply(); updateClock(); tickCountdowns() }
+                26 -> { prefs.edit().putBoolean("arDigits", !arDigits).apply(); updateClock(); tickCountdowns(); prefs.edit().putLong("wxTry", 0L).apply(); refreshWeather(); render(true) }
                 27 -> greetingMenu()
                 28 -> { prefs.edit().putBoolean("suhoorOn", !prefs.getBoolean("suhoorOn", true)).apply(); Alerts.schedule(this)
                         toast(t("Suhoor reminder: ", "تذكير السحور: ") + onOff(prefs.getBoolean("suhoorOn", true))) }
@@ -1994,15 +1994,15 @@ class MainActivity : Activity(), RemoteServer.Host {
         if (o != null && fresh) {
             val cur = o.getJSONObject("current"); val day = o.getJSONObject("daily")
             val code = cur.getInt("weather_code"); val isDay = cur.optInt("is_day", 1) == 1
-            wxTemp.text = "${Math.round(cur.getDouble("temperature_2m"))}°"
+            wxTemp.text = digits("${Math.round(cur.getDouble("temperature_2m"))}°")
             wxIcon.kind = when (code) { 0, 1 -> if (isDay) GoldIcon.SUN else GoldIcon.CRESCENT; 2, 3, 45, 48 -> GoldIcon.CLOUD; in 51..67, in 80..82, in 95..99 -> GoldIcon.RAIN; else -> GoldIcon.CLOUD }
             val desc = when (code) { 0 -> t("Clear", "صافٍ"); 1, 2 -> t("Partly cloudy", "غائم جزئيًا"); 3 -> t("Cloudy", "غائم"); 45, 48 -> t("Fog", "ضباب")
                 in 51..67, in 80..82 -> t("Rain", "أمطار"); in 95..99 -> t("Thunderstorm", "عاصفة رعدية"); else -> "" }
             val hi = Math.round(day.getJSONArray("temperature_2m_max").getDouble(0)); val lo = Math.round(day.getJSONArray("temperature_2m_min").getDouble(0))
-            wxLine.text = (if (desc.isNotEmpty()) "$desc  ·  " else "") + t("H $hi°  L $lo°", "العظمى $hi°  الصغرى $lo°")
+            wxLine.text = digits((if (desc.isNotEmpty()) "$desc  ·  " else "") + t("H $hi°  L $lo°", "العظمى $hi°  الصغرى $lo°"))
             wxTemp.visibility = View.VISIBLE; wxLine.visibility = View.VISIBLE; wxIcon.visibility = View.VISIBLE
         } else { wxTemp.visibility = View.GONE; wxLine.visibility = View.GONE; wxIcon.visibility = View.GONE }
-        qaLine.text = qatarNext()
+        qaLine.text = digits(qatarNext())
     }
 
     /** Next Qatar occasion: National Day (18 Dec), National Sport Day (2nd Tuesday of February), the two Eids. Worked out on the TV. */
