@@ -71,3 +71,10 @@ Quran reader for the TV: continues where you stopped, jump by Surah / Juz' / pag
 Remote: ◀ ▶ turn pages, ▲ ▼ scroll, OK opens the menu.
 
 Quran text: Tanzil Project (tanzil.net), Uthmani, CC BY 3.0, used unchanged. Font: Amiri Quran, SIL Open Font License.
+
+## ☪ Islamic theme (v1.5)
+- Night-sky background with a crescent, mosque silhouette and a faint gold star pattern (drawn once, no images, no slowdown). Switch to Classic in ☰ Launcher → Theme.
+- Next prayer with a live countdown, and all five prayers with the next one highlighted. Press OK for today's full times.
+- Hijri date under the clock, with a ±2 day adjustment for local moon sighting.
+- Ramadan card: days until Ramadan; during Ramadan, the day number and a live Iftar / Suhoor countdown; Eid and Arafah greetings. Press OK for upcoming Islamic dates.
+- Sunnah fast card: next Monday/Thursday, White days, Arafah, Ashura, Dhu al-Hijjah and Shawwal fasts; glows the day before. Press OK for the next 30 days.

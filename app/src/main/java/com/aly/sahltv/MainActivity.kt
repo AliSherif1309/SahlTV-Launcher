@@ -85,6 +85,7 @@ class MainActivity : Activity(), RemoteServer.Host {
     // views
     private lateinit var clockTv: TextView
     private lateinit var dateTv: TextView
+    private lateinit var hijriTv: TextView
     private lateinit var content: LinearLayout
     private lateinit var scroll: ScrollView
     private lateinit var memBtn: TextView
@@ -109,6 +110,10 @@ class MainActivity : Activity(), RemoteServer.Host {
     private val TEXT = Color.parseColor("#EEF3F1")
     private val MUTED = Color.parseColor("#8FA39C")
     private val ACCENT = Color.parseColor("#3CC88F")
+    private val GOLD = Color.parseColor("#E3B85C")
+    /** Islamic theme (night sky, mosque, gold) or the plain classic look. */
+    private val islamic by lazy { prefs.getBoolean("islamic", true) }
+    private val FOCUS get() = if (islamic) GOLD else Color.WHITE
 
     private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
 
@@ -127,6 +132,8 @@ class MainActivity : Activity(), RemoteServer.Host {
     private val saverMin get() = prefs.getInt("saverMin", 5)          // 0 = off
     private val nowOn get() = prefs.getBoolean("nowOn", true)
     private val remoteOn get() = prefs.getBoolean("remoteOn", false)
+    private val hijriAdj get() = prefs.getInt("hijriAdj", 0)
+    private val fastOn get() = prefs.getBoolean("fastOn", true)
     private val locked get() = list("locked")
     private val pinSet get() = prefs.getString("pinHash", null) != null
     private val lockSettings get() = prefs.getBoolean("lockSettings", false)
@@ -144,7 +151,8 @@ class MainActivity : Activity(), RemoteServer.Host {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val root = FrameLayout(this).also { rootFrame = it }.apply {
-            background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(BG_TOP, BG_BOTTOM))
+            background = if (islamic) IslamicBackdrop(resources.displayMetrics.density)
+                         else GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(BG_TOP, BG_BOTTOM))
         }
         val col = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -163,6 +171,8 @@ class MainActivity : Activity(), RemoteServer.Host {
             addView(content)
         }
         col.addView(scroll, LinearLayout.LayoutParams(MATCH_PARENT, 0, 1f))
+        panel = buildPanel()
+        panel.layoutDirection = col.layoutDirection
         root.addView(col)
         setContentView(root)
         window.setBackgroundDrawable(null)      // the gradient covers everything: skip one full-screen draw
@@ -190,6 +200,7 @@ class MainActivity : Activity(), RemoteServer.Host {
         super.onResume()
         updateClock()
         handler.post(clockTick)
+        handler.post(secondTick)
         if (dirty && !loading) loadApps() else if (apps.isNotEmpty()) render(keepFocus = true)
         maybeAutoClean()
         refreshPreviews(force = false)
@@ -201,6 +212,7 @@ class MainActivity : Activity(), RemoteServer.Host {
     override fun onPause() {
         super.onPause()
         handler.removeCallbacks(clockTick)
+        handler.removeCallbacks(secondTick)
         handler.removeCallbacks(saverTick)
         hideSaver()
     }
@@ -235,8 +247,9 @@ class MainActivity : Activity(), RemoteServer.Host {
         val left = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         clockTv = TextView(this).apply { textSize = 40f; setTextColor(TEXT); typeface = Typeface.create("sans-serif-light", Typeface.NORMAL) }
         dateTv = TextView(this).apply { textSize = 15f; setTextColor(MUTED) }
-        prayerTv = TextView(this).apply { textSize = 15f; setTextColor(ACCENT); setPadding(0, dp(2), 0, 0) }
-        left.addView(clockTv); left.addView(dateTv); left.addView(prayerTv)
+        hijriTv = TextView(this).apply { textSize = 15f; setTextColor(GOLD); setPadding(0, dp(1), 0, 0) }
+        prayerTv = TextView(this).apply { textSize = 15f; setTextColor(ACCENT); visibility = View.GONE }
+        left.addView(clockTv); left.addView(dateTv); left.addView(hijriTv)
         bar.addView(left, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
 
         memBtn = pill(t("🧹  Free memory", "🧹  تحرير الذاكرة")) { freeMemory() }
@@ -255,7 +268,7 @@ class MainActivity : Activity(), RemoteServer.Host {
         isFocusable = true; isClickable = true
         defaultFocusHighlightEnabled = false
         val normal = GradientDrawable().apply { setColor(Color.parseColor("#1AFFFFFF")); cornerRadius = dp(20).toFloat() }
-        val focused = GradientDrawable().apply { setColor(Color.WHITE); cornerRadius = dp(20).toFloat() }
+        val focused = GradientDrawable().apply { setColor(FOCUS); cornerRadius = dp(20).toFloat() }
         background = normal
         setOnFocusChangeListener { v, has ->
             v.background = if (has) focused else normal
@@ -264,29 +277,18 @@ class MainActivity : Activity(), RemoteServer.Host {
         setOnClickListener { onClick() }
     }
 
-    private val hijriMonths = arrayOf("Muharram", "Safar", "Rabi' al-Awwal", "Rabi' al-Thani", "Jumada al-Ula", "Jumada al-Akhirah",
-        "Rajab", "Sha'ban", "Ramadan", "Shawwal", "Dhu al-Qa'dah", "Dhu al-Hijjah")
-    private val hijriMonthsAr = arrayOf("محرم", "صفر", "ربيع الأول", "ربيع الآخر", "جمادى الأولى", "جمادى الآخرة",
-        "رجب", "شعبان", "رمضان", "شوال", "ذو القعدة", "ذو الحجة")
-
     private fun updateClock() {
         val now = Date()
         clockTv.text = SimpleDateFormat(if (clock24) "HH:mm" else "h:mm a", Locale.US).format(now)
-        var d = SimpleDateFormat("EEEE d MMMM yyyy", if (ar) Locale.forLanguageTag("ar") else Locale.US).format(now)
-        try {
-            val cal = android.icu.util.IslamicCalendar()
-            cal.calculationType = android.icu.util.IslamicCalendar.CalculationType.ISLAMIC_UMALQURA
-            cal.timeInMillis = now.time
-            d += "  ·  ${cal.get(android.icu.util.Calendar.DAY_OF_MONTH)} ${(if (ar) hijriMonthsAr else hijriMonths)[cal.get(android.icu.util.Calendar.MONTH)]} ${cal.get(android.icu.util.Calendar.YEAR)} ${t("AH", "هـ")}"
-        } catch (_: Throwable) {}
-        dateTv.text = d
+        dateTv.text = SimpleDateFormat("EEEE d MMMM yyyy", if (ar) Locale.forLanguageTag("ar") else Locale.US).format(now)
+        hijriTv.text = "☪  " + hijriText(LocalDate.now())
         updatePrayer()
+        updateIslamic()
     }
 
     private fun updatePrayer() {
         val idx = cityIndex
         if (idx < 0 || idx >= cities.size) { prayerTv.visibility = View.GONE; return }
-        prayerTv.visibility = View.VISIBLE
         val (city, la, lo) = cities[idx]
         val zone = ZoneId.systemDefault()
         val nowZ = java.time.ZonedDateTime.now(zone)
@@ -410,6 +412,8 @@ class MainActivity : Activity(), RemoteServer.Host {
             else l.sortedBy { it.label.lowercase() }
         }
         content.removeAllViews()
+        (panel.parent as? android.view.ViewGroup)?.removeView(panel)
+        content.addView(panel)
 
         if (fav.isNotEmpty()) {
             content.addView(rowTitle(t("Favorites", "المفضلة")))
@@ -510,7 +514,7 @@ class MainActivity : Activity(), RemoteServer.Host {
         }
         // focus ring drawn on top
         val ring = View(this).apply {
-            background = GradientDrawable().apply { setColor(Color.TRANSPARENT); setStroke(dp(3), Color.WHITE); cornerRadius = radius }
+            background = GradientDrawable().apply { setColor(Color.TRANSPARENT); setStroke(dp(3), FOCUS); cornerRadius = radius }
             visibility = View.INVISIBLE
         }
         frame.addView(ring, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
@@ -520,7 +524,7 @@ class MainActivity : Activity(), RemoteServer.Host {
             v.animate().scaleX(if (has) 1.1f else 1f).scaleY(if (has) 1.1f else 1f).translationZ(if (has) dp(10).toFloat() else 0f)
                 .setInterpolator(ease).setDuration(150).withLayer().start()
             nameStrip?.animate()?.alpha(if (has) 1f else 0f)?.setDuration(150)?.start()
-            if (has) { focusPkg = a.pkg; focusRow = row }
+            if (has) { focusPkg = a.pkg; focusRow = row; if (row == "fav") scroll.smoothScrollTo(0, 0) }
         }
         frame.setOnClickListener { launch(a) }
         frame.setOnLongClickListener { appMenu(a, row); true }
@@ -586,7 +590,7 @@ class MainActivity : Activity(), RemoteServer.Host {
             background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Color.TRANSPARENT, Color.parseColor("#DD000000")))
         }, FrameLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT, Gravity.BOTTOM))
         val ring = View(this).apply {
-            background = GradientDrawable().apply { setColor(Color.TRANSPARENT); setStroke(dp(3), Color.WHITE); cornerRadius = radius }
+            background = GradientDrawable().apply { setColor(Color.TRANSPARENT); setStroke(dp(3), FOCUS); cornerRadius = radius }
             visibility = View.INVISIBLE
         }
         frame.addView(ring, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
@@ -791,7 +795,7 @@ class MainActivity : Activity(), RemoteServer.Host {
         }
         rootFrame.addView(f, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
         saver = f
-        fun fill() { clock.text = clockTv.text; date.text = dateTv.text; pray.text = if (prayerTv.visibility == View.VISIBLE) prayerTv.text else "" }
+        fun fill() { clock.text = clockTv.text; date.text = dateTv.text; date.text = "${dateTv.text}\n${hijriTv.text}"; pray.text = listOf(if (cityIndex in cities.indices) prayerTv.text.toString() else "", fastLine).filter { it.isNotEmpty() }.joinToString("\n") }
         fill()
         f.tag = Runnable { fill() }
         f.animate().alpha(1f).setDuration(800).start()
@@ -1027,6 +1031,8 @@ class MainActivity : Activity(), RemoteServer.Host {
             t("Sort all apps: ", "ترتيب التطبيقات: ") + (if (sortMostUsed) t("Most used first", "الأكثر استخدامًا أولًا") else t("A to Z", "أبجديًا")) + ch,
             t("Clock: ", "الساعة: ") + (if (clock24) t("24-hour", "24 ساعة") else t("12-hour", "12 ساعة")) + ch,
             t("Prayer times: ", "مواقيت الصلاة: ") + city + ch,
+            t("🎨  Theme: ", "🎨  المظهر: ") + (if (islamic) t("Islamic", "إسلامي") else t("Classic", "كلاسيكي")) + ch,
+            t("☪  Hijri date & fasting reminders", "☪  التاريخ الهجري وتذكير الصيام"),
             t("Auto clean when memory is low: ", "التنظيف التلقائي عند انخفاض الذاكرة: ") + onOff(autoClean) + ch,
             t("🔒  PIN & locks", "🔒  الرمز السري والأقفال") + (if (pinSet) t("  (${locked.size} apps locked)", "  (${locked.size} تطبيقات مقفلة)") else t("  (no PIN set)", "  (لا يوجد رمز)")),
             t("Show hidden apps (${hidden.size})", "إظهار التطبيقات المخفية (${hidden.size})"),
@@ -1043,18 +1049,20 @@ class MainActivity : Activity(), RemoteServer.Host {
                 2 -> { prefs.edit().putBoolean("sortUsed", !sortMostUsed).apply(); render(false) }
                 3 -> { prefs.edit().putBoolean("clock24", !clock24).apply(); updateClock() }
                 4 -> cityMenu()
-                5 -> { prefs.edit().putBoolean("autoClean", !autoClean).apply(); toast(t("Auto clean: ", "التنظيف التلقائي: ") + onOff(autoClean)) }
-                6 -> pinMenu()
-                7 -> guarded { hiddenMenu() }
-                8 -> {
+                5 -> { prefs.edit().putBoolean("islamic", !islamic).apply(); recreate() }
+                6 -> islamicMenu()
+                7 -> { prefs.edit().putBoolean("autoClean", !autoClean).apply(); toast(t("Auto clean: ", "التنظيف التلقائي: ") + onOff(autoClean)) }
+                8 -> pinMenu()
+                9 -> guarded { hiddenMenu() }
+                10 -> {
                     val next = when (saverMin) { 0 -> 3; 3 -> 5; 5 -> 10; else -> 0 }
                     prefs.edit().putInt("saverMin", next).apply()
                     toast(t("Clock screensaver: ", "شاشة توقف الساعة: ") + if (next == 0) t("Off", "متوقفة") else t("after $next min", "بعد $next دقائق"))
                 }
-                9 -> nowMenu()
-                10 -> backupMenu()
-                11 -> remoteMenu()
-                12 -> dialog().setTitle("Sahl TV  ·  سهل")
+                11 -> nowMenu()
+                12 -> backupMenu()
+                13 -> remoteMenu()
+                14 -> dialog().setTitle("Sahl TV  ·  سهل")
                     .setMessage(t("A fast, ad-free home screen for Android TV.\n\nNo tracking, no background services. Internet is used only to download preview pictures when you turn App previews on.\n\nPrayer times are calculated on the TV (Qatar method: Fajr 18°, Asr Shafi'i, Isha 90 min after Maghrib). Please compare with the official Awqaf timetable.\n\nTip: hold OK on an app (or press Menu) for options.\n\nFree & open source (MIT).\nContact: alysherif1309@gmail.com",
                                   "واجهة رئيسية سريعة وبلا إعلانات لأجهزة Android TV.\n\nبلا تتبّع وبلا خدمات تعمل في الخلفية. يُستخدم الإنترنت فقط لتنزيل صور المعاينات عند تفعيل «معاينات التطبيقات».\n\nتُحسب مواقيت الصلاة على التلفاز (طريقة قطر: الفجر 18°، العصر شافعي، العشاء بعد المغرب بـ 90 دقيقة). يُرجى مقارنتها بتقويم الأوقاف الرسمي.\n\nنصيحة: اضغط مطولًا على OK فوق تطبيق (أو زر القائمة) لعرض الخيارات.\n\nمجاني ومفتوح المصدر (MIT).\nللتواصل: alysherif1309@gmail.com"))
                     .setPositiveButton(t("OK", "حسنًا"), null).show()
@@ -1062,11 +1070,331 @@ class MainActivity : Activity(), RemoteServer.Host {
         }.show()
     }
 
+    private fun islamicMenu() {
+        val items = arrayOf(t("Adjust Hijri date (now: ", "ضبط التاريخ الهجري (حاليًا: ") + hijriText(LocalDate.now()) + ")",
+            t("Sunnah fasting reminders: ", "تذكير صيام السنة: ") + onOff(fastOn),
+            t("Upcoming Islamic dates", "المناسبات الإسلامية القادمة"))
+        dialog().setTitle(t("Hijri date & fasting", "التاريخ الهجري والصيام")).setItems(items) { _, w ->
+            when (w) {
+                0 -> hijriAdjMenu()
+                1 -> { prefs.edit().putBoolean("fastOn", !fastOn).apply(); updateClock(); toast(t("Fasting reminders: ", "تذكير الصيام: ") + onOff(fastOn)) }
+                2 -> islamicDatesDialog()
+            }
+        }.show()
+    }
+
     private fun cityMenu() {
         val names = cities.indices.map { if (ar) cityAr(it) else cities[it].first } + t("Turn prayer times off", "إيقاف مواقيت الصلاة")
         dialog().setTitle(t("Prayer times for", "مواقيت الصلاة في")).setItems(names.toTypedArray()) { _, which ->
-            prefs.edit().putInt("city", if (which < cities.size) which else -1).apply(); updatePrayer()
+            prefs.edit().putInt("city", if (which < cities.size) which else -1).apply(); updateClock()
         }.show()
+    }
+
+    // ------------------------------------------------------------------ Islamic panel: prayer countdown, Ramadan, Sunnah fasts
+
+    private lateinit var panel: LinearLayout
+    private lateinit var prayRow: LinearLayout
+    private lateinit var nextNameTv: TextView
+    private lateinit var nextCountTv: TextView
+    private val cellBoxes = ArrayList<LinearLayout>()
+    private val cellNames = ArrayList<TextView>()
+    private val cellTimes = ArrayList<TextView>()
+    private lateinit var ramCard: LinearLayout
+    private lateinit var ramTitle: TextView
+    private lateinit var ramSub: TextView
+    private lateinit var fastCard: LinearLayout
+    private lateinit var fastTitle: TextView
+    private lateinit var fastSub: TextView
+    private var nextAt = 0L
+    private var ramAt = 0L
+    private var ramLabel = ""
+    private var fastLine = ""
+    private var ramCacheKey = ""
+    private var ramCache: LocalDate? = null
+
+    private val secondTick = object : Runnable {
+        override fun run() { tickCountdowns(); handler.postDelayed(this, 1000 - System.currentTimeMillis() % 1000) }
+    }
+
+    private fun cardBg(strong: Boolean, focused: Boolean, glow: Boolean = false) = GradientDrawable().apply {
+        setColor(if (focused) Color.parseColor("#E6143A30") else Color.parseColor("#B30D2420"))
+        cornerRadius = dp(14).toFloat()
+        val w = if (focused) dp(3) else if (strong || glow) dp(2) else dp(1)
+        setStroke(w, if (focused) Color.WHITE else if (strong || glow) GOLD else Color.argb(80, 227, 184, 92))
+    }
+
+    private fun card(strong: Boolean, onClick: () -> Unit) = LinearLayout(this).apply {
+        isFocusable = true; isClickable = true; defaultFocusHighlightEnabled = false
+        gravity = Gravity.CENTER_VERTICAL
+        background = cardBg(strong, false)
+        setPadding(dp(16), dp(8), dp(16), dp(8))
+        setOnFocusChangeListener { v, has ->
+            v.background = cardBg(strong, has, v.tag == "glow")
+            v.animate().scaleX(if (has) 1.03f else 1f).scaleY(if (has) 1.03f else 1f).setInterpolator(ease).setDuration(150).start()
+            if (has) scroll.smoothScrollTo(0, 0)
+        }
+        setOnClickListener { onClick() }
+    }
+
+    private fun small(text: String, color: Int = MUTED) = TextView(this).apply { this.text = text; textSize = 13f; setTextColor(color); maxLines = 1 }
+
+    private fun buildPanel(): LinearLayout {
+        val col = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(0, dp(12), 0, 0); clipChildren = false; clipToPadding = false }
+
+        // row 1: next prayer + countdown, then the five prayers
+        prayRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; clipChildren = false }
+        val hero = card(true) { prayerDialog() }
+        val a = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        a.addView(small(t("🕌  Next prayer", "🕌  الصلاة القادمة")))
+        nextNameTv = TextView(this).apply { textSize = 26f; setTextColor(TEXT); setTypeface(typeface, Typeface.BOLD); maxLines = 1 }
+        a.addView(nextNameTv)
+        hero.addView(a, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
+        hero.addView(View(this).apply { setBackgroundColor(Color.argb(90, 227, 184, 92)) }, LinearLayout.LayoutParams(dp(1), dp(46)).apply { setMargins(dp(12), 0, dp(12), 0) })
+        val b = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        b.addView(small(t("⏱  Countdown", "⏱  الوقت المتبقي")))
+        nextCountTv = TextView(this).apply {
+            textSize = 28f; setTextColor(GOLD); setTypeface(Typeface.create("sans-serif-medium", Typeface.BOLD)); maxLines = 1
+            fontFeatureSettings = "tnum"; textDirection = View.TEXT_DIRECTION_LTR
+        }
+        b.addView(nextCountTv)
+        hero.addView(b, LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT))
+        prayRow.addView(hero, LinearLayout.LayoutParams(0, dp(84), 0.42f))
+
+        val strip = card(false) { prayerDialog() }.apply { setPadding(dp(6), dp(6), dp(6), dp(6)) }
+        val icons = listOf("🌄", "☀️", "🌤️", "🌇", "🌙")
+        for (i in 0 until 5) {
+            val cell = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER }
+            cell.addView(TextView(this).apply { text = icons[i]; textSize = 14f; gravity = Gravity.CENTER })
+            val n = TextView(this).apply { textSize = 13f; setTextColor(MUTED); gravity = Gravity.CENTER; maxLines = 1 }
+            val tm = TextView(this).apply { textSize = 16f; setTextColor(TEXT); setTypeface(typeface, Typeface.BOLD); gravity = Gravity.CENTER; maxLines = 1 }
+            cell.addView(n); cell.addView(tm)
+            cellBoxes.add(cell); cellNames.add(n); cellTimes.add(tm)
+            strip.addView(cell, LinearLayout.LayoutParams(0, MATCH_PARENT, 1f).apply { setMargins(dp(3), 0, dp(3), 0) })
+        }
+        prayRow.addView(strip, LinearLayout.LayoutParams(0, dp(84), 0.58f).apply { marginStart = dp(12) })
+        col.addView(prayRow)
+
+        // row 2: Ramadan / Hijri occasions, and the next Sunnah fast
+        val row2 = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(0, dp(12), 0, 0); clipChildren = false }
+        ramCard = card(false) { islamicDatesDialog() }
+        ramCard.addView(TextView(this).apply { text = "🌙"; textSize = 24f }, LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply { marginEnd = dp(12) })
+        val rc = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        ramTitle = TextView(this).apply { textSize = 17f; setTextColor(TEXT); setTypeface(typeface, Typeface.BOLD); maxLines = 1 }
+        ramSub = TextView(this).apply { textSize = 14f; setTextColor(GOLD); maxLines = 1; fontFeatureSettings = "tnum" }
+        rc.addView(ramTitle); rc.addView(ramSub)
+        ramCard.addView(rc, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
+        row2.addView(ramCard, LinearLayout.LayoutParams(0, dp(64), 1f))
+
+        fastCard = card(false) { fastDialog() }
+        fastCard.addView(TextView(this).apply { text = "🤲"; textSize = 24f }, LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply { marginEnd = dp(12) })
+        val fc = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        fastTitle = TextView(this).apply { textSize = 17f; setTextColor(TEXT); setTypeface(typeface, Typeface.BOLD); maxLines = 1 }
+        fastSub = TextView(this).apply { textSize = 14f; setTextColor(MUTED); maxLines = 1 }
+        fc.addView(fastTitle); fc.addView(fastSub)
+        fastCard.addView(fc, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
+        row2.addView(fastCard, LinearLayout.LayoutParams(0, dp(64), 1f).apply { marginStart = dp(12) })
+        col.addView(row2)
+        return col
+    }
+
+    private fun epochAt(day: LocalDate, hours: Double) =
+        day.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli() + Math.round(hours * 3_600_000.0)
+
+    private fun fmtLeft(ms: Long): String {
+        val s = (ms / 1000).coerceAtLeast(0)
+        return String.format(Locale.US, "%02d:%02d:%02d", s / 3600, (s / 60) % 60, s % 60)
+    }
+
+    private fun prayerNames(friday: Boolean) = listOf(t("Fajr", "الفجر"), if (friday) t("Jumu'ah", "الجمعة") else t("Dhuhr", "الظهر"),
+        t("Asr", "العصر"), t("Maghrib", "المغرب"), t("Isha", "العشاء"))
+
+    private fun timesFor(day: LocalDate): Prayer.Times? {
+        val idx = cityIndex
+        if (idx !in cities.indices) return null
+        val (_, la, lo) = cities[idx]
+        val tz = java.time.ZonedDateTime.now(ZoneId.systemDefault()).offset.totalSeconds / 3600.0
+        return Prayer.compute(day, la, lo, tz)
+    }
+
+    private fun weekday(d: LocalDate) = SimpleDateFormat("EEEE", if (ar) Locale.forLanguageTag("ar") else Locale.US)
+        .format(Date(epochAt(d, 12.0)))
+    private fun shortDate(d: LocalDate) = SimpleDateFormat("EEE d MMM yyyy", if (ar) Locale.forLanguageTag("ar") else Locale.US)
+        .format(Date(epochAt(d, 12.0)))
+
+    /** Recomputes the whole panel (every 20 s, and whenever a countdown reaches zero). */
+    private fun updateIslamic() {
+        if (!::panel.isInitialized) return
+        val now = System.currentTimeMillis()
+        val today = LocalDate.now()
+        val adj = hijriAdj
+        val tt = timesFor(today)
+        val tm = timesFor(today.plusDays(1))
+
+        // prayers
+        if (tt != null && tm != null) {
+            prayRow.visibility = View.VISIBLE
+            val names = prayerNames(today.dayOfWeek == DayOfWeek.FRIDAY)
+            val hours = listOf(tt.fajr, tt.dhuhr, tt.asr, tt.maghrib, tt.isha)
+            var nextI = hours.indexOfFirst { epochAt(today, it) > now }
+            if (nextI < 0) { nextI = 0; nextAt = epochAt(today.plusDays(1), tm.fajr); nextNameTv.text = t("Fajr", "الفجر") }
+            else { nextAt = epochAt(today, hours[nextI]); nextNameTv.text = names[nextI] }
+            for (i in 0 until 5) {
+                cellNames[i].text = names[i]
+                cellTimes[i].text = Prayer.hm(if (i == 0 && epochAt(today, tt.isha) < now) tm.fajr else hours[i])
+                val on = i == nextI
+                cellBoxes[i].background = if (on) GradientDrawable().apply {
+                    setColor(Color.parseColor("#1F7A5A")); cornerRadius = dp(10).toFloat(); setStroke(dp(1), GOLD)
+                } else null
+                cellNames[i].setTextColor(if (on) Color.WHITE else MUTED)
+            }
+        } else { prayRow.visibility = View.GONE; nextAt = 0 }
+
+        // Ramadan / occasions
+        val h = Islamic.hijri(today, adj)
+        ramAt = 0; ramLabel = ""
+        ramCard.tag = null
+        when {
+            h.m == 8 -> {
+                ramTitle.text = t("Ramadan Kareem  ·  day ${h.d}", "رمضان كريم  ·  اليوم ${h.d}")
+                ramCard.tag = "glow"
+                if (tt != null && tm != null) {
+                    when {
+                        now < epochAt(today, tt.fajr) -> { ramAt = epochAt(today, tt.fajr); ramLabel = t("Suhoor ends in", "ينتهي السحور بعد") }
+                        now < epochAt(today, tt.maghrib) -> { ramAt = epochAt(today, tt.maghrib); ramLabel = t("Iftar in", "الإفطار بعد") }
+                        else -> { ramAt = epochAt(today.plusDays(1), tm.fajr); ramLabel = t("Suhoor ends in", "ينتهي السحور بعد") }
+                    }
+                } else ramSub.text = t("May Allah accept your fasting", "تقبّل الله صيامكم")
+            }
+            h.m == 9 && h.d <= 3 -> { ramTitle.text = t("Eid al-Fitr Mubarak 🎉", "عيد فطر مبارك 🎉"); ramSub.text = t("Taqabbal Allahu minna wa minkum", "تقبّل الله منّا ومنكم"); ramCard.tag = "glow" }
+            h.m == 11 && h.d == 9 -> { ramTitle.text = t("Day of Arafah", "يوم عرفة"); ramSub.text = t("The best day for du'a", "خير الدعاء دعاء يوم عرفة"); ramCard.tag = "glow" }
+            h.m == 11 && h.d in 10..13 -> { ramTitle.text = t("Eid al-Adha Mubarak 🎉", "عيد أضحى مبارك 🎉"); ramSub.text = t("Taqabbal Allahu minna wa minkum", "تقبّل الله منّا ومنكم"); ramCard.tag = "glow" }
+            else -> {
+                val key = "$today/$adj"
+                if (key != ramCacheKey) { ramCacheKey = key; ramCache = Islamic.firstDate(today, 400) { d -> Islamic.hijri(d, adj).let { it.m == 8 && it.d == 1 } } }
+                val start = ramCache
+                if (start != null) {
+                    val days = java.time.temporal.ChronoUnit.DAYS.between(today, start)
+                    val y = Islamic.hijri(start, adj).y
+                    ramTitle.text = t("Ramadan $y in $days days", "رمضان $y بعد $days يومًا")
+                    ramSub.text = t("Expected ${shortDate(start)}  ·  depends on moon sighting", "متوقع ${shortDate(start)}  ·  حسب رؤية الهلال")
+                    if (days <= 30) ramCard.tag = "glow"
+                } else { ramTitle.text = t("Islamic dates", "المناسبات الإسلامية"); ramSub.text = "" }
+            }
+        }
+        if (!ramCard.hasFocus()) ramCard.background = cardBg(false, false, ramCard.tag == "glow")
+
+        // next Sunnah fast (hidden in Ramadan: the Ramadan card covers it)
+        fastLine = ""
+        if (!fastOn || h.m == 8) { fastCard.visibility = View.GONE }
+        else {
+            fastCard.visibility = View.VISIBLE
+            val beforeFajr = tt != null && now < epochAt(today, tt.fajr)
+            val from = if (beforeFajr) today else today.plusDays(1)
+            val next = Islamic.firstDate(from, 40) { d -> Islamic.sunnahFast(d, Islamic.hijri(d, adj), ar) != null }
+            fastCard.tag = null
+            if (next == null) { fastTitle.text = t("No Sunnah fast soon", "لا صيام سنة قريبًا"); fastSub.text = "" }
+            else {
+                val why = Islamic.sunnahFast(next, Islamic.hijri(next, adj), ar)!!
+                val days = java.time.temporal.ChronoUnit.DAYS.between(today, next)
+                val nf = timesFor(next)
+                when (days) {
+                    0L -> { fastTitle.text = t("Today: $why", "اليوم: $why"); fastCard.tag = "glow"
+                        fastSub.text = if (nf != null) t("Suhoor until Fajr ${Prayer.hm(nf.fajr)}  ·  Iftar ${Prayer.hm(nf.maghrib)}", "السحور حتى الفجر ${Prayer.hm(nf.fajr)}  ·  الإفطار ${Prayer.hm(nf.maghrib)}") else "" }
+                    1L -> { fastTitle.text = t("Tomorrow: $why", "غدًا: $why"); fastCard.tag = "glow"
+                        fastSub.text = if (nf != null) t("Make your intention  ·  Suhoor before Fajr ${Prayer.hm(nf.fajr)}", "انوِ الصيام  ·  السحور قبل الفجر ${Prayer.hm(nf.fajr)}") else t("Make your intention tonight", "انوِ الصيام الليلة") }
+                    else -> { fastTitle.text = "${weekday(next)}: $why"; fastSub.text = t("Next Sunnah fast  ·  in $days days", "صيام السنة القادم  ·  بعد $days أيام") }
+                }
+                fastSub.setTextColor(if (days <= 1) GOLD else MUTED)
+                if (days <= 1) fastLine = fastTitle.text.toString()
+            }
+            if (!fastCard.hasFocus()) fastCard.background = cardBg(false, false, fastCard.tag == "glow")
+        }
+        panel.visibility = if (prayRow.visibility == View.GONE && ramCard.visibility == View.GONE && fastCard.visibility == View.GONE) View.GONE else View.VISIBLE
+        tickCountdowns()
+    }
+
+    private fun tickCountdowns() {
+        if (!::panel.isInitialized) return
+        val now = System.currentTimeMillis()
+        if ((nextAt in 1..now) || (ramAt in 1..now)) { updateClock(); return }
+        if (nextAt > 0) {
+            val left = nextAt - now
+            nextCountTv.text = fmtLeft(left)
+            nextCountTv.setTextColor(if (left < 10 * 60_000) Color.parseColor("#FFE29A") else GOLD)
+        }
+        if (ramAt > 0) ramSub.text = "$ramLabel  ${fmtLeft(ramAt - now)}"
+    }
+
+    private fun prayerDialog() {
+        val today = LocalDate.now()
+        val tt = timesFor(today) ?: run { cityMenu(); return }
+        val tm = timesFor(today.plusDays(1))!!
+        val n = prayerNames(today.dayOfWeek == DayOfWeek.FRIDAY)
+        val msg = StringBuilder()
+        msg.append(t("Today", "اليوم")).append("  ·  ").append(shortDate(today)).append("\n\n")
+        msg.append("${n[0]}   ${Prayer.hm(tt.fajr)}\n${t("Sunrise", "الشروق")}   ${Prayer.hm(tt.sunrise)}\n${n[1]}   ${Prayer.hm(tt.dhuhr)}\n")
+        msg.append("${n[2]}   ${Prayer.hm(tt.asr)}\n${n[3]}   ${Prayer.hm(tt.maghrib)}\n${n[4]}   ${Prayer.hm(tt.isha)}\n\n")
+        msg.append(t("Tomorrow's Fajr", "فجر الغد")).append("   ").append(Prayer.hm(tm.fajr)).append("\n\n")
+        msg.append(t("Qatar method: Fajr 18°, Asr Shafi'i, Isha 90 min after Maghrib. Compare with the Awqaf timetable.",
+                      "طريقة قطر: الفجر 18°، العصر شافعي، العشاء بعد المغرب بـ 90 دقيقة. قارنها بتقويم الأوقاف."))
+        val city = if (ar) cityAr(cityIndex) else cities[cityIndex].first
+        dialog().setTitle(t("Prayer times  ·  $city", "مواقيت الصلاة  ·  $city")).setMessage(msg.toString())
+            .setPositiveButton(t("OK", "حسنًا"), null)
+            .setNeutralButton(t("Change city", "تغيير المدينة")) { _, _ -> cityMenu() }.show()
+    }
+
+    private fun hijriText(d: LocalDate): String {
+        val h = Islamic.hijri(d, hijriAdj)
+        if (h.m < 0) return ""
+        return "${h.d} ${(if (ar) Islamic.monthsAr else Islamic.monthsEn)[h.m]} ${h.y} ${t("AH", "هـ")}"
+    }
+
+    private fun islamicDatesDialog() {
+        val today = LocalDate.now()
+        val msg = StringBuilder(t("Today: ", "اليوم: ") + hijriText(today) + "\n\n")
+        for ((d, en, a) in Islamic.occasions(today, hijriAdj)) {
+            val days = java.time.temporal.ChronoUnit.DAYS.between(today, d)
+            msg.append("• ").append(t(en, a)).append("  —  ").append(shortDate(d))
+                .append(if (days == 0L) t("  (today)", "  (اليوم)") else t("  (in $days days)", "  (بعد $days يومًا)")).append("\n")
+        }
+        msg.append("\n").append(t("Dates follow the Umm al-Qura calendar. Months start by moon sighting, so a date can move by a day. If the TV is a day off from Qatar's announcement, use “Adjust Hijri date”.",
+            "التواريخ حسب تقويم أم القرى. تبدأ الشهور برؤية الهلال، لذا قد يختلف التاريخ يومًا. إذا اختلف التلفاز عن إعلان قطر استخدم «ضبط التاريخ الهجري»."))
+        dialog().setTitle(t("Islamic dates", "المناسبات الإسلامية")).setMessage(msg.toString())
+            .setPositiveButton(t("OK", "حسنًا"), null)
+            .setNeutralButton(t("Adjust Hijri date", "ضبط التاريخ الهجري")) { _, _ -> hijriAdjMenu() }.show()
+    }
+
+    private fun hijriAdjMenu() {
+        val opts = listOf(-2, -1, 0, 1, 2)
+        val today = LocalDate.now()
+        val labels = opts.map { o ->
+            val h = Islamic.hijri(today, o)
+            val s = if (o == 0) t("No change", "بدون تعديل") else if (o > 0) t("+$o day", "+$o يوم") else t("$o day", "$o يوم")
+            "$s   →   ${h.d} ${(if (ar) Islamic.monthsAr else Islamic.monthsEn)[h.m.coerceAtLeast(0)]}" + if (o == hijriAdj) "  ✓" else ""
+        }
+        dialog().setTitle(t("Adjust Hijri date", "ضبط التاريخ الهجري")).setItems(labels.toTypedArray()) { _, w ->
+            prefs.edit().putInt("hijriAdj", opts[w]).apply(); updateClock()
+        }.show()
+    }
+
+    private fun fastDialog() {
+        val today = LocalDate.now()
+        val msg = StringBuilder()
+        var d = today
+        var count = 0
+        repeat(31) {
+            val h = Islamic.hijri(d, hijriAdj)
+            val why = if (h.m == 8) t("Ramadan", "رمضان") else Islamic.sunnahFast(d, h, ar)
+            if (why != null && count < 14) { msg.append("• ").append(shortDate(d)).append("  —  ").append(why).append("\n"); count++ }
+            d = d.plusDays(1)
+        }
+        if (count == 0) msg.append(t("No Sunnah fasts in the next 30 days.", "لا يوجد صيام سنة في الثلاثين يومًا القادمة.")).append("\n")
+        msg.append("\n").append(t("Includes Mondays & Thursdays, the White days (13–15), Arafah, Ashura & Tasu'a, the first days of Dhu al-Hijjah and the six days of Shawwal. Eid days and the days of Tashreeq are skipped.",
+            "يشمل الاثنين والخميس، والأيام البيض (13–15)، وعرفة، وعاشوراء وتاسوعاء، وعشر ذي الحجة، وست شوال. وتُستثنى أيام العيد وأيام التشريق."))
+        dialog().setTitle(t("Upcoming Sunnah fasts", "صيام السنة القادم")).setMessage(msg.toString())
+            .setPositiveButton(t("OK", "حسنًا"), null)
+            .setNeutralButton(t("Turn reminders off", "إيقاف التذكير")) { _, _ -> prefs.edit().putBoolean("fastOn", false).apply(); updateClock()
+                toast(t("Fasting reminders off. Turn on again in ☰ Launcher.", "تم إيقاف تذكير الصيام. يمكن تفعيله من ☰ الواجهة.")) }.show()
     }
 
     // ------------------------------------------------------------------ PIN
