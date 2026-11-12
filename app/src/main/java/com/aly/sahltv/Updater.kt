@@ -26,8 +26,11 @@ import java.net.URL
 object Updater {
     private const val BASE = "https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/"
 
-    class Info(val code: Long, val tv: String, val quran: String, val notes: String)
-    private class Item(val pkg: String, val file: String, val name: String, val from: String, val to: String)
+    /** Sahl PDF lives in its own repository (a TV edition of MJ PDF). */
+    private const val PDF_BASE = "https://github.com/AliSherif1309/SahlPDF/releases/download/latest/"
+
+    class Info(val code: Long, val tv: String, val quran: String, val notes: String, val pdfCode: Long = 0, val pdfName: String = "", val pdfNotes: String = "")
+    private class Item(val pkg: String, val file: String, val name: String, val from: String, val to: String, val url: String, val code: Long)
 
     private val main = Handler(Looper.getMainLooper())
     private val queue = ArrayList<Pair<File, String>>()
@@ -42,8 +45,16 @@ object Updater {
     fun fetch(): Info? = try {
         val c = get(BASE + "version.json")
         val o = org.json.JSONObject(c.inputStream.bufferedReader().use { it.readText() })
-        Info(o.getLong("code"), o.optString("sahltv"), o.optString("quran"), o.optString("notes"))
+        val pdf = try { org.json.JSONObject(get(PDF_BASE + "version.json").inputStream.bufferedReader().use { it.readText() }) } catch (_: Exception) { null }
+        Info(o.getLong("code"), o.optString("sahltv"), o.optString("quran"), o.optString("notes"),
+             pdf?.optLong("code") ?: 0L, pdf?.optString("sahlpdf") ?: "", pdf?.optString("notes") ?: "")
     } catch (_: Exception) { null }
+
+    /** The Sahl PDF file that matches this TV's processor (smaller than the all-in-one file). */
+    private fun pdfFile(): String {
+        val abis = Build.SUPPORTED_ABIS.toList()
+        return when { "arm64-v8a" in abis -> "SahlPDF-arm64-v8a.apk"; "armeabi-v7a" in abis -> "SahlPDF-armeabi-v7a.apk"; else -> "SahlPDF.apk" }
+    }
 
     @Suppress("DEPRECATION")
     private fun installed(ctx: Context, pkg: String): Pair<Long, String>? = try {
@@ -59,8 +70,16 @@ object Updater {
         for ((pkg, file, nv) in all) {
             val have = installed(ctx, pkg)
             if (pkg != ctx.packageName && pkg == "com.aly.sahltv") continue      // Sahl Quran only updates itself
-            if (have == null) { if (pkg != ctx.packageName) out.add(Item(pkg, file, nv.first, "", nv.second)) }
-            else if (have.first < info.code) out.add(Item(pkg, file, nv.first, have.second, nv.second))
+            if (have == null) { if (pkg != ctx.packageName) out.add(Item(pkg, file, nv.first, "", nv.second, BASE + file, info.code)) }
+            else if (have.first < info.code) out.add(Item(pkg, file, nv.first, have.second, nv.second, BASE + file, info.code))
+        }
+        // Sahl PDF (offered by the launcher only)
+        if (ctx.packageName == "com.aly.sahltv" && info.pdfCode > 0) {
+            val have = installed(ctx, "com.aly.sahlpdf")
+            val file = pdfFile()
+            val name = if (ar) "سهل PDF" else "Sahl PDF"
+            if (have == null) out.add(0, Item("com.aly.sahlpdf", file, name, "", info.pdfName, PDF_BASE + file, info.pdfCode))
+            else if (have.first < info.pdfCode) out.add(0, Item("com.aly.sahlpdf", file, name, have.second, info.pdfName, PDF_BASE + file, info.pdfCode))
         }
         return out
     }
@@ -98,7 +117,8 @@ object Updater {
                 val msg = StringBuilder()
                 for (it in list) msg.append("• ").append(it.name).append("   ")
                     .append(if (it.from.isEmpty()) t("not installed → ${it.to}", "غير مثبّت ← ${it.to}") else "${it.from} → ${it.to}").append("\n")
-                if (info.notes.isNotBlank()) msg.append("\n").append(t("What's new: ", "الجديد: ")).append(info.notes)
+                if (info.notes.isNotBlank() && list.any { it.pkg != "com.aly.sahlpdf" }) msg.append("\n").append(t("What's new: ", "الجديد: ")).append(info.notes)
+                if (info.pdfNotes.isNotBlank() && list.any { it.pkg == "com.aly.sahlpdf" }) msg.append("\n").append(t("Sahl PDF: ", "سهل PDF: ")).append(info.pdfNotes)
                 dialog(a).setTitle(t("Update available", "يتوفّر تحديث")).setMessage(msg.toString())
                     .setPositiveButton(t("Update now", "تحديث الآن")) { _, _ -> start(a, list, ar) }
                     .setNegativeButton(t("Later", "لاحقًا"), null).show()
@@ -126,7 +146,7 @@ object Updater {
             try {
                 for (it in list) {
                     val f = File(dir, it.file)
-                    val c = get(BASE + it.file)
+                    val c = get(it.url)
                     val total = c.contentLength.toLong()
                     c.inputStream.use { inp -> f.outputStream().use { out ->
                         val buf = ByteArray(64 * 1024); var done = 0L; var last = -1
@@ -166,18 +186,19 @@ object Updater {
             val dir = autoDir(ctx)
             val marker = File(dir, "ready.json")
             val old = try { org.json.JSONObject(marker.readText()) } catch (_: Exception) { null }
-            if (old == null || old.optLong("code") != info.code) {
+            val key = list.joinToString(",") { "${it.pkg}:${it.code}" }
+            if (old == null || old.optString("key") != key) {
                 dir.listFiles()?.forEach { it.delete() }
                 try {
-                    val o = org.json.JSONObject().put("code", info.code)
+                    val o = org.json.JSONObject().put("key", key)
                     val arr = org.json.JSONArray()
                     for (it in list) {
                         val f = File(dir, it.file)
-                        val c = get(BASE + it.file)
+                        val c = get(it.url)
                         val total = c.contentLength.toLong()
                         c.inputStream.use { inp -> f.outputStream().use { out -> inp.copyTo(out, 64 * 1024) } }
                         if (total > 0 && f.length() != total) throw java.io.IOException("incomplete")
-                        arr.put(org.json.JSONObject().put("file", it.file).put("pkg", it.pkg))
+                        arr.put(org.json.JSONObject().put("file", it.file).put("pkg", it.pkg).put("code", it.code))
                     }
                     o.put("items", arr)
                     marker.writeText(o.toString())
@@ -194,11 +215,10 @@ object Updater {
     fun installDownloaded(ctx: Context) {
         val dir = autoDir(ctx)
         val o = try { org.json.JSONObject(File(dir, "ready.json").readText()) } catch (_: Exception) { return }
-        val code = o.optLong("code")
         val arr = o.optJSONArray("items") ?: return
         val files = ArrayList<Pair<File, String>>()
         for (i in 0 until arr.length()) {
-            val it = arr.getJSONObject(i); val f = File(dir, it.getString("file")); val pkg = it.getString("pkg")
+            val it = arr.getJSONObject(i); val f = File(dir, it.getString("file")); val pkg = it.getString("pkg"); val code = it.optLong("code")
             val have = installed(ctx, pkg)
             if (f.exists() && (have == null || have.first < code)) files.add(f to pkg)
         }

@@ -32,6 +32,7 @@
             <category android:name="android.intent.category.LAUNCHER" />
         </intent>
         <package android:name="com.aly.sahlquran" />
+        <package android:name="com.aly.sahlpdf" />
     </queries>
 
     <application
