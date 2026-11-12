@@ -144,6 +144,12 @@ internal fun MainActivity.buildPanel(): LinearLayout {
     fastCard.addView(fc, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
     fastCard.minimumHeight = dp(64)
     row2.addView(fastCard, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f).apply { marginStart = dp(12) })
+    // morning adhkar after Fajr, evening adhkar after Asr: a third card in the same row (no extra height)
+    adhkarCard = card(true) { openAdhkar() }.apply { visibility = View.GONE; minimumHeight = dp(46) }
+    adhkarCard.addView(GoldIcon(this, GoldIcon.BOOK, GOLD), LinearLayout.LayoutParams(dp(30), dp(30)).apply { marginEnd = dp(12) })
+    adhkarTitle = TextView(this).apply { textSize = 17f; setTextColor(TEXT); typeface = Fonts.display(true); maxLines = 1 }
+    adhkarCard.addView(adhkarTitle, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
+    row2.addView(adhkarCard, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f).apply { marginStart = dp(12) })
     col.addView(row2)
 
     // row 3: Ayah of the day (text copied unchanged from the verified Quran text at build time)
@@ -311,6 +317,7 @@ internal fun MainActivity.updateIslamic() {
     for (tv in listOf(ramTitle, ramSub, fastTitle, fastSub)) { val d = digits(tv.text.toString()); if (d != tv.text.toString()) tv.text = d }
     // ordinary days: one slim line per card; Ramadan, Eid, Arafah and fasting days: full cards
     slimIslamic(ramCard.tag != "glow" && fastCard.tag != "glow")
+    updateAdhkar()
     updateAyah(); updateNews(); updateGreeting(); refreshWeather()
     refreshBackground()
     // calm mode: soften the whole home screen from an hour after Isha until Fajr

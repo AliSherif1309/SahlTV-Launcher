@@ -136,6 +136,7 @@ object Alerts {
             val diff = now - at
             if (diff in -60_000L..5 * 60_000L) {
                 if (!once(ctx, "a$at")) return
+                if (prefs(ctx).getBoolean("prayerPause", false)) pauseMedia(ctx)
                 show(ctx, if (ar) "حان الآن موعد صلاة ${names[i]}" else "It's time for ${names[i]}",
                     (if (ar) "${Prayer.hm(hours[i])}  ·  تقبّل الله" else "${Prayer.hm(hours[i])}  ·  May Allah accept your prayer"), 60_000L)
                 return
@@ -147,6 +148,16 @@ object Alerts {
                 return
             }
         }
+    }
+
+    /** Prayer pause: pauses whatever is playing, like pressing ⏸ on the remote (works with any app). */
+    private fun pauseMedia(ctx: Context) {
+        try {
+            val am = ctx.getSystemService(Context.AUDIO_SERVICE) as android.media.AudioManager
+            if (!am.isMusicActive) return
+            am.dispatchMediaKeyEvent(android.view.KeyEvent(android.view.KeyEvent.ACTION_DOWN, android.view.KeyEvent.KEYCODE_MEDIA_PAUSE))
+            am.dispatchMediaKeyEvent(android.view.KeyEvent(android.view.KeyEvent.ACTION_UP, android.view.KeyEvent.KEYCODE_MEDIA_PAUSE))
+        } catch (_: Exception) {}
     }
 
     /** Each banner shows only once, even if the TV wakes the alarm twice. */

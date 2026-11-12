@@ -48,7 +48,7 @@ for pid, fname, en, ar, focus, required in PHOTOS:
         im = im.crop((l, t, l + W, t + H))
         mask = Image.linear_gradient("L").resize((W, H)).point(lambda v: 0 if v < 180 else min(255, (v - 180) * 255 // 34))
         im = Image.composite(im.filter(ImageFilter.GaussianBlur(7)), im, mask)
-        im.save(f"{OUT}/bg_{pid}.jpg", quality=84, optimize=True, progressive=True)
+        im.save(f"{OUT}/bg_{pid}.jpg", quality=80, optimize=True, progressive=False)   # baseline: decodes faster on the TV
         credits.append({"id": pid, "en": en, "ar": ar, "author": artist, "licence": lic,
                         "source": "https://commons.wikimedia.org/wiki/File:" + urllib.parse.quote(fname)})
     except Exception as e:

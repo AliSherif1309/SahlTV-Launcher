@@ -67,6 +67,12 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".AdhkarActivity"
+            android:exported="false"
+            android:screenOrientation="landscape"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar"
+            android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout|uiMode|smallestScreenSize" />
         <!-- Sahl Keyboard: receives text typed on the phone remote -->
         <service
             android:name=".RemoteKeyboard"

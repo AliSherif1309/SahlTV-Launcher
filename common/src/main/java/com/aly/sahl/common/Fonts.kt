@@ -174,7 +174,7 @@ object Fonts {
         if (w == null || (map.isEmpty() && scale == 1f && !night) || watched.put(w, true) != null) return
         val d = w.decorView
         if (night) d.setLayerType(View.LAYER_TYPE_HARDWARE, android.graphics.Paint().apply { colorFilter = WARM })
-        d.viewTreeObserver.addOnGlobalLayoutListener { applyTree(d) }
+        d.viewTreeObserver.addOnGlobalLayoutListener { applyTree(d) }   // before drawing, so new text never flashes in another font
         applyTree(d)
     }
 }

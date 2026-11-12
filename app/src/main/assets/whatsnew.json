@@ -1,15 +1,15 @@
 {
- "version": "1.22",
+ "version": "1.23",
  "en": [
-  "Friday mode: from Thursday Maghrib — read Surah Al-Kahf (OK opens it), Jumu'ah countdown and a reminder 45 minutes before, and the hour of response before Maghrib",
-  "Faster start: your apps appear at once from a saved copy, and the rest fills in right after",
-  "Smarter cleaning: keeps your 3 recent apps, apps used in the last 30 minutes and what is playing; Auto clean is now off by default (apps open faster)",
-  "New: Sahl apps — open or install any Sahl app (Settings, and in Quran, PDF and Files)"
+  "Adhkar: morning adhkar after Fajr, evening adhkar after Asr — one at a time, OK counts",
+  "Prayer pause (Settings, off by default): at each prayer time, what is playing pauses and the prayer banner shows",
+  "Seasonal look: Ramadan lanterns, Eid stars, National Day maroon and white — they change by themselves (preview in Settings)",
+  "Lighter background photos: faster to load, and prepared once"
  ],
  "ar": [
-  "وضع الجمعة: من مغرب الخميس — سورة الكهف (OK لفتحها)، العدّ لصلاة الجمعة وتذكير قبلها بـ 45 دقيقة، وساعة الإجابة قبل المغرب",
-  "فتح أسرع: تظهر تطبيقاتك فورًا من نسخة محفوظة، ويكتمل الباقي بعدها مباشرة",
-  "تنظيف أذكى: يُبقي آخر 3 تطبيقات وما استُخدم في آخر 30 دقيقة وما يعمل الآن؛ والتنظيف التلقائي متوقف افتراضيًا (التطبيقات تفتح أسرع)",
-  "جديد: تطبيقات سهل — افتح أو ثبّت أي تطبيق من العائلة (من الإعدادات، وفي القرآن وPDF والملفات)"
+  "الأذكار: أذكار الصباح بعد الفجر، وأذكار المساء بعد العصر — ذكرًا ذكرًا، وOK للعدّ",
+  "إيقاف للصلاة (من الإعدادات، متوقف افتراضيًا): عند كل صلاة يتوقف ما يعمل ويظهر تنبيه الصلاة",
+  "المظهر الموسمي: فوانيس رمضان، نجوم العيد، العنابي والأبيض في اليوم الوطني — تتغير وحدها (معاينة من الإعدادات)",
+  "صور خلفية أخف: أسرع تحميلًا وتُجهّز مرة واحدة"
  ]
 }

@@ -83,6 +83,7 @@ class MainActivity : Activity(), RemoteServer.Host {
     // for the split-out parts: whether a view has been built yet
     internal val greetCardReady get() = ::greetCard.isInitialized
     internal val panelReady get() = ::panel.isInitialized
+    internal val adhkarCardReady get() = ::adhkarCard.isInitialized
     internal val wxBoxReady get() = ::wxBox.isInitialized
 
     internal class App(val pkg: String, val label: String, val banner: Drawable?, val icon: Drawable?, val tint: Int)
@@ -411,6 +412,8 @@ class MainActivity : Activity(), RemoteServer.Host {
     internal lateinit var ramTitle: TextView
     internal lateinit var ramSub: TextView
     internal lateinit var fastCard: LinearLayout
+    internal lateinit var adhkarCard: LinearLayout
+    internal lateinit var adhkarTitle: TextView
     internal lateinit var fastTitle: TextView
     internal lateinit var fastSub: TextView
     internal lateinit var nextLabelTv: TextView

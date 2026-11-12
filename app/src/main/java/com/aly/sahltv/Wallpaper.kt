@@ -71,13 +71,37 @@ internal fun MainActivity.wantedBg(): String {
 internal fun MainActivity.makeBackdrop(id: String): android.graphics.drawable.Drawable {
     bgKey = "$id/$bgDim"
     val drawn = IslamicBackdrop(resources.displayMetrics.density, ar)
-    return if (id == "drawn") drawn else PhotoBackdrop(this, "bg_$id.jpg", bgDim, drawn)
+    return (if (id == "drawn") drawn else PhotoBackdrop(this, "bg_$id.jpg", bgDim, drawn)).also { currentBase = it; currentSeason = null }
 }
 
+private var currentBase: android.graphics.drawable.Drawable? = null
+private var currentSeason: String? = null
+
+/** Picks the photo (only rebuilt when it changes) and adds or removes the seasonal decoration on top of it. */
 internal fun MainActivity.refreshBackground(force: Boolean = false) {
     if (!islamic) return
     val id = wantedBg()
     if (force || "$id/$bgDim" != bgKey) rootFrame.background = makeBackdrop(id)
+    val s = season()
+    if (s != currentSeason) {
+        currentSeason = s
+        val base = currentBase ?: return
+        rootFrame.background = if (s == null) base else SeasonalBackdrop(base, s, resources.displayMetrics.density, ar)
+    }
+}
+
+internal fun MainActivity.seasonMenu() {
+    val on = prefs.getBoolean("seasonOn", true)
+    val keys = listOf("ramadan", "eid", "national")
+    val names = listOf(t("Ramadan lanterns", "فوانيس رمضان"), t("Eid stars", "نجوم العيد"), t("Qatar National Day", "اليوم الوطني لقطر"))
+    val items = arrayOf(if (on) t("✓ Automatic (on)", "✓ تلقائي (مُفعّل)") else t("Automatic (off)", "تلقائي (متوقف)")) + names.map { t("Preview: ", "معاينة: ") + it }
+    dialog().setTitle(t("Seasonal look", "المظهر الموسمي")).setItems(items) { _, w ->
+        if (w == 0) { prefs.edit().putBoolean("seasonOn", !on).apply(); seasonPreview = null }
+        else { seasonPreview = keys[w - 1]; seasonPreviewUntil = System.currentTimeMillis() + 60_000L
+               toast(t("Shown for one minute (Islamic theme)", "تظهر لمدة دقيقة (المظهر الإسلامي)")); scroll.smoothScrollTo(0, 0) }
+        refreshBackground()
+        handler.postDelayed({ refreshBackground() }, 61_000L)
+    }.setNegativeButton(t("Close", "إغلاق"), null).show()
 }
 
 internal fun MainActivity.bgName(): String = when (bgChoice) {

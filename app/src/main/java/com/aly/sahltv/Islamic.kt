@@ -365,7 +365,22 @@ class PhotoBackdrop(private val ctx: android.content.Context, private val asset:
         canvas.drawBitmap(bmp, b.left.toFloat(), b.top.toFloat(), null)
     }
 
+    /** The finished background (cropped, darkened, screen size) is kept, so later starts only decode one picture. */
     private fun build(w: Int, h: Int): Bitmap? {
+        val ver = try { ctx.packageManager.getPackageInfo(ctx.packageName, 0).lastUpdateTime } catch (_: Exception) { 0L }
+        val cached = java.io.File(ctx.cacheDir, "bg/${asset.removeSuffix(".jpg")}_${dim}_${w}x${h}_$ver.jpg")
+        if (cached.isFile) android.graphics.BitmapFactory.decodeFile(cached.path)?.let { return it }
+        val made = buildFresh(w, h) ?: return null
+        try {
+            cached.parentFile?.apply { mkdirs(); listFiles()?.forEach { if (it.name.startsWith(asset.removeSuffix(".jpg") + "_")) it.delete() } }
+            val tmp = java.io.File(cached.path + ".tmp")
+            tmp.outputStream().use { made.compress(Bitmap.CompressFormat.JPEG, 92, it) }
+            tmp.renameTo(cached)
+        } catch (_: Exception) {}
+        return made
+    }
+
+    private fun buildFresh(w: Int, h: Int): Bitmap? {
         val photo = try { ctx.assets.open(asset).use { android.graphics.BitmapFactory.decodeStream(it) } } catch (_: Exception) { null } ?: return null
         val out = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
         val c = Canvas(out)
