@@ -101,3 +101,9 @@ Updates come from this repository's "latest" release. Android only installs an u
 - New Settings screen: grouped sections, a short explanation under every option, current value on the right.
 - ⬆ Updates button always on the home screen (turns gold when an update is ready).
 - Fixed card borders being cut at the edges.
+
+## v1.9
+- Backgrounds: the Kaaba (day), the Kaaba (night), the Prophet's Mosque, Al-Aqsa (Dome of the Rock), or Automatic: Kaaba by day, at night from Maghrib to Fajr.
+  Photos come from Wikimedia Commons; the build checks each licence (only CC BY / CC BY-SA / public domain are used) and lists the credits in About.
+- Photo brightness (5 levels), Auto update (Off / Tell me / Download & install), round gold icon buttons, larger clock.
+- Phone remote: a new code is made after 10 wrong tries. The background photo is prepared in the background (no stall).

@@ -36,6 +36,7 @@ object RemoteServer {
     private val pool = Executors.newFixedThreadPool(4)
     private lateinit var app: Context
     private val rnd = SecureRandom()
+    @Volatile private var wrongCodes = 0
     @Volatile private var lastText = 0L
 
     private fun prefs() = app.getSharedPreferences("sahl", Context.MODE_PRIVATE)
@@ -135,7 +136,12 @@ object RemoteServer {
         val ok = Triple("200 OK", "application/json", "{\"ok\":true}")
         if (method == "GET" && (path == "/" || path == "/index.html")) return Triple("200 OK", "text/html", RemotePage.HTML)
         if (path == "/api/pair" && method == "POST") {
-            if (body.trim() != code(app)) { Thread.sleep(800); return Triple("403 Forbidden", "application/json", "{\"ok\":false}") }
+            if (body.trim() != code(app)) {
+                // too many wrong codes: make a new one (shown in Settings → Phone remote), so guessing never works
+                if (++wrongCodes >= 10) { wrongCodes = 0; prefs().edit().remove("rcode").apply() }
+                Thread.sleep(800); return Triple("403 Forbidden", "application/json", "{\"ok\":false}")
+            }
+            wrongCodes = 0
             val t = ByteArray(16).also { rnd.nextBytes(it) }.joinToString("") { String.format("%02x", it) }
             prefs().edit().putString("rtokens", (listOf(t) + tokens()).take(10).joinToString("|")).apply()
             return Triple("200 OK", "application/json", "{\"ok\":true,\"token\":${json(t)}}")

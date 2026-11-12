@@ -319,12 +319,27 @@ class PhotoBackdrop(private val ctx: android.content.Context, private val asset:
     private var failed = false
     override fun onBoundsChange(bounds: Rect) { cache = null; fallback.setBounds(bounds.left, bounds.top, bounds.right, bounds.bottom) }
 
+    @Volatile private var building = false
+    private val main = android.os.Handler(android.os.Looper.getMainLooper())
+
+    /** The photo is prepared on a background thread, so the screen never stalls; a plain dark colour shows meanwhile. */
     override fun draw(canvas: Canvas) {
         val b = bounds
         if (b.width() <= 0 || b.height() <= 0) return
         if (failed) { fallback.draw(canvas); return }
-        val bmp = cache ?: build(b.width(), b.height())?.also { cache = it }
-        if (bmp == null) { failed = true; fallback.draw(canvas); return }
+        val bmp = cache
+        if (bmp == null) {
+            canvas.drawColor(Color.parseColor("#06110E"))
+            if (!building) {
+                building = true
+                val w = b.width(); val h = b.height()
+                Thread {
+                    val made = try { build(w, h) } catch (_: Throwable) { null }
+                    main.post { building = false; if (made == null) failed = true else cache = made; invalidateSelf() }
+                }.start()
+            }
+            return
+        }
         canvas.drawBitmap(bmp, b.left.toFloat(), b.top.toFloat(), null)
     }
 
