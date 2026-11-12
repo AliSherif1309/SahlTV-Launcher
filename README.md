@@ -113,3 +113,8 @@ Updates come from this repository's "latest" release. Android only installs an u
 - Ayah of the day (verses copied unchanged from the verified Tanzil text at build time); press OK to open it in Sahl Quran.
 - Weather (Open-Meteo, fetched in the background) and the next Qatar occasion next to the clock.
 - "What's new" card for two days after each update.
+
+## Sahl Quran 1.3
+- Mushaf view: an open Mushaf on the TV — right page odd, left page even, the same 604 pages and the same verses per page as the Madinah Mushaf; cream paper, gold-and-green frame, ornamental surah headers, basmala, round verse markers, surah and juz' at the top, page number at the bottom. "Large text" view is still there.
+- Reading timer: start from the menu; a small chip shows the time and pages; it pauses when you leave; at the end you see the session and today's total.
+- Fixed: Mushaf page numbers and "Go to Mushaf page" were missing (the page list's end marker made it 605 entries).

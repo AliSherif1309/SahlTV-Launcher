@@ -83,9 +83,10 @@ class QuranData private constructor(
             var juz = JUZ
             try {
                 val js = ctx.assets.open("quran-data.js").bufferedReader(Charsets.UTF_8).readText()
-                val p = parseStarts(js, "Page")
+                // the lists end with a [115, 1] "end" marker: drop it
+                val p = parseStarts(js, "Page").filter { it.first in 1..114 }
                 if (p.size == 604) pages = p
-                val j = parseStarts(js, "Juz")
+                val j = parseStarts(js, "Juz").filter { it.first in 1..114 }
                 if (j.size == 30) juz = j
             } catch (_: Exception) {}
             return QuranData(ayahs, pages, juz)
@@ -102,6 +103,24 @@ class QuranData private constructor(
         var j = 1
         for ((i, st) in juzStarts.withIndex()) if (ordinal(st.first, st.second) <= o) j = i + 1
         return j
+    }
+
+    private val pageCache = HashMap<Int, List<Pair<Int, Int>>>()
+
+    /** Every (surah, ayah) printed on Madinah Mushaf page [p] (1..604). */
+    fun pageAyahs(p: Int): List<Pair<Int, Int>> {
+        if (pageStarts.size != 604 || p !in 1..604) return emptyList()
+        pageCache[p]?.let { return it }
+        val out = ArrayList<Pair<Int, Int>>()
+        var (s, a) = pageStarts[p - 1]
+        val end = if (p < 604) pageStarts[p] else 115 to 1
+        while (s < 115 && (s < end.first || (s == end.first && a < end.second))) {
+            out.add(s to a)
+            a++
+            if (a > ayahCount(s)) { s++; a = 1 }
+        }
+        pageCache[p] = out
+        return out
     }
 
     /** 1-based Mushaf page of (s, a), or 0 when page data isn't available */

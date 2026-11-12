@@ -50,6 +50,17 @@ class QuranActivity : Activity() {
 
     // views
     private lateinit var root: LinearLayout
+    private lateinit var frame: FrameLayout
+    private lateinit var bar: LinearLayout
+    private lateinit var spread: LinearLayout
+    private lateinit var leftPage: MushafPage
+    private lateinit var rightPage: MushafPage
+    private lateinit var timerTv: TextView
+    /** Right-hand page of the open spread (odd: 1, 3, 5 … 603). */
+    private var mPage = 1
+    /** "mushaf" = two printed pages side by side, "text" = large flowing text. */
+    private val view get() = prefs.getString("view", "mushaf") ?: "mushaf"
+    private val mushaf get() = view == "mushaf" && data?.pageStarts?.size == 604
     private lateinit var topTv: TextView
     private lateinit var hintTv: TextView
     private lateinit var scroll: ScrollView
@@ -59,7 +70,7 @@ class QuranActivity : Activity() {
     // settings
     private val sizes = floatArrayOf(26f, 30f, 34f, 38f, 44f)
     private val sizeIdx get() = prefs.getInt("size", 2).coerceIn(0, sizes.size - 1)
-    private val theme get() = prefs.getString("theme", "dark") ?: "dark"
+    private val theme get() = prefs.getString("theme", "sepia") ?: "sepia"
     private val ar: Boolean by lazy {
         val saved = prefs.getString("lang", null)
         if (saved != null) saved == "ar" else resources.configuration.locales[0].language == "ar"
@@ -84,7 +95,7 @@ class QuranActivity : Activity() {
             setPadding(dp(56), dp(20), dp(56), dp(14))
             layoutDirection = View.LAYOUT_DIRECTION_RTL
         }
-        val bar = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+        bar = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         topTv = TextView(this).apply { textSize = 15f }
         hintTv = TextView(this).apply { textSize = 13f }
         bar.addView(topTv, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
@@ -100,7 +111,24 @@ class QuranActivity : Activity() {
             addView(textTv, FrameLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT))
         }
         root.addView(scroll, LinearLayout.LayoutParams(MATCH_PARENT, 0, 1f).apply { topMargin = dp(10) })
-        setContentView(root)
+        // the open Mushaf: left page (even) and right page (odd), like a printed copy
+        spread = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER; layoutDirection = View.LAYOUT_DIRECTION_LTR
+            isFocusable = true; isFocusableInTouchMode = true; visibility = View.GONE }
+        leftPage = MushafPage(this, amiri).apply { rightSide = false }
+        rightPage = MushafPage(this, amiri).apply { rightSide = true }
+        spread.addView(leftPage, LinearLayout.LayoutParams(0, MATCH_PARENT))
+        spread.addView(rightPage, LinearLayout.LayoutParams(0, MATCH_PARENT))
+        root.addView(spread, LinearLayout.LayoutParams(MATCH_PARENT, 0, 1f))
+        frame = FrameLayout(this)
+        frame.addView(root, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
+        // reading timer: a small, quiet chip at the top
+        timerTv = TextView(this).apply {
+            textSize = 14f; setPadding(dp(14), dp(5), dp(14), dp(5)); visibility = View.GONE
+            background = GradientDrawable().apply { setColor(Color.parseColor("#CC101814")); cornerRadius = dp(14).toFloat(); setStroke(dp(1), Color.parseColor("#80C9A54F")) }
+            setTextColor(Color.parseColor("#EDE3C8"))
+        }
+        frame.addView(timerTv, FrameLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT, Gravity.TOP or Gravity.CENTER_HORIZONTAL).apply { topMargin = dp(4) })
+        setContentView(frame)
         applyTheme()
 
         // opened from the launcher's "Ayah of the day": go straight to that verse
@@ -117,14 +145,57 @@ class QuranActivity : Activity() {
                                     "نص القرآن غير مضمَّن في هذه النسخة. يُرجى تثبيت النسخة من صفحة الإصدارات على GitHub.")
                     return@post
                 }
-                scroll.post { goTo(surah, startAyah) }
+                highlight = if (askedSurah in 1..114) askedSurah to startAyah else null
+                mPage = prefs.getInt("mp", 0).takeIf { it in 1..604 && askedSurah !in 1..114 } ?: d.pageOf(surah, startAyah).coerceAtLeast(1)
+                applyView()
+                if (mushaf) spread.post { sizePages(); showSpread() } else scroll.post { goTo(surah, startAyah) }
+                if (prefs.getBoolean("firstMushaf", true) && mushaf) { prefs.edit().putBoolean("firstMushaf", false).apply()
+                    toast(t("◀ next page   ▶ previous page   OK: menu", "◀ الصفحة التالية   ▶ السابقة   OK: القائمة")) }
             }
         }
     }
 
+    private var highlight: Pair<Int, Int>? = null
+    private var styleTheme = ""
+
+    /** Shows either the Mushaf spread or the large-text reader. */
+    private fun applyView() {
+        val m = mushaf
+        spread.visibility = if (m) View.VISIBLE else View.GONE
+        scroll.visibility = if (m) View.GONE else View.VISIBLE
+        bar.visibility = if (m) View.GONE else View.VISIBLE
+        root.setPadding(if (m) dp(16) else dp(56), if (m) dp(10) else dp(20), if (m) dp(16) else dp(56), if (m) dp(10) else dp(14))
+        applyTheme()
+        if (m) spread.requestFocus()
+    }
+
+    /** Page size like a printed Mushaf (about 2 : 3), as tall as the screen allows. */
+    private fun sizePages() {
+        val h = spread.height; if (h <= 0) return
+        val w = minOf((h * 0.70f).toInt(), spread.width / 2)
+        for (pg in listOf(leftPage, rightPage)) pg.layoutParams = LinearLayout.LayoutParams(w, h)
+        spread.requestLayout()
+    }
+
+    private fun showSpread() {
+        val d = data ?: return
+        mPage = mPage.coerceIn(1, 604)
+        if (mPage % 2 == 0) mPage -= 1
+        rightPage.data = d; leftPage.data = d
+        if (styleTheme != theme) { styleTheme = theme; val st = MushafStyle.of(theme); rightPage.style = st; leftPage.style = st }
+        rightPage.highlight = highlight; leftPage.highlight = highlight
+        rightPage.page = mPage
+        leftPage.page = if (mPage + 1 <= 604) mPage + 1 else 0
+        leftPage.visibility = if (mPage + 1 <= 604) View.VISIBLE else View.INVISIBLE
+        val first = d.pageAyahs(mPage).firstOrNull() ?: (1 to 1)
+        surah = first.first
+        prefs.edit().putInt("mp", mPage).putInt("s", first.first).putInt("a", first.second).apply()
+    }
+
     private fun applyTheme() {
-        root.setBackgroundColor(Color.parseColor(bg))
-        window.decorView.setBackgroundColor(Color.parseColor(bg))
+        val bgCol = if (mushaf) MushafStyle.of(theme).around else Color.parseColor(bg)
+        root.setBackgroundColor(bgCol)
+        window.decorView.setBackgroundColor(bgCol)
         textTv.setTextColor(Color.parseColor(ink))
         textTv.textSize = sizes[sizeIdx]
         amiri?.let { textTv.typeface = it }
@@ -203,6 +274,8 @@ class QuranActivity : Activity() {
     }
 
     private fun goTo(s: Int, a: Int) {
+        val d = data
+        if (mushaf && d != null) { mPage = d.pageOf(s.coerceIn(1, 114), a).coerceAtLeast(1); showSpread(); return }
         surah = s.coerceIn(1, 114)
         val pages = pagesOf(surah)
         pageIdx = pages.indexOfFirst { a in it[0]..it[1] }.coerceAtLeast(0)
@@ -228,6 +301,11 @@ class QuranActivity : Activity() {
 
     private fun nextPage() {
         if (data == null) return
+        if (mushaf) {
+            if (mPage + 2 > 604) { toast(t("End of the Quran — صدق الله العظيم", "صدق الله العظيم")); return }
+            mPage += 2; highlight = null; pagesRead += 2; showSpread(); return
+        }
+        pagesRead++
         if (pageIdx < pagesOf(surah).size - 1) pageIdx++
         else if (surah < 114) { surah++; pageIdx = 0 } else { toast(t("End of the Quran — صدق الله العظيم", "صدق الله العظيم")); return }
         show()
@@ -235,9 +313,56 @@ class QuranActivity : Activity() {
 
     private fun prevPage() {
         if (data == null) return
+        if (mushaf) { if (mPage > 1) { mPage -= 2; highlight = null; showSpread() }; return }
         if (pageIdx > 0) pageIdx--
         else if (surah > 1) { surah--; pageIdx = pagesOf(surah).size - 1 } else return
         show()
+    }
+
+    // ------------------------------------------------------------------ reading timer
+
+    private var timerOn = false
+    private var timerStart = 0L
+    private var timerAcc = 0L
+    private var pagesRead = 0
+    private fun timerMs() = timerAcc + if (timerOn && timerStart > 0) System.currentTimeMillis() - timerStart else 0L
+    private fun fmt(ms: Long): String { val s = ms / 1000; return if (s >= 3600) String.format(java.util.Locale.US, "%d:%02d:%02d", s / 3600, s / 60 % 60, s % 60) else String.format(java.util.Locale.US, "%02d:%02d", s / 60, s % 60) }
+    private fun dayKey() = "read_" + java.time.LocalDate.now()
+    private fun todayMs() = prefs.getLong(dayKey(), 0L)
+
+    private val tick = object : Runnable {
+        override fun run() {
+            if (!timerOn) return
+            timerTv.text = "⏱  " + fmt(timerMs()) + (if (pagesRead > 0) t("   ·   $pagesRead pages", "   ·   ${arabicNum(pagesRead)} صفحة") else "")
+            handler.postDelayed(this, 1000)
+        }
+    }
+
+    private fun startTimer() {
+        timerOn = true; timerAcc = 0L; pagesRead = 0; timerStart = System.currentTimeMillis()
+        timerTv.visibility = View.VISIBLE; handler.removeCallbacks(tick); handler.post(tick)
+    }
+
+    private fun stopTimer() {
+        val ms = timerMs()
+        timerOn = false; timerAcc = 0L; handler.removeCallbacks(tick); timerTv.visibility = View.GONE
+        val total = todayMs() + ms
+        prefs.edit().putLong(dayKey(), total).apply()
+        dialog().setTitle(t("May Allah accept it 🤲", "تقبّل الله منك 🤲"))
+            .setMessage(t("You read for ${fmt(ms)}" + (if (pagesRead > 0) " · $pagesRead pages" else "") + ".\n\nToday in total: ${total / 60_000} min.",
+                          "قرأت لمدة ${fmt(ms)}" + (if (pagesRead > 0) " · ${arabicNum(pagesRead)} صفحة" else "") + ".\n\nمجموع اليوم: ${arabicNum((total / 60_000).toInt())} دقيقة."))
+            .setPositiveButton(t("OK", "حسنًا"), null).show()
+        pagesRead = 0
+    }
+
+    override fun onPause() {
+        super.onPause()
+        if (timerOn) { timerAcc += System.currentTimeMillis() - timerStart; timerStart = 0L; handler.removeCallbacks(tick) }   // paused while away
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (timerOn) { timerStart = System.currentTimeMillis(); handler.post(tick) }
     }
 
     // ------------------------------------------------------------------ remote keys
@@ -247,8 +372,8 @@ class QuranActivity : Activity() {
             KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_MEDIA_NEXT, KeyEvent.KEYCODE_MEDIA_FAST_FORWARD, KeyEvent.KEYCODE_PAGE_DOWN -> { nextPage(); return true }
             KeyEvent.KEYCODE_DPAD_RIGHT, KeyEvent.KEYCODE_MEDIA_PREVIOUS, KeyEvent.KEYCODE_MEDIA_REWIND, KeyEvent.KEYCODE_PAGE_UP -> { prevPage(); return true }
             KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_MENU -> { menu(); return true }
-            KeyEvent.KEYCODE_DPAD_DOWN -> { scroll.smoothScrollBy(0, scroll.height / 3); return true }
-            KeyEvent.KEYCODE_DPAD_UP -> { scroll.smoothScrollBy(0, -scroll.height / 3); return true }
+            KeyEvent.KEYCODE_DPAD_DOWN -> { if (!mushaf) scroll.smoothScrollBy(0, scroll.height / 3); return true }
+            KeyEvent.KEYCODE_DPAD_UP -> { if (!mushaf) scroll.smoothScrollBy(0, -scroll.height / 3); return true }
         }
         return super.onKeyDown(keyCode, event)
     }
@@ -269,26 +394,38 @@ class QuranActivity : Activity() {
         val d = data ?: return
         val hasPages = d.pageStarts.isNotEmpty()
         val items = ArrayList<Pair<String, () -> Unit>>()
+        items.add((if (timerOn) t("⏱  Stop reading timer  (${fmt(timerMs())})", "⏱  إيقاف مؤقت القراءة  (${fmt(timerMs())})") else t("⏱  Start reading timer", "⏱  بدء مؤقت القراءة")) to { if (timerOn) stopTimer() else startTimer() })
         items.add(t("📖  Go to surah", "📖  الانتقال إلى سورة") to { surahMenu() })
         items.add(t("🔢  Go to juz'", "🔢  الانتقال إلى جزء") to { juzMenu() })
         if (hasPages) items.add(t("📄  Go to Mushaf page", "📄  الانتقال إلى صفحة المصحف") to { pageMenu() })
         items.add(t("🔖  Bookmark this page", "🔖  إضافة علامة لهذه الصفحة") to {
-            val from = pagesOf(surah)[pageIdx][0]
+            if (mushaf) d.pageAyahs(mPage).firstOrNull()?.let { surah = it.first }
+            val from = if (mushaf) (d.pageAyahs(mPage).firstOrNull()?.second ?: 1) else pagesOf(surah)[pageIdx][0]
             val l = bookmarks; if (l.none { it.first == surah && it.second == from }) l.add(0, surah to from); saveBookmarks(l.take(30))
             toast(t("Bookmarked", "تمت إضافة العلامة"))
         })
         items.add(t("📑  Bookmarks (${bookmarks.size})", "📑  العلامات (${arabicNum(bookmarks.size)})") to { bookmarksMenu() })
-        items.add(t("🔠  Text size: ${sizeIdx + 1}/5  (change)", "🔠  حجم الخط: ${arabicNum(sizeIdx + 1)}/٥  (تغيير)") to { sizeMenu() })
+        if (hasPages) items.add((if (mushaf) t("📗  View: Mushaf pages  (switch to large text)", "📗  العرض: صفحات المصحف  (التبديل إلى خط كبير)")
+                                 else t("📗  View: Large text  (switch to Mushaf pages)", "📗  العرض: خط كبير  (التبديل إلى صفحات المصحف)")) to {
+            val keep = if (mushaf) d.pageAyahs(mPage).firstOrNull() ?: (surah to 1) else (surah to pagesOf(surah)[pageIdx][0])
+            prefs.edit().putString("view", if (mushaf) "text" else "mushaf").apply()
+            applyView()
+            if (mushaf) spread.post { sizePages(); mPage = d.pageOf(keep.first, keep.second); showSpread() } else scroll.post { goTo(keep.first, keep.second) }
+        })
+        if (!mushaf) items.add(t("🔠  Text size: ${sizeIdx + 1}/5  (change)", "🔠  حجم الخط: ${arabicNum(sizeIdx + 1)}/٥  (تغيير)") to { sizeMenu() })
         items.add(t("🎨  Background: ", "🎨  الخلفية: ") + themeName(theme) + t("  (change)", "  (تغيير)") to {
             val next = when (theme) { "dark" -> "light"; "light" -> "sepia"; else -> "dark" }
-            prefs.edit().putString("theme", next).apply(); applyTheme(); show()
+            prefs.edit().putString("theme", next).apply(); applyTheme(); if (mushaf) showSpread() else show()
         })
         items.add(t("🌐  Language: English  (العربية)", "🌐  اللغة: العربية  (English)") to {
             prefs.edit().putString("lang", if (ar) "en" else "ar").apply(); recreate()
         })
         items.add(t("⬆  Check for updates", "⬆  البحث عن تحديثات") to { Updater.check(this, ar) })
         items.add(t("ⓘ  About", "ⓘ  حول التطبيق") to { about() })
-        dialog().setTitle(surahLabel(surah)).setItems(items.map { it.first }.toTypedArray()) { _, w -> items[w].second() }.show()
+        val today = todayMs() + (if (timerOn) timerMs() else 0L)
+        val title = surahLabel(surah) + (if (mushaf) "  ·  " + t("page $mPage", "صفحة ${arabicNum(mPage)}") else "") +
+            (if (today >= 60_000) "  ·  " + t("today ${today / 60_000} min", "اليوم ${arabicNum((today / 60_000).toInt())} د") else "")
+        dialog().setTitle(title).setItems(items.map { it.first }.toTypedArray()) { _, w -> items[w].second() }.show()
     }
 
     private fun themeName(th: String) = when (th) { "light" -> t("Light", "فاتحة"); "sepia" -> t("Sepia", "ورقية"); else -> t("Dark", "داكنة") }
@@ -339,8 +476,8 @@ class QuranActivity : Activity() {
 
     private fun about() {
         dialog().setTitle(t("Sahl Quran", "سهل · القرآن"))
-            .setMessage(t("Read the Quran on your TV.\n\nQuran text: Tanzil Project (tanzil.net) — Uthmani text, copied verbatim, licensed under Creative Commons Attribution 3.0. The text is not modified.\n\nFont: Amiri Quran by Khaled Hosny, SIL Open Font License 1.1.\n\nPages are laid out to fit your screen; Mushaf page numbers refer to the Madinah Mushaf.\n\nContact: alysherif1309@gmail.com",
-                          "اقرأ القرآن الكريم على التلفاز.\n\nنص القرآن: مشروع تنزيل (tanzil.net) — الرسم العثماني، منقول حرفيًا دون أي تعديل، برخصة المشاع الإبداعي (نسب المصنف 3.0).\n\nالخط: أميري قرآن لخالد حسني، برخصة SIL للخطوط المفتوحة 1.1.\n\nتُرتَّب الصفحات لتناسب شاشتك، وأرقام صفحات المصحف وفق مصحف المدينة المنورة.\n\nللتواصل: alysherif1309@gmail.com"))
+            .setMessage(t("Read the Quran on your TV.\n\nQuran text: Tanzil Project (tanzil.net) — Uthmani text, copied verbatim, licensed under Creative Commons Attribution 3.0. The text is not modified.\n\nFont: Amiri Quran by Khaled Hosny, SIL Open Font License 1.1.\n\nMushaf view: each page holds exactly the verses of the same page of the Madinah Mushaf (604 pages, page breaks from Tanzil). The lettering is Amiri Quran, so line breaks differ slightly from print.\n\nContact: alysherif1309@gmail.com",
+                          "اقرأ القرآن الكريم على التلفاز.\n\nنص القرآن: مشروع تنزيل (tanzil.net) — الرسم العثماني، منقول حرفيًا دون أي تعديل، برخصة المشاع الإبداعي (نسب المصنف 3.0).\n\nالخط: أميري قرآن لخالد حسني، برخصة SIL للخطوط المفتوحة 1.1.\n\nعرض المصحف: كل صفحة تضم نفس آيات الصفحة نفسها في مصحف المدينة المنورة (٦٠٤ صفحات، وفق بيانات تنزيل). الخط هو أميري قرآن، لذا قد يختلف توزيع الأسطر قليلًا عن المطبوع.\n\nللتواصل: alysherif1309@gmail.com"))
             .setPositiveButton(t("OK", "حسنًا"), null).show()
     }
 
