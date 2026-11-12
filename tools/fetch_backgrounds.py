@@ -16,9 +16,9 @@ W, H = 1920, 1080
 # id, Commons file, English title, Arabic title, vertical focus (0 = top, 0.5 = centre, 1 = bottom), required
 PHOTOS = [
     ("kaaba_day", "The_Kaaba_during_Hajj.jpg", "The Kaaba (day)", "الكعبة (نهارًا)", 0.5, True),
-    ("kaaba_night", "Mosquée_Masjid_el_Haram_à_la_Mecque.jpg", "The Kaaba (night)", "الكعبة (ليلًا)", 0.5, False),
-    ("madinah", "Masjid_Nabawi_The_Prophet's_Mosque,_Madina.jpg", "The Prophet's Mosque, Madinah", "المسجد النبوي، المدينة", 0.45, False),
-    ("aqsa", "Jerusalem-2013-Temple_Mount-Dome_of_the_Rock_&_Chain_02.jpg", "Al-Aqsa: Dome of the Rock", "الأقصى: قبة الصخرة", 0.5, False),
+    ("kaaba_night", "Mosquée_Masjid_el_Haram_à_la_Mecque.jpg", "The Kaaba (night)", "الكعبة (ليلًا)", 0.15, False),
+    ("madinah", "Al-Masjid_an_Nabawi.jpg", "The Prophet's Mosque, Madinah", "المسجد النبوي، المدينة", 0.4, False),
+    ("aqsa", "Jerusalem-2013-Temple_Mount-Dome_of_the_Rock_&_Chain_02.jpg", "Al-Aqsa: Dome of the Rock", "الأقصى: قبة الصخرة", 0.22, False),
 ]
 OK = re.compile(r"^(CC BY(-SA)? ?[0-9.]*|CC0|Public domain|PD.*)$", re.I)
 
