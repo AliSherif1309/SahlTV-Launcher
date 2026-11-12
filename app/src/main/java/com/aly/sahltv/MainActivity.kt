@@ -88,7 +88,7 @@ class MainActivity : Activity(), RemoteServer.Host {
     private lateinit var hijriTv: TextView
     private lateinit var content: LinearLayout
     private lateinit var scroll: ScrollView
-    private lateinit var memBtn: TextView
+    private lateinit var memBtn: IconBtn
     private lateinit var prayerTv: TextView
     private lateinit var rootFrame: FrameLayout
     private lateinit var nowBar: LinearLayout
@@ -99,8 +99,8 @@ class MainActivity : Activity(), RemoteServer.Host {
     private var msm: MediaSessionManager? = null
     private var controller: MediaController? = null
     private var mediaAllowed = false
-    private lateinit var settingsBtn: TextView
-    private lateinit var updBtn: TextView
+    private lateinit var settingsBtn: IconBtn
+    private lateinit var updBtn: IconBtn
     private var lastSig = ""
     private var lastAutoClean = 0L
     private val ease = DecelerateInterpolator(1.6f)
@@ -137,6 +137,45 @@ class MainActivity : Activity(), RemoteServer.Host {
     private val fastOn get() = prefs.getBoolean("fastOn", true)
     /** Calm mode (for little eyes): minute countdown instead of ticking seconds, softer focus, home screen dims at night. */
     private val calm by lazy { prefs.getBoolean("calm", true) }
+    /** 0 = off, 1 = tell me (gold dot on Updates), 2 = download by itself and install when I'm on the home screen. */
+    private val autoUpd get() = prefs.getInt("autoUpd", 1)
+    private var resumed = false
+
+    // ---- backgrounds: photos come with the app (see tools/fetch_backgrounds.py) and their credits
+    private class Bg(val id: String, val en: String, val ar: String, val author: String, val licence: String)
+    private val backgrounds: List<Bg> by lazy {
+        try {
+            val a = org.json.JSONArray(assets.open("backgrounds.json").bufferedReader().use { it.readText() })
+            (0 until a.length()).map { a.getJSONObject(it).let { o -> Bg(o.getString("id"), o.getString("en"), o.getString("ar"), o.optString("author"), o.optString("licence")) } }
+        } catch (_: Exception) { emptyList() }
+    }
+    private var bgKey = ""
+    private val bgChoice get() = prefs.getString("bg", "auto") ?: "auto"
+    private val bgDim get() = prefs.getInt("bgDim", 2)
+
+    /** Which photo should show now: "auto" = the Kaaba by day, the Kaaba at night from Maghrib to Fajr. */
+    private fun wantedBg(): String {
+        val ids = backgrounds.map { it.id }
+        if (bgChoice == "drawn" || ids.isEmpty()) return "drawn"
+        if (bgChoice != "auto" && bgChoice in ids) return bgChoice
+        val tt = timesFor(LocalDate.now())
+        val now = System.currentTimeMillis()
+        val night = if (tt != null) now >= epochAt(LocalDate.now(), tt.maghrib) || now < epochAt(LocalDate.now(), tt.fajr)
+                    else java.time.LocalTime.now().let { it.hour >= 18 || it.hour < 5 }
+        return if (night && "kaaba_night" in ids) "kaaba_night" else if ("kaaba_day" in ids) "kaaba_day" else ids.first()
+    }
+
+    private fun makeBackdrop(id: String): android.graphics.drawable.Drawable {
+        bgKey = "$id/$bgDim"
+        val drawn = IslamicBackdrop(resources.displayMetrics.density, ar)
+        return if (id == "drawn") drawn else PhotoBackdrop(this, "bg_$id.jpg", bgDim, drawn)
+    }
+
+    private fun refreshBackground(force: Boolean = false) {
+        if (!islamic) return
+        val id = wantedBg()
+        if (force || "$id/$bgDim" != bgKey) rootFrame.background = makeBackdrop(id)
+    }
     private lateinit var dimView: View
     private val locked get() = list("locked")
     private val pinSet get() = prefs.getString("pinHash", null) != null
@@ -151,8 +190,7 @@ class MainActivity : Activity(), RemoteServer.Host {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val root = FrameLayout(this).also { rootFrame = it }.apply {
-            background = if (islamic) PhotoBackdrop(this@MainActivity, IslamicBackdrop(resources.displayMetrics.density, ar))
-                         else GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(BG_TOP, BG_BOTTOM))
+            background = if (islamic) makeBackdrop(wantedBg()) else GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(BG_TOP, BG_BOTTOM)).also { bgKey = "classic" }
         }
         val col = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -207,12 +245,8 @@ class MainActivity : Activity(), RemoteServer.Host {
         if (dirty && !loading) loadApps() else if (apps.isNotEmpty()) render(keepFocus = true)
         maybeAutoClean()
         Alerts.schedule(this)
-        // look for a new version at most every 12 hours; quietly shows the "Update ready" button
-        val lastUpd = prefs.getLong("updChecked", 0L)
-        if (System.currentTimeMillis() - lastUpd > 12 * 3_600_000L) {
-            prefs.edit().putLong("updChecked", System.currentTimeMillis()).apply()
-            Updater.checkQuietly(this, ar) { has -> setUpd(has) }
-        } else setUpd(prefs.getBoolean("updReady", false))
+        resumed = true
+        autoUpdateTick()
         refreshPreviews(force = false)
         setupMedia()
         lastInput = System.currentTimeMillis()
@@ -221,6 +255,7 @@ class MainActivity : Activity(), RemoteServer.Host {
 
     override fun onPause() {
         super.onPause()
+        resumed = false
         handler.removeCallbacks(clockTick)
         handler.removeCallbacks(secondTick)
         handler.removeCallbacks(saverTick)
@@ -255,9 +290,10 @@ class MainActivity : Activity(), RemoteServer.Host {
     private fun buildTopBar(): View {
         val bar = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         val left = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        clockTv = TextView(this).apply { textSize = 40f; setTextColor(TEXT); typeface = Typeface.create("sans-serif-light", Typeface.NORMAL) }
-        dateTv = TextView(this).apply { textSize = 15f; setTextColor(MUTED) }
-        hijriTv = TextView(this).apply { textSize = 15f; setTextColor(GOLD); setPadding(0, dp(1), 0, 0) }
+        clockTv = TextView(this).apply { textSize = 58f; setTextColor(Color.WHITE); typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL); includeFontPadding = false
+            setShadowLayer(14f, 0f, 2f, Color.argb(220, 0, 0, 0)); letterSpacing = 0.02f }
+        dateTv = TextView(this).apply { textSize = 17f; setTextColor(Color.parseColor("#E6EEEA")); setShadowLayer(8f, 0f, 1f, Color.BLACK); setPadding(0, dp(4), 0, 0) }
+        hijriTv = TextView(this).apply { textSize = 16f; setTextColor(GOLD); setPadding(0, dp(1), 0, 0); setShadowLayer(8f, 0f, 1f, Color.BLACK) }
         prayerTv = TextView(this).apply { textSize = 15f; setTextColor(ACCENT); visibility = View.GONE }
         val hRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         hRow.addView(GoldIcon(this, GoldIcon.CRESCENT, GOLD), LinearLayout.LayoutParams(dp(16), dp(16)).apply { marginEnd = dp(6) })
@@ -265,15 +301,17 @@ class MainActivity : Activity(), RemoteServer.Host {
         left.addView(clockTv); left.addView(dateTv); left.addView(hRow)
         bar.addView(left, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
 
-        updBtn = pill(t("⬆  Updates", "⬆  التحديثات")) { setUpd(false); Updater.check(this, ar) }
-        bar.addView(updBtn, LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply { marginEnd = dp(12) })
-        memBtn = pill(t("🧹  Free memory", "🧹  تحرير الذاكرة")) { freeMemory() }
-        bar.addView(memBtn)
-        settingsBtn = pill(t("⚙  TV settings", "⚙  إعدادات التلفاز")) {
+        val dark = Color.parseColor("#0B1E1A")
+        fun gap() = LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply { marginStart = dp(6) }
+        updBtn = IconBtn(this, GoldIcon.UPDATE, t("Updates", "التحديثات"), GOLD, dark) { setUpd(false); Updater.check(this, ar) }
+        bar.addView(updBtn, gap())
+        memBtn = IconBtn(this, GoldIcon.BROOM, t("Free memory", "تحرير الذاكرة"), GOLD, dark) { freeMemory() }
+        bar.addView(memBtn, gap())
+        settingsBtn = IconBtn(this, GoldIcon.GEAR, t("TV settings", "إعدادات التلفاز"), GOLD, dark) {
             if (lockSettings) askPin(t("TV settings are locked", "إعدادات التلفاز مقفلة")) { open(Intent(Settings.ACTION_SETTINGS)) } else open(Intent(Settings.ACTION_SETTINGS))
         }
-        bar.addView(settingsBtn, LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply { marginStart = dp(12) })
-        bar.addView(pill(t("☰  Launcher", "☰  الواجهة")) { launcherMenu() }, LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply { marginStart = dp(12) })
+        bar.addView(settingsBtn, gap())
+        bar.addView(IconBtn(this, GoldIcon.SLIDERS, t("Settings", "الإعدادات"), GOLD, dark) { launcherMenu() }, gap())
         return bar
     }
 
@@ -1068,9 +1106,12 @@ class MainActivity : Activity(), RemoteServer.Host {
                 14 -> backupMenu()
                 15 -> remoteMenu()
                 16 -> { setUpd(false); Updater.check(this, ar) }
+                18 -> if (islamic) backgroundMenu() else toast(t("Choose the Islamic theme first", "اختر المظهر الإسلامي أولًا"))
+                19 -> dimMenu()
+                20 -> autoUpdMenu()
                 17 -> dialog().setTitle("Sahl TV  ·  سهل")
-                    .setMessage(t("A fast, ad-free home screen for Android TV.\n\nNo tracking, no background services. Internet is used only to download preview pictures when you turn App previews on.\n\nPrayer times are calculated on the TV (Qatar method: Fajr 18°, Asr Shafi'i, Isha 90 min after Maghrib). Please compare with the official Awqaf timetable.\n\nTip: hold OK on an app (or press Menu) for options.\n\nFree & open source (MIT).\nBackground photo: “The Kaaba during Hajj” by Adli Wahid, CC BY-SA 4.0, via Wikimedia Commons (cropped and darkened).\nContact: alysherif1309@gmail.com",
-                                  "واجهة رئيسية سريعة وبلا إعلانات لأجهزة Android TV.\n\nبلا تتبّع وبلا خدمات تعمل في الخلفية. يُستخدم الإنترنت فقط لتنزيل صور المعاينات عند تفعيل «معاينات التطبيقات».\n\nتُحسب مواقيت الصلاة على التلفاز (طريقة قطر: الفجر 18°، العصر شافعي، العشاء بعد المغرب بـ 90 دقيقة). يُرجى مقارنتها بتقويم الأوقاف الرسمي.\n\nنصيحة: اضغط مطولًا على OK فوق تطبيق (أو زر القائمة) لعرض الخيارات.\n\nمجاني ومفتوح المصدر (MIT).\nصورة الخلفية: «The Kaaba during Hajj» للمصوّر Adli Wahid، رخصة CC BY-SA 4.0، عبر Wikimedia Commons (مقصوصة ومعتّمة).\nللتواصل: alysherif1309@gmail.com"))
+                    .setMessage(t("A fast, ad-free home screen for Android TV.\n\nNo tracking, no background services. Internet is used only to download preview pictures when you turn App previews on.\n\nPrayer times are calculated on the TV (Qatar method: Fajr 18°, Asr Shafi'i, Isha 90 min after Maghrib). Please compare with the official Awqaf timetable.\n\nTip: hold OK on an app (or press Menu) for options.\n\nFree & open source (MIT).\n" + photoCredits() + "Contact: alysherif1309@gmail.com",
+                                  "واجهة رئيسية سريعة وبلا إعلانات لأجهزة Android TV.\n\nبلا تتبّع وبلا خدمات تعمل في الخلفية. يُستخدم الإنترنت فقط لتنزيل صور المعاينات عند تفعيل «معاينات التطبيقات».\n\nتُحسب مواقيت الصلاة على التلفاز (طريقة قطر: الفجر 18°، العصر شافعي، العشاء بعد المغرب بـ 90 دقيقة). يُرجى مقارنتها بتقويم الأوقاف الرسمي.\n\nنصيحة: اضغط مطولًا على OK فوق تطبيق (أو زر القائمة) لعرض الخيارات.\n\nمجاني ومفتوح المصدر (MIT).\n" + photoCredits() + "للتواصل: alysherif1309@gmail.com"))
                     .setPositiveButton(t("OK", "حسنًا"), null).show()
             }
     }
@@ -1353,6 +1394,7 @@ class MainActivity : Activity(), RemoteServer.Host {
             }
             if (!fastCard.hasFocus()) fastCard.background = cardBg(false, false, fastCard.tag == "glow")
         }
+        refreshBackground()
         // calm mode: soften the whole home screen from an hour after Isha until Fajr
         val night = if (tt != null) now > epochAt(today, tt.isha) + 3_600_000L || now < epochAt(today, tt.fajr)
                     else java.time.LocalTime.now().let { it.hour >= 21 || it.hour < 5 }
@@ -1452,11 +1494,69 @@ class MainActivity : Activity(), RemoteServer.Host {
 
     private class SRow(val icon: Int, val title: String, val desc: String, val value: String, val action: Int)
 
+    /** Background update check, by the Auto update setting. */
+    private fun autoUpdateTick() {
+        val now = System.currentTimeMillis()
+        val mode = autoUpd
+        if (mode == 2 && Updater.hasDownloaded(this) && settingsView == null && now - prefs.getLong("autoAsk", 0L) > 6 * 3_600_000L) {
+            prefs.edit().putLong("autoAsk", now).apply()
+            handler.postDelayed({ if (resumed && settingsView == null) Updater.installDownloaded(this) }, 1500)
+        }
+        val every = if (mode == 2) 6 * 3_600_000L else 12 * 3_600_000L
+        if (mode == 0 || now - prefs.getLong("updChecked", 0L) < every) { setUpd(prefs.getBoolean("updReady", false)); return }
+        prefs.edit().putLong("updChecked", now).apply()
+        if (mode == 2) Updater.autoDownload(this, ar) {
+            setUpd(true); prefs.edit().putLong("autoAsk", 0L).apply()
+            if (resumed && settingsView == null) { prefs.edit().putLong("autoAsk", System.currentTimeMillis()).apply(); Updater.installDownloaded(this) }
+        } else Updater.checkQuietly(this, ar) { has -> setUpd(has) }
+    }
+
+    private fun autoUpdName() = when (autoUpd) { 0 -> t("Off", "متوقف"); 2 -> t("Download & install", "تنزيل وتثبيت"); else -> t("Tell me", "إعلامي فقط") }
+
+    private fun autoUpdMenu() {
+        val items = arrayOf(t("Download & install by itself — Android asks you to press Install, only when you're on the home screen", "تنزيل وتثبيت تلقائي — يطلب Android الضغط على «تثبيت» فقط وأنت في الشاشة الرئيسية"),
+            t("Tell me — a gold dot on Updates", "إعلامي فقط — نقطة ذهبية على زر التحديثات"),
+            t("Off — I'll check myself", "إيقاف — سأبحث بنفسي"))
+        dialog().setTitle(t("Auto update", "التحديث التلقائي")).setItems(items) { _, w ->
+            prefs.edit().putInt("autoUpd", when (w) { 0 -> 2; 1 -> 1; else -> 0 }).putLong("updChecked", 0L).apply()
+            autoUpdateTick()
+        }.show()
+    }
+
+    private fun bgName(): String = when (bgChoice) {
+        "auto" -> t("Automatic (day / night)", "تلقائي (نهار / ليل)")
+        "drawn" -> t("Drawn night sky", "سماء مرسومة")
+        else -> backgrounds.firstOrNull { it.id == bgChoice }?.let { if (ar) it.ar else it.en } ?: t("Automatic", "تلقائي")
+    }
+
+    private fun backgroundMenu() {
+        val ids = listOf("auto") + backgrounds.map { it.id } + "drawn"
+        val names = ids.map { id -> when (id) {
+            "auto" -> t("Automatic — the Kaaba by day, at night after Maghrib", "تلقائي — الكعبة نهارًا، وليلًا بعد المغرب")
+            "drawn" -> t("Drawn night sky (no photo)", "سماء ليلية مرسومة (بدون صورة)")
+            else -> backgrounds.first { it.id == id }.let { if (ar) it.ar else it.en } } + if (id == bgChoice) "  ✓" else "" }
+        dialog().setTitle(t("Background", "الخلفية")).setItems(names.toTypedArray()) { _, w ->
+            prefs.edit().putString("bg", ids[w]).apply(); refreshBackground(true)
+        }.show()
+    }
+
+    private fun dimName(l: Int = bgDim) = arrayOf(t("Brightest", "الأسطع"), t("Bright", "ساطع"), t("Balanced", "متوازن"), t("Dim", "خافت"), t("Darkest", "الأغمق"))[l.coerceIn(0, 4)]
+
+    private fun dimMenu() {
+        val names = (0..4).map { dimName(it) + (if (it == 2) t("  (recommended)", "  (مُوصى به)") else "") + (if (it == bgDim) "  ✓" else "") }
+        dialog().setTitle(t("Photo brightness", "سطوع الصورة")).setItems(names.toTypedArray()) { _, w ->
+            prefs.edit().putInt("bgDim", w).apply(); refreshBackground(true)
+        }.show()
+    }
+
     private fun setUpd(has: Boolean) {
         prefs.edit().putBoolean("updReady", has).apply()
-        updBtn.text = if (has) t("⬆  Update ready", "⬆  يتوفّر تحديث") else t("⬆  Updates", "⬆  التحديثات")
-        if (!updBtn.hasFocus()) updBtn.setTextColor(if (has) GOLD else TEXT)
+        updBtn.setName(if (has) t("Update ready", "يتوفّر تحديث") else t("Updates", "التحديثات")); updBtn.setBadge(has)
     }
+
+    private fun photoCredits(): String = if (backgrounds.isEmpty()) "" else
+        t("Background photos (Wikimedia Commons; cropped, darkened, lower part softened):\n", "صور الخلفية (Wikimedia Commons؛ مقصوصة ومعتّمة وأسفلها مُنعَّم):\n") +
+        backgrounds.joinToString("\n") { "• " + (if (ar) it.ar else it.en) + " — " + it.author + ", " + it.licence } + "\n"
 
     private fun version(): String = try {
         val pi = packageManager.getPackageInfo(packageName, 0)
@@ -1475,6 +1575,8 @@ class MainActivity : Activity(), RemoteServer.Host {
             t("Look & comfort", "المظهر والراحة") to listOf(
                 SRow(GoldIcon.GLOBE, t("Language", "اللغة"), t("Language of the home screen and menus", "لغة الشاشة الرئيسية والقوائم"), if (ar) "العربية" else "English", 0),
                 SRow(GoldIcon.STAR, t("Theme", "المظهر"), t("Islamic: Kaaba photo with gold details. Classic: plain dark", "إسلامي: صورة الكعبة بلمسات ذهبية. كلاسيكي: داكن بسيط"), if (islamic) t("Islamic", "إسلامي") else t("Classic", "كلاسيكي"), 5),
+                SRow(GoldIcon.IMAGE, t("Background", "الخلفية"), t("The Kaaba, the Prophet's Mosque, Al-Aqsa — or automatic day / night", "الكعبة أو المسجد النبوي أو الأقصى — أو تلقائي نهار / ليل"), if (islamic) bgName() else t("Classic theme", "المظهر الكلاسيكي"), 18),
+                SRow(GoldIcon.SUN, t("Photo brightness", "سطوع الصورة"), t("Darker is calmer and easier to read", "الأغمق أهدأ وأسهل للقراءة"), dimName(), 19),
                 SRow(GoldIcon.EYE, t("Calm mode", "الوضع الهادئ"), t("Gentle for little eyes: minute countdown, soft focus, dims at night", "لطيف لعيون الصغار: عدّ بالدقائق، تركيز هادئ، تعتيم ليلًا"), onOff(calm), 7),
                 SRow(GoldIcon.CLOCK, t("Clock", "الساعة"), t("Show time as 24-hour or 12-hour", "عرض الوقت بنظام 24 أو 12 ساعة"), if (clock24) t("24-hour", "24 ساعة") else t("12-hour", "12 ساعة"), 3),
                 SRow(GoldIcon.SCREEN, t("Clock screensaver", "شاشة توقف الساعة"), t("A dim moving clock when the TV sits idle", "ساعة خافتة متحركة عند عدم الاستخدام"), if (saverMin == 0) t("Off", "متوقفة") else t("After $saverMin min", "بعد $saverMin د"), 12)),
@@ -1488,6 +1590,7 @@ class MainActivity : Activity(), RemoteServer.Host {
             t("Phone & TV", "الهاتف والتلفاز") to listOf(
                 SRow(GoldIcon.PHONE, t("Phone remote", "الريموت من الهاتف"), t("Control the TV and type from your phone's browser", "تحكّم بالتلفاز واكتب من متصفح هاتفك"), onOff(remoteOn), 15),
                 SRow(GoldIcon.BROOM, t("Auto clean", "التنظيف التلقائي"), t("Frees memory when the TV gets low", "يحرّر الذاكرة عند انخفاضها"), onOff(autoClean), 9),
+                SRow(GoldIcon.UPDATE, t("Auto update", "التحديث التلقائي"), t("Get new versions of Sahl TV and Sahl Quran without searching", "احصل على الإصدارات الجديدة دون البحث عنها"), autoUpdName(), 20),
                 SRow(GoldIcon.SAVE, t("Backup & restore", "النسخ الاحتياطي والاستعادة"), t("Save all settings to the Download folder, or bring them back", "حفظ كل الإعدادات في مجلد التنزيلات أو استعادتها"), "", 14)),
             t("About", "حول") to listOf(
                 SRow(GoldIcon.INFO, t("About Sahl TV", "حول سهل TV"), t("Credits, privacy and contact", "الشكر والخصوصية والتواصل"), "", 17)))
@@ -1694,8 +1797,7 @@ class MainActivity : Activity(), RemoteServer.Host {
             val after = ActivityManager.MemoryInfo().also { am.getMemoryInfo(it) }.availMem
             val freed = ((after - before) / (1024 * 1024)).coerceAtLeast(0)
             if (freed > 0) handler.post {
-                memBtn.text = t("🧹  Auto-freed $freed MB", "🧹  تم تحرير $freed ميغابايت تلقائيًا")
-                handler.postDelayed({ memBtn.text = t("🧹  Free memory", "🧹  تحرير الذاكرة") }, 4000)
+                memBtn.text = t("Auto-freed $freed MB", "تم تحرير $freed ميغابايت")
             }
         }
     }
@@ -1715,7 +1817,7 @@ class MainActivity : Activity(), RemoteServer.Host {
     private fun freeMemory() {
         val am = getSystemService(ACTIVITY_SERVICE) as ActivityManager
         val before = ActivityManager.MemoryInfo().also { am.getMemoryInfo(it) }.availMem
-        memBtn.text = t("🧹  Cleaning…", "🧹  جارٍ التنظيف…")
+        memBtn.text = t("Cleaning…", "جارٍ التنظيف…")
         worker.execute {
             for (pkg in apps.keys) try { am.killBackgroundProcesses(pkg) } catch (_: Exception) {}
             Thread.sleep(600)
@@ -1724,7 +1826,6 @@ class MainActivity : Activity(), RemoteServer.Host {
             val freeMb = info.availMem / (1024 * 1024)
             val totalMb = info.totalMem / (1024 * 1024)
             handler.post {
-                memBtn.text = t("🧹  Free memory", "🧹  تحرير الذاكرة")
                 toast(t("Freed $freed MB  ·  $freeMb MB of $totalMb MB now free", "تم تحرير $freed ميغابايت  ·  المتاح الآن $freeMb من $totalMb ميغابايت"))
             }
         }

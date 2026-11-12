@@ -17,14 +17,12 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.7"
-      - name: Fetch the background photo (Wikimedia Commons, CC BY-SA 4.0) fit it to 1920x1080, soften the crowd below the Kaaba
+      - name: Fetch background photos from Wikimedia Commons (licence checked) and fit them to 1920x1080
         run: |
           mkdir -p app/src/main/assets
-          UA="SahlTV-build/1.0 (https://github.com/AliSherif1309/SahlTV-Launcher)"
-          curl -fsSL --retry 3 -A "$UA" "https://commons.wikimedia.org/wiki/Special:FilePath/The_Kaaba_during_Hajj.jpg?width=2560" -o /tmp/kaaba-src.jpg
           pip install --quiet pillow
-          python3 -c "from PIL import Image; im=Image.open('/tmp/kaaba-src.jpg').convert('RGB'); print('source', im.size); W,H=1920,1080; s=max(W/im.width,H/im.height); im=im.resize((round(im.width*s),round(im.height*s)),Image.LANCZOS); l=(im.width-W)//2; t=(im.height-H)//2; im=im.crop((l,t,l+W,t+H)); from PIL import ImageFilter; m=Image.linear_gradient('L').resize((W,H)).point(lambda v: 0 if v < 180 else min(255, (v-180)*255//34)); im=Image.composite(im.filter(ImageFilter.GaussianBlur(7)), im, m); im.save('app/src/main/assets/kaaba.jpg',quality=84,optimize=True,progressive=True)"
-          ls -la app/src/main/assets/kaaba.jpg
+          python3 tools/fetch_backgrounds.py
+          ls -la app/src/main/assets/
       - name: Fetch Quran text (Tanzil) and font (Amiri Quran), and verify them
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

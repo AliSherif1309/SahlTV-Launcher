@@ -214,12 +214,14 @@ class IslamicBackdrop(private val density: Float, private val rtl: Boolean = fal
 }
 
 /** Small line icons drawn in one colour, so every icon matches (no mixed emoji styles). */
-class GoldIcon(ctx: android.content.Context, private val kind: Int, private val color: Int) : android.view.View(ctx) {
+class GoldIcon(ctx: android.content.Context, private val kind: Int, color: Int) : android.view.View(ctx) {
+    var color: Int = color
+        set(v) { field = v; invalidate() }
     companion object { const val FAJR = 0; const val DHUHR = 1; const val ASR = 2; const val MAGHRIB = 3; const val ISHA = 4
         const val MOSQUE = 5; const val HOURGLASS = 6; const val LANTERN = 7; const val DATES = 8; const val CRESCENT = 9
         const val GLOBE = 10; const val BELL = 11; const val LOCK = 12; const val PHONE = 13; const val CLOCK = 14; const val EYE = 15
         const val PLAY = 16; const val SORT = 17; const val EYE_OFF = 18; const val SAVE = 19; const val UPDATE = 20; const val INFO = 21
-        const val STAR = 22; const val BROOM = 23; const val SCREEN = 24 }
+        const val STAR = 22; const val BROOM = 23; const val SCREEN = 24; const val GEAR = 25; const val SLIDERS = 26; const val IMAGE = 27; const val SUN = 28 }
     private val p = Paint(Paint.ANTI_ALIAS_FLAG)
 
     private fun crescent(c: Canvas, x: Float, y: Float, r: Float) {
@@ -292,6 +294,13 @@ class GoldIcon(ctx: android.content.Context, private val kind: Int, private val 
             BROOM -> { c.drawLine(cx + s * 0.32f, cy - s * 0.38f, cx - s * 0.04f, cy + s * 0.02f, p)
                 c.drawPath(Path().apply { moveTo(cx - s * 0.1f, cy - s * 0.04f); lineTo(cx + s * 0.06f, cy + s * 0.12f); lineTo(cx - s * 0.16f, cy + s * 0.38f); lineTo(cx - s * 0.38f, cy + s * 0.16f); close() }, p) }
             SCREEN -> { c.drawRoundRect(cx - s * 0.4f, cy - s * 0.28f, cx + s * 0.4f, cy + s * 0.18f, s * 0.05f, s * 0.05f, p); c.drawLine(cx - s * 0.16f, cy + s * 0.34f, cx + s * 0.16f, cy + s * 0.34f, p) }
+            GEAR -> { c.drawCircle(cx, cy, s * 0.13f, p); c.drawCircle(cx, cy, s * 0.27f, p); rays(c, cx, cy, s * 0.27f, s * 0.4f, 0, 7) }
+            SLIDERS -> { for (i in 0..2) { val y = cy - s * 0.26f + i * s * 0.26f; val kx = cx + s * (if (i == 1) -0.14f else 0.14f)
+                    c.drawLine(cx - s * 0.38f, y, cx + s * 0.38f, y, p); p.style = Paint.Style.FILL; c.drawCircle(kx, y, s * 0.08f, p); p.style = Paint.Style.STROKE } }
+            IMAGE -> { c.drawRoundRect(cx - s * 0.4f, cy - s * 0.3f, cx + s * 0.4f, cy + s * 0.3f, s * 0.06f, s * 0.06f, p)
+                c.drawPath(Path().apply { moveTo(cx - s * 0.32f, cy + s * 0.22f); lineTo(cx - s * 0.1f, cy - s * 0.04f); lineTo(cx + s * 0.06f, cy + s * 0.12f); lineTo(cx + s * 0.16f, cy + s * 0.02f); lineTo(cx + s * 0.32f, cy + s * 0.22f) }, p)
+                p.style = Paint.Style.FILL; c.drawCircle(cx + s * 0.2f, cy - s * 0.14f, s * 0.05f, p) }
+            SUN -> { c.drawCircle(cx, cy, s * 0.15f, p); rays(c, cx, cy, s * 0.25f, s * 0.38f, 0, 7) }
             DATES -> { p.style = Paint.Style.FILL
                 for (i in -1..1) c.drawOval(RectF(cx + i * s * 0.17f - s * 0.08f, cy - s * 0.24f, cx + i * s * 0.17f + s * 0.08f, cy + s * 0.02f), p)
                 p.style = Paint.Style.STROKE
@@ -305,7 +314,7 @@ class GoldIcon(ctx: android.content.Context, private val kind: Int, private val 
  * Real photo background (Masjid al-Haram and the Kaaba). Darkened, with deeper shade at the top (clock)
  * and bottom (apps) so text stays easy and calm to read. Falls back to the drawn background if the photo is missing.
  */
-class PhotoBackdrop(private val ctx: android.content.Context, private val fallback: Drawable) : Drawable() {
+class PhotoBackdrop(private val ctx: android.content.Context, private val asset: String, private val dim: Int, private val fallback: Drawable) : Drawable() {
     private var cache: Bitmap? = null
     private var failed = false
     override fun onBoundsChange(bounds: Rect) { cache = null; fallback.setBounds(bounds.left, bounds.top, bounds.right, bounds.bottom) }
@@ -320,7 +329,7 @@ class PhotoBackdrop(private val ctx: android.content.Context, private val fallba
     }
 
     private fun build(w: Int, h: Int): Bitmap? {
-        val photo = try { ctx.assets.open("kaaba.jpg").use { android.graphics.BitmapFactory.decodeStream(it) } } catch (_: Exception) { null } ?: return null
+        val photo = try { ctx.assets.open(asset).use { android.graphics.BitmapFactory.decodeStream(it) } } catch (_: Exception) { null } ?: return null
         val out = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
         val c = Canvas(out)
         // centre-crop the photo to the screen
@@ -331,8 +340,9 @@ class PhotoBackdrop(private val ctx: android.content.Context, private val fallba
         c.drawBitmap(photo, Rect(sx, sy, sx + sw, sy + sh), Rect(0, 0, w, h), p)
         photo.recycle()
         // calm it down: an even dark green-black veil, then deeper shade where the text sits
-        c.drawColor(Color.argb(120, 4, 14, 12))
-        p.shader = LinearGradient(0f, 0f, 0f, h * 0.42f, intArrayOf(Color.argb(200, 4, 12, 11), Color.argb(0, 4, 12, 11)), null, Shader.TileMode.CLAMP)
+        val veil = intArrayOf(60, 90, 120, 155, 195)[dim.coerceIn(0, 4)]          // photo brightness setting: 0 brightest … 4 darkest
+        c.drawColor(Color.argb(veil, 4, 14, 12))
+        p.shader = LinearGradient(0f, 0f, 0f, h * 0.42f, intArrayOf(Color.argb(minOf(235, veil + 80), 4, 12, 11), Color.argb(0, 4, 12, 11)), null, Shader.TileMode.CLAMP)
         c.drawRect(0f, 0f, w.toFloat(), h * 0.42f, p)
         p.shader = LinearGradient(0f, h * 0.45f, 0f, h.toFloat(), intArrayOf(Color.argb(0, 4, 12, 11), Color.argb(225, 4, 12, 11)), null, Shader.TileMode.CLAMP)
         c.drawRect(0f, h * 0.45f, w.toFloat(), h.toFloat(), p)

@@ -153,6 +153,61 @@ object Updater {
         }.start()
     }
 
+    // ---------------------------------------------------------------- automatic updates
+
+    private fun autoDir(ctx: Context) = File(ctx.cacheDir, "auto-update").apply { mkdirs() }
+
+    /** Downloads waiting updates in the background (no dialogs). Calls back on the main thread when they are ready. */
+    fun autoDownload(ctx: Context, ar: Boolean, ready: () -> Unit) {
+        Thread {
+            val info = fetch() ?: return@Thread
+            val list = items(ctx, info, ar).filter { it.from.isNotEmpty() }
+            if (list.isEmpty()) return@Thread
+            val dir = autoDir(ctx)
+            val marker = File(dir, "ready.json")
+            val old = try { org.json.JSONObject(marker.readText()) } catch (_: Exception) { null }
+            if (old == null || old.optLong("code") != info.code) {
+                dir.listFiles()?.forEach { it.delete() }
+                try {
+                    val o = org.json.JSONObject().put("code", info.code)
+                    val arr = org.json.JSONArray()
+                    for (it in list) {
+                        val f = File(dir, it.file)
+                        val c = get(BASE + it.file)
+                        val total = c.contentLength.toLong()
+                        c.inputStream.use { inp -> f.outputStream().use { out -> inp.copyTo(out, 64 * 1024) } }
+                        if (total > 0 && f.length() != total) throw java.io.IOException("incomplete")
+                        arr.put(org.json.JSONObject().put("file", it.file).put("pkg", it.pkg))
+                    }
+                    o.put("items", arr)
+                    marker.writeText(o.toString())
+                } catch (_: Exception) { dir.listFiles()?.forEach { it.delete() }; return@Thread }
+            }
+            main.post { ready() }
+        }.start()
+    }
+
+    /** True when an automatic download is waiting to be installed. */
+    fun hasDownloaded(ctx: Context) = File(autoDir(ctx), "ready.json").exists()
+
+    /** Starts installing what autoDownload fetched (Android shows its Install screen unless it allows silent updates). */
+    fun installDownloaded(ctx: Context) {
+        val dir = autoDir(ctx)
+        val o = try { org.json.JSONObject(File(dir, "ready.json").readText()) } catch (_: Exception) { return }
+        val code = o.optLong("code")
+        val arr = o.optJSONArray("items") ?: return
+        val files = ArrayList<Pair<File, String>>()
+        for (i in 0 until arr.length()) {
+            val it = arr.getJSONObject(i); val f = File(dir, it.getString("file")); val pkg = it.getString("pkg")
+            val have = installed(ctx, pkg)
+            if (f.exists() && (have == null || have.first < code)) files.add(f to pkg)
+        }
+        if (files.isEmpty()) { dir.listFiles()?.forEach { it.delete() }; return }
+        files.sortBy { if (it.second == ctx.packageName) 1 else 0 }      // this app last
+        synchronized(queue) { queue.clear(); queue.addAll(files) }
+        installNext(ctx.applicationContext)
+    }
+
     /** Installs the next downloaded APK; Android shows its own "Install" confirmation. */
     fun installNext(ctx: Context) {
         val next = synchronized(queue) { if (queue.isEmpty()) null else queue.removeAt(0) } ?: return
@@ -161,6 +216,7 @@ object Updater {
             val pi = ctx.packageManager.packageInstaller
             val params = PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL)
             params.setAppPackageName(pkg)
+            if (Build.VERSION.SDK_INT >= 31) params.setRequireUserAction(2 /* USER_ACTION_NOT_REQUIRED: Android 12+ may then update without asking */)
             val id = pi.createSession(params)
             pi.openSession(id).use { s ->
                 s.openWrite("app", 0, f.length()).use { out -> f.inputStream().use { it.copyTo(out) }; s.fsync(out) }
