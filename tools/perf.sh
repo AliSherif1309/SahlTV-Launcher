@@ -6,7 +6,7 @@
 #   3. remote navigation: 80 D-pad presses across the home screen -> frames drawn, slow frames, crashes
 #   4. does "free memory" help? memory freed, how much is still free 1 minute later,
 #      and how much slower the apps open afterwards (they must cold-start again)
-# Usage: perf.sh <folder with the APKs> <emulator RAM in MB>
+# Usage: perf.sh <folder with the APKs> <label: RAM in MB, optionally -build>
 set -u
 D=$1; RAM=$2; OUT=perf-$RAM.md
 PKG=com.aly.sahltv; ACT=$PKG/.MainActivity
@@ -77,7 +77,8 @@ FREED=$((M_AFTER - M_BEFORE)); KEPT="-"
 WA=$(printf '%s\n' "${WARM_APPS[@]}" | grep -E '^[0-9]+$' | median); AA=$(printf '%s\n' "${AFTER_APPS[@]}" | grep -E '^[0-9]+$' | median)
 
 {
-echo "## Performance · emulator with ${RAM} MB RAM (TV total ${TOTAL_RAM} MB, low-RAM flag: ${LOWRAM:-no})"
+B=${RAM#*-}; [ "$B" = "$RAM" ] || [ "$B" = "0" ] && B=latest
+echo "## Performance · build ${B} · emulator with ${RAM%%-*} MB RAM (TV total ${TOTAL_RAM} MB, low-RAM flag: ${LOWRAM:-no})"
 echo
 echo "| Measure | Result |"
 echo "|---|---|"

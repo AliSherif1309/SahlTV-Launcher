@@ -6,6 +6,11 @@ on:
     workflows: ["Build APK"]
     types: [completed]
   workflow_dispatch:
+    inputs:
+      builds:
+        description: "Builds to test side by side, e.g. 29,30 (empty = the latest)"
+        required: false
+        default: ""
 permissions:
   contents: write
 jobs:
@@ -17,6 +22,7 @@ jobs:
       fail-fast: false
       matrix:
         ram: [2048, 1024]
+        build: ${{ fromJSON(format('[{0}]', inputs.builds || '0')) }}
     steps:
       - uses: actions/checkout@v4
       - name: Enable hardware acceleration for the emulator
@@ -28,7 +34,8 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release download latest -p 'Sahl*.apk' -p version.json -D apks
+          if [ "${{ matrix.build }}" = "0" ]; then gh release download latest -p 'Sahl*.apk' -p version.json -D apks
+          else gh release download "build-${{ matrix.build }}" -p 'Sahl*.apk' -p version.json -D apks; fi
           echo "BUILD=$(python3 -c "import json;print(json.load(open('apks/version.json')).get('build',''))")" >> $GITHUB_ENV
           cd apks && python3 - <<'PY'
           import json, hashlib
@@ -49,18 +56,18 @@ jobs:
           disk-size: 4G
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot
           disable-animations: false
-          script: bash tools/perf.sh apks ${{ matrix.ram }}
+          script: bash tools/perf.sh apks ${{ matrix.ram }}-${{ matrix.build }}
       - name: Report
         if: always()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          [ -f perf-${{ matrix.ram }}.md ] && cat perf-${{ matrix.ram }}.md >> $GITHUB_STEP_SUMMARY
-          if [ -n "$BUILD" ] && [ -f perf-${{ matrix.ram }}.md ]; then gh release upload "build-$BUILD" perf-${{ matrix.ram }}.md --clobber || true; fi
+          [ -f perf-${{ matrix.ram }}-${{ matrix.build }}.md ] && cat perf-${{ matrix.ram }}-${{ matrix.build }}.md >> $GITHUB_STEP_SUMMARY
+          if [ -n "$BUILD" ] && [ -f perf-${{ matrix.ram }}-${{ matrix.build }}.md ]; then gh release upload "build-$BUILD" perf-${{ matrix.ram }}-${{ matrix.build }}.md --clobber || true; fi
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: perf-${{ matrix.ram }}
+          name: perf-${{ matrix.ram }}-${{ matrix.build }}
           path: |
-            perf-${{ matrix.ram }}.md
-            logcat-${{ matrix.ram }}.txt
+            perf-${{ matrix.ram }}-${{ matrix.build }}.md
+            logcat-${{ matrix.ram }}-${{ matrix.build }}.txt
