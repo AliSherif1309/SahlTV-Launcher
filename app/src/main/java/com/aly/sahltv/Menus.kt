@@ -130,6 +130,7 @@ internal fun MainActivity.menuAction(which: Int) {
             25 -> { prefs.edit().putBoolean("nightStyle", !nightStyle).commit(); Fonts.night = PrefsProvider.isNight(this); recreate() }
             26 -> { prefs.edit().putBoolean("arDigits", !arDigits).apply(); updateClock(); tickCountdowns(); prefs.edit().putLong("wxTry", 0L).apply(); refreshWeather(); render(true) }
             27 -> greetingMenu()
+            30 -> com.aly.sahl.common.Family.show(this)
             29 -> dialog().setTitle(t("Diagnostics", "التشخيص")).setMessage(Diagnostics.report(this, ar))
                 .setPositiveButton(t("Free memory now", "حرّر الذاكرة الآن")) { _, _ -> freeMemory() }
                 .setNegativeButton(t("Close", "إغلاق"), null).show()

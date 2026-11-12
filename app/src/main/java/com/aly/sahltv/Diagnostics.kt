@@ -28,7 +28,7 @@ object Diagnostics {
     private var createdAt = 0L
 
     /** Call at the start of MainActivity.onCreate. */
-    fun onCreate() { createdAt = SystemClock.uptimeMillis() }
+    fun onCreate() { createdAt = SystemClock.uptimeMillis(); readyMarked = false }
 
     /** Measures until the first frame is drawn. Cold = the app process had just started; warm = the screen was re-created. */
     fun watchFirstFrame(a: Activity) {
@@ -59,6 +59,20 @@ object Diagnostics {
         val a = JSONArray(sp(ctx).getString(key, "[]")); (0 until a.length()).map { a.getDouble(it) }
     } catch (_: Exception) { emptyList() }
     private fun median(l: List<Double>) = l.sorted().let { if (it.isEmpty()) 0.0 else it[it.size / 2] }
+
+    // ---------------------------------------------------------------- time until the apps are on screen
+    private var readyMarked = false
+    /** Called when the app rows first appear ("cache" = from the saved copy, "scan" = after reading all apps). */
+    fun markReady(a: Activity, how: String) {
+        if (readyMarked) return
+        readyMarked = true
+        val now = SystemClock.uptimeMillis()
+        val procStart = Process.getStartUptimeMillis()
+        val cold = createdAt - procStart < 3_000
+        val ms = if (cold) now - procStart else now - createdAt
+        android.util.Log.i("SahlPerf", "ready=$ms via=$how cold=$cold")
+        add(a, if (cold) "readyCold" else "readyWarm", ms.toDouble())
+    }
 
     // ---------------------------------------------------------------- smoothness (only frames that are really drawn)
     @Volatile private var frames = 0
@@ -132,6 +146,8 @@ object Diagnostics {
         sb.append(if (cold.isEmpty()) t("  Cold start: not measured yet (after the TV restarts)", "  الفتح الأول: لم يُقَس بعد (بعد إعادة تشغيل التلفاز)")
                   else t("  Cold start: ${median(cold).toInt()} ms (median of ${cold.size})", "  الفتح الأول: ${median(cold).toInt()} ملّي ثانية (الوسيط من ${cold.size})")).append('\n')
         if (warm.isNotEmpty()) sb.append(t("  Return to Home: ${median(warm).toInt()} ms (median of ${warm.size})", "  العودة للرئيسية: ${median(warm).toInt()} ملّي ثانية (الوسيط من ${warm.size})")).append('\n')
+        val rc = list(ctx, "readyCold")
+        if (rc.isNotEmpty()) sb.append(t("  Apps on screen after a cold start: ${median(rc).toInt()} ms", "  ظهور التطبيقات بعد الفتح الأول: ${median(rc).toInt()} ملّي ثانية")).append('\n')
         sb.append('\n').append(t("SMOOTHNESS (since Sahl TV started)", "السلاسة (منذ فتح سهل TV)")).append('\n')
         if (frames == 0) sb.append(t("  No frames measured yet — move around the home screen, then look again", "  لم تُقَس إطارات بعد — تنقّل في الشاشة الرئيسية ثم عُد")).append('\n')
         else sb.append(t("  $frames frames · ${100 - slow * 100 / frames}% on time · $slow slow (>33 ms) · $frozen frozen · worst $worst ms",

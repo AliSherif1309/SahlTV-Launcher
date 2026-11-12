@@ -37,17 +37,19 @@ object Fonts {
     private var nightMap: Map<Typeface, Typeface> = emptyMap()
     private val sizes = java.util.WeakHashMap<TextView, Pair<Float, Float>>()
     private var map: Map<Typeface, Typeface> = emptyMap()
-    private var ours: Set<Typeface> = emptySet()
+    private val ours: MutableSet<Typeface> = java.util.Collections.newSetFromMap(java.util.concurrent.ConcurrentHashMap())
+    private var app: Context? = null
 
     fun init(ctx: Context) {
         if (regular != null) return
+        app = ctx.applicationContext
+        // start-up speed: only the fonts the home screen shows are loaded now; the reading font (Serif Text)
+        // and Light load the first time they are needed
         regular = load(ctx, "r") ?: return
-        light = load(ctx, "l") ?: regular
         medium = load(ctx, "m") ?: regular
         bold = load(ctx, "b") ?: regular
         dispMed = load(ctx, "dm"); dispBold = load(ctx, "db") ?: dispMed
-        textReg = load(ctx, "tr"); textBold = load(ctx, "tb") ?: textReg
-        val r = regular!!; val l = light!!; val m = medium!!; val b = bold!!
+        val r = regular!!; val m = medium!!; val b = bold!!; val l = r
         val mm = HashMap<Typeface, Typeface>()
         fun put(tf: Typeface?, to: Typeface) { if (tf != null && tf !in mm) mm[tf] = to }   // first match wins (a missing family can fall back to the default one)
         put(Typeface.DEFAULT, r); put(Typeface.SANS_SERIF, r)
@@ -57,9 +59,25 @@ object Fonts {
         put(Typeface.create("sans-serif-medium", Typeface.NORMAL), m); put(Typeface.create("sans-serif-medium", Typeface.BOLD), b)
         // these are other font families on this TV; never replace them (monospace stays for codes)
         for (k in listOf(Typeface.MONOSPACE, Typeface.SERIF)) mm.remove(k)
-        map = mm; ours = setOfNotNull(r, l, m, b, dispMed, dispBold, textReg, textBold)
+        map = mm; ours.addAll(listOfNotNull(r, m, b, dispMed, dispBold))
+    }
+
+    @Volatile private var textLoaded = false
+    @Synchronized private fun ensureText() {
+        if (textLoaded) return
+        textLoaded = true
+        val c = app ?: return
+        textReg = load(c, "tr"); textBold = load(c, "tb") ?: textReg
+        listOfNotNull(textReg, textBold).forEach { ours.add(it) }
+        val r = regular ?: return; val b = bold ?: r; val m = medium ?: r
         val tr = textReg ?: r; val tb = textBold ?: b
-        nightMap = mm.mapValues { (_, v) -> if (v === b || v === m) tb else tr }
+        nightMap = map.mapValues { (_, v) -> if (v === b || v === m) tb else tr }
+    }
+    @Volatile private var lightLoaded = false
+    @Synchronized private fun ensureLight() {
+        if (lightLoaded) return
+        lightLoaded = true
+        light = app?.let { load(it, "l") }?.also { ours.add(it) }
     }
 
     private fun load(ctx: Context, name: String): Typeface? = try {
@@ -74,7 +92,7 @@ object Fonts {
     } catch (_: Throwable) { null }
 
     /** The font for a weight, for code that needs it directly (falls back to the TV font). */
-    fun get(boldOrMedium: Int = 0): Typeface = when (boldOrMedium) { 2 -> bold; 1 -> medium; -1 -> light; else -> regular } ?: Typeface.DEFAULT
+    fun get(boldOrMedium: Int = 0): Typeface = when (boldOrMedium) { 2 -> bold; 1 -> medium; -1 -> { ensureLight(); light ?: regular }; else -> regular } ?: Typeface.DEFAULT
 
     // ---------------------------------------------------------------- Thmanyah's guide for headings
     // One touch per heading, on its LAST word only (never in long text):
@@ -115,13 +133,14 @@ object Fonts {
     /** Serif Display, for titles and headings. */
     fun display(bold: Boolean = true): Typeface = (if (bold) dispBold else dispMed) ?: get(if (bold) 2 else 1)
     /** Serif Text, for text you read. */
-    fun text(bold: Boolean = false): Typeface = (if (bold) textBold else textReg) ?: get(if (bold) 2 else 0)
+    fun text(bold: Boolean = false): Typeface { ensureText(); return (if (bold) textBold else textReg) ?: get(if (bold) 2 else 0) }
     /** Sans Light, for very large numbers (the clock). */
-    fun light(): Typeface = light ?: Typeface.create("sans-serif-light", Typeface.NORMAL)
+    fun light(): Typeface { ensureLight(); return light ?: Typeface.create("sans-serif-light", Typeface.NORMAL) }
 
     fun applyTree(v: View) {
         if (v is TextView) {
             if (map.isNotEmpty()) {
+                if (night) ensureText()
                 val tf = v.typeface
                 val mp = if (night) nightMap else map
                 if (tf == null) v.typeface = if (night) (textReg ?: regular) else regular

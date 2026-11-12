@@ -192,3 +192,14 @@ Font © thmanyah Publishing and Distribution, used under thmanyah's Font License
   - network safety (`LanGuard`);
   - update checks (`UpdateCheck`).
 - `app/.../MainActivity.kt` keeps the home screen's state, lifecycle and callbacks. Each part has its own file: `AppCatalog`, `HomeRows`, `PreviewRows`, `TopBar`, `Wallpaper`, `PrayerPanel`, `Greetings`, `HomeCards`, `Comfort`, `SettingsScreen`, `Menus`, `Pin`, `PhoneRemote`, `NowPlaying`, `Screensaver`, `Backup`, `Memory`, `Diagnostics`.
+
+## ⚡ Speed (v1.21)
+- **Apps at once:** the app list, with ready-drawn banners and icons, is saved on the TV (`AppCache`). At start-up the rows come from that copy immediately. Then the real list is read in the background, and only apps installed or updated since are redrawn.
+- **First frame first:** the screen appears with its time and date. Prayer times, Islamic cards, previews, media, alarms and update checks fill in right after the first frame.
+- **Hijri dates remembered:** the Islamic calendar is slow to set up, and the fasting search looks up to 40 days ahead, so dates already computed are kept.
+- **Fonts on demand:** the reading font (Serif Text) and Light load the first time they are needed.
+- **Smarter cleaning:** your 3 most recent apps, anything used in the last 30 minutes, the app playing in the background, and the Sahl apps are never closed. **Auto clean is off by default**, because the measurements showed closed apps open 5–7× slower. The broom explains this the first time.
+- **Measured:** the emulator test now also reports *apps on screen after a cold start*. Settings → Diagnostics shows it on your TV.
+
+## ✦ One family
+"Sahl apps" (Sahl TV Settings, and the menus of Quran, PDF and Files) lists the four apps with their versions. It opens an installed one, and installs a missing one through Sahl TV, the family's single, checked update centre.

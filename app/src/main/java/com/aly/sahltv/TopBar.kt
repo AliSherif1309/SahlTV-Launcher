@@ -104,10 +104,12 @@ internal fun MainActivity.pill(text: String, onClick: () -> Unit) = TextView(thi
     setOnClickListener { onClick() }
 }
 
-internal fun MainActivity.updateClock() {
+/** [full] = false only sets the time and date (cheap), for the very first frame; the rest follows right after. */
+internal fun MainActivity.updateClock(full: Boolean = true) {
     val now = Date()
     clockTv.text = digits(SimpleDateFormat(if (clock24) "HH:mm" else "h:mm a", if (ar) Locale.forLanguageTag("ar") else Locale.US).format(now))
     dateTv.text = digits(SimpleDateFormat("EEEE d MMMM yyyy", if (ar) Locale.forLanguageTag("ar") else Locale.US).format(now))
+    if (!full) return
     hijriTv.text = digits(hijriText(LocalDate.now()))
     updatePrayer()
     updateIslamic()

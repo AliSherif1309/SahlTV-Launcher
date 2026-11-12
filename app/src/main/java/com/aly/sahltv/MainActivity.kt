@@ -75,6 +75,11 @@ import java.time.ZoneId
  * Shared with the other Sahl apps (fonts, colours, dialogs, network safety): the :common module.
  */
 class MainActivity : Activity(), RemoteServer.Host {
+    // start-up speed: work that waits until the first frame is on screen
+    internal var drawn = false
+    private val pending = ArrayList<() -> Unit>()
+    internal fun afterFirstFrame(r: () -> Unit) { if (drawn) r() else pending.add(r) }
+
     // for the split-out parts: whether a view has been built yet
     internal val greetCardReady get() = ::greetCard.isInitialized
     internal val panelReady get() = ::panel.isInitialized
@@ -145,7 +150,7 @@ class MainActivity : Activity(), RemoteServer.Host {
     internal val recent get() = list("recent")
     internal val sortMostUsed get() = prefs.getBoolean("sortUsed", true)
     internal val clock24 get() = prefs.getBoolean("clock24", true)
-    internal val autoClean get() = prefs.getBoolean("autoClean", true)
+    internal val autoClean get() = prefs.getBoolean("autoClean", false)   // off by default: measured, closing apps makes them open 5–7× slower next time
     internal val saverMin get() = prefs.getInt("saverMin", 5)          // 0 = off
     internal val nowOn get() = prefs.getBoolean("nowOn", true)
     internal val remoteOn get() = prefs.getBoolean("remoteOn", false)
@@ -211,6 +216,13 @@ class MainActivity : Activity(), RemoteServer.Host {
         root.addView(dimView, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
         setContentView(root)
         Diagnostics.watchFirstFrame(this)
+        root.viewTreeObserver.addOnDrawListener(object : android.view.ViewTreeObserver.OnDrawListener {
+            override fun onDraw() {
+                if (drawn) return
+                drawn = true
+                handler.post { root.viewTreeObserver.removeOnDrawListener(this); val l = ArrayList(pending); pending.clear(); l.forEach { it() } }
+            }
+        })
         window.setBackgroundDrawable(null)      // the gradient covers everything: skip one full-screen draw
 
         val filter = IntentFilter().apply {
@@ -223,6 +235,7 @@ class MainActivity : Activity(), RemoteServer.Host {
         RemoteServer.host = this
         if (prefs.getBoolean("reopenSettings", false)) { prefs.edit().putBoolean("reopenSettings", false).apply(); handler.post { showSettings() } }
         if (remoteOn) RemoteServer.start(this)
+        if (intent?.action == com.aly.sahl.common.Family.UPDATES) handler.postDelayed({ Updater.check(this, ar) }, 400)
     }
 
     override fun onDestroy() {
@@ -236,16 +249,23 @@ class MainActivity : Activity(), RemoteServer.Host {
     override fun onResume() {
         super.onResume()
         Diagnostics.startFrames(window)
-        updateClock()
-        handler.post(clockTick)
-        handler.post(secondTick)
-        if (dirty && !loading) loadApps() else if (apps.isNotEmpty()) render(keepFocus = true)
-        maybeAutoClean()
-        Alerts.schedule(this)
         resumed = true
-        autoUpdateTick()
-        refreshPreviews(force = false)
-        setupMedia()
+        if (dirty && !loading) loadApps() else if (apps.isNotEmpty()) render(keepFocus = true)
+        // speed: the first frame shows the screen with its time and date; prayer times, Islamic cards,
+        // previews, media, alarms and update checks fill in right after it is on screen
+        updateClock(full = drawn)
+        afterFirstFrame {
+            if (!resumed) return@afterFirstFrame
+            updateClock()
+            handler.removeCallbacks(clockTick); handler.removeCallbacks(secondTick)
+            handler.post(clockTick)
+            handler.post(secondTick)
+            maybeAutoClean()
+            Alerts.schedule(this)
+            autoUpdateTick()
+            refreshPreviews(force = false)
+            setupMedia()
+        }
         lastInput = System.currentTimeMillis()
         handler.removeCallbacks(saverTick); handler.postDelayed(saverTick, 15_000)
     }
@@ -265,6 +285,7 @@ class MainActivity : Activity(), RemoteServer.Host {
         super.onNewIntent(intent)
         scroll.smoothScrollTo(0, 0)
         focusFirstTile()
+        if (intent?.action == com.aly.sahl.common.Family.UPDATES) handler.post { Updater.check(this, ar) }
     }
 
     @Deprecated("Deprecated in Java")

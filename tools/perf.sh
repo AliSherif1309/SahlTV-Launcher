@@ -23,10 +23,11 @@ A settings put global window_animation_scale 1; A settings put global transition
 A am start -W -n "$ACT" >/dev/null; sleep 6          # first start: let it load apps, photos and caches
 
 # 1) start-up
-COLD=(); WARM=()
+COLD=(); WARM=(); READY=()
 for i in 1 2 3 4 5; do
-  A am force-stop $PKG; sleep 3
+  A am force-stop $PKG; sleep 3; adb logcat -c
   COLD+=("$(start_ms $ACT)"); sleep 4
+  READY+=("$(adb logcat -d -s SahlPerf:I 2>/dev/null | tr -d '\r' | sed -n 's/.*ready=\([0-9]*\).*/\1/p' | head -1)")
 done
 for i in 1 2 3 4 5; do
   A am start -n com.android.tv.settings/.MainSettings >/dev/null 2>&1 || A am start -a android.settings.SETTINGS >/dev/null; sleep 3
@@ -35,6 +36,7 @@ for i in 1 2 3 4 5; do
 done
 COLD_MED=$(printf '%s\n' "${COLD[@]}" | grep -E '^[0-9]+$' | median)
 WARM_MED=$(printf '%s\n' "${WARM[@]}" | grep -E '^[0-9]+$' | median)
+READY_MED=$(printf '%s\n' "${READY[@]}" | grep -E '^[0-9]+$' | median)
 
 # 2) memory
 sleep 5
@@ -80,6 +82,7 @@ echo
 echo "| Measure | Result |"
 echo "|---|---|"
 echo "| Cold start (process starts, until first frame), median of 5 | **${COLD_MED} ms** (runs: ${COLD[*]}) |"
+echo "| Apps on screen after a cold start, median of 5 | **${READY_MED} ms** (runs: ${READY[*]}) |"
 echo "| Return to Home (warm), median of 5 | **${WARM_MED} ms** (runs: ${WARM[*]}) |"
 echo "| Memory used by Sahl TV (PSS) | **${PSS:-?} MB** |"
 echo "| Remote navigation: 80 key presses | ${FRAMES:-?} frames · janky ${JANK:-?} · p50 ${P50:-?} · p90 ${P90:-?} · p99 ${P99:-?} |"

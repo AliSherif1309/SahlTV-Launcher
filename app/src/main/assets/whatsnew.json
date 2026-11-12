@@ -1,15 +1,15 @@
 {
- "version": "1.20",
+ "version": "1.21",
  "en": [
-  "Safer phone remote: pair with a one-time code (Settings → Phone remote → Pair a phone); see and remove paired phones",
-  "Safer updates: every download is checked (fingerprint and Sahl signature) before installing",
-  "New: Settings → Diagnostics — start-up time, smoothness, memory, and whether cleaning really helps",
-  "Arabic reads fully right to left"
+  "Faster start: your apps appear at once from a saved copy, and the rest fills in right after",
+  "Smarter cleaning: keeps your 3 recent apps, apps used in the last 30 minutes and what is playing; Auto clean is now off by default (apps open faster)",
+  "New: Sahl apps — open or install any Sahl app (Settings, and in Quran, PDF and Files)",
+  "Safer phone remote and verified updates; Settings → Diagnostics"
  ],
  "ar": [
-  "ريموت الهاتف أكثر أمانًا: الاقتران برمز لمرة واحدة (الإعدادات ← الريموت من الهاتف ← اقتران هاتف)، مع عرض الهواتف المقترنة وإزالتها",
-  "تحديثات أكثر أمانًا: كل ملف يُفحص (البصمة وتوقيع سهل) قبل التثبيت",
-  "جديد: الإعدادات ← التشخيص — سرعة الفتح، السلاسة، الذاكرة، وهل يفيد التنظيف فعلًا",
-  "العربية من اليمين إلى اليسار بالكامل"
+  "فتح أسرع: تظهر تطبيقاتك فورًا من نسخة محفوظة، ويكتمل الباقي بعدها مباشرة",
+  "تنظيف أذكى: يُبقي آخر 3 تطبيقات وما استُخدم في آخر 30 دقيقة وما يعمل الآن؛ والتنظيف التلقائي متوقف افتراضيًا (التطبيقات تفتح أسرع)",
+  "جديد: تطبيقات سهل — افتح أو ثبّت أي تطبيق من العائلة (من الإعدادات، وفي القرآن وPDF والملفات)",
+  "ريموت هاتف أكثر أمانًا وتحديثات مفحوصة؛ الإعدادات ← التشخيص"
  ]
 }

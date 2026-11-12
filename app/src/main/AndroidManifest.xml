@@ -61,6 +61,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
+            <!-- the other Sahl apps ask Sahl TV (the family's update centre) to check for updates / install missing apps -->
+            <intent-filter>
+                <action android:name="com.aly.sahltv.UPDATES" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
         </activity>
         <!-- Sahl Keyboard: receives text typed on the phone remote -->
         <service

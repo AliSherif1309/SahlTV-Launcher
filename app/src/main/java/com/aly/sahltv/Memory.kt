@@ -67,7 +67,7 @@ internal fun MainActivity.maybeAutoClean() {
     lastAutoClean = now
     val before = info.availMem
     worker.execute {
-        for (pkg in apps.keys) try { am.killBackgroundProcesses(pkg) } catch (_: Exception) {}
+        for (pkg in cleanTargets()) try { am.killBackgroundProcesses(pkg) } catch (_: Exception) {}
         Thread.sleep(500)
         val after = ActivityManager.MemoryInfo().also { am.getMemoryInfo(it) }.availMem
         val freed = ((after - before) / (1024 * 1024)).coerceAtLeast(0)
@@ -87,13 +87,39 @@ internal fun MainActivity.hiddenMenu() {
         }.show()
 }
 
-/** Asks Android to close apps running in the background (not the one you're using). */
+/**
+ * Which apps cleaning may close. Measured on the emulator: closed apps open 5–7× slower the next time
+ * (they must start from zero), and about half the freed memory is used again within a minute.
+ * So the apps you are likely to open again stay: your 3 most recent, anything used in the last 30 minutes,
+ * and whatever is playing in the background.
+ */
+internal fun MainActivity.cleanTargets(): List<String> {
+    val now = System.currentTimeMillis()
+    val keep = HashSet<String>(recent.take(3))
+    controller?.packageName?.let { keep.add(it) }
+    return apps.keys.filter { it !in keep && now - prefs.getLong("t_$it", 0L) > 30 * 60_000L && !it.startsWith("com.aly.sahl") }
+}
+
+/** The broom: explains the trade-off once, then cleans. */
 internal fun MainActivity.freeMemory() {
+    if (!prefs.getBoolean("cleanExplained", false)) {
+        dialog().setTitle(t("Free memory", "تحرير الذاكرة"))
+            .setMessage(t("Measured on a TV: closing apps frees memory, but those apps then open 5–7 times slower, and about half the memory is used again within a minute.\n\nSo Sahl TV keeps your 3 most recent apps, anything used in the last 30 minutes and what is playing, and closes only the others.\n\nSee the real effect on your TV in Settings → Diagnostics.",
+                          "مقاس على تلفاز: إغلاق التطبيقات يحرّر الذاكرة، لكن هذه التطبيقات تفتح بعدها أبطأ بـ 5 إلى 7 مرات، ويُستخدم نصف الذاكرة تقريبًا من جديد خلال دقيقة.\n\nلذلك يُبقي سهل TV آخر 3 تطبيقات استخدمتها، وأي تطبيق استُخدم في آخر 30 دقيقة، وما يعمل الآن، ويغلق الباقي فقط.\n\nشاهد الأثر الحقيقي على تلفازك في الإعدادات ← التشخيص."))
+            .setPositiveButton(t("Clean", "تنظيف")) { _, _ -> prefs.edit().putBoolean("cleanExplained", true).apply(); cleanNow() }
+            .setNegativeButton(t("Cancel", "إلغاء"), null).show()
+        return
+    }
+    cleanNow()
+}
+
+/** Asks Android to close background apps that you are not likely to open again soon. */
+internal fun MainActivity.cleanNow() {
     val am = getSystemService(android.content.Context.ACTIVITY_SERVICE) as ActivityManager
     val before = ActivityManager.MemoryInfo().also { am.getMemoryInfo(it) }.availMem
     memBtn.text = t("Cleaning…", "جارٍ التنظيف…")
     worker.execute {
-        for (pkg in apps.keys) try { am.killBackgroundProcesses(pkg) } catch (_: Exception) {}
+        for (pkg in cleanTargets()) try { am.killBackgroundProcesses(pkg) } catch (_: Exception) {}
         Thread.sleep(600)
         val info = ActivityManager.MemoryInfo().also { am.getMemoryInfo(it) }
         val freed = ((info.availMem - before) / (1024 * 1024)).coerceAtLeast(0)

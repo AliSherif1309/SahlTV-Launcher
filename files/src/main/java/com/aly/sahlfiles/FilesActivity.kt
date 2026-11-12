@@ -141,6 +141,7 @@ class FilesActivity : Activity() {
         places.removeAllViews()
         if (!Storage.granted(this)) places.addView(placeRow("🔓", t("Allow access to files", "السماح بالوصول إلى الملفات"), null) { Storage.ask(this) })
         for ((icon, name, f) in placeList()) places.addView(placeRow(icon, name, f) { openPlace(f, name); list.requestFocus() })
+        places.addView(placeRow("✦", t("Sahl apps", "تطبيقات سهل"), null) { Family.show(this) })
         val st = try { StatFs(Storage.root.path) } catch (_: Exception) { null }
         if (st != null) places.addView(label(t("Free: ", "المتاح: ") + Storage.size(st.availableBytes) + t(" of ", " من ") + Storage.size(st.totalBytes), 13f, C.MUTED).apply { setPadding(dp(10), dp(16), 0, 0) })
     }

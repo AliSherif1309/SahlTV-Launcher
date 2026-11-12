@@ -83,6 +83,8 @@ class LibraryActivity : Activity() {
             sortRecent = !sortRecent; lastFocus = "btn/sort"; build()
         }.apply { tag = "btn/sort" }
         row.addView(send); row.addView(sort, LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply { marginStart = dp(12) })
+        row.addView(pill("✦") { Family.show(this) }.apply { tag = "btn/family"; contentDescription = t("Sahl apps", "تطبيقات سهل") },
+            LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply { marginStart = dp(12) })
         col.addView(row)
     }
 

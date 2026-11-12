@@ -655,6 +655,7 @@ class QuranActivity : Activity() {
             prefs.edit().putString("lang", if (ar) "en" else "ar").apply(); recreate()
         })
         items.add(t("⬆  Check for updates", "⬆  البحث عن تحديثات") to { Updater.check(this, ar) })
+        items.add(t("✦  Sahl apps", "✦  تطبيقات سهل") to { com.aly.sahl.common.Family.show(this) })
         items.add(t("ⓘ  About", "ⓘ  حول التطبيق") to { about() })
         val today = todayMs()
         val title = readerName() + "  ·  " + surahLabel(surah) + (if (mushaf) "  ·  " + t("page $curPage", "صفحة ${arabicNum(curPage)}") else "") +

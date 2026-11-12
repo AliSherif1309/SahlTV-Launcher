@@ -24,7 +24,18 @@ object Islamic {
     class H(val y: Int, val m: Int, val d: Int)
 
     /** Umm al-Qura calendar, shifted by [adj] days (set in the launcher menu to match local moon sighting). */
+    private val memo = object : LinkedHashMap<String, H>(128, 0.75f, true) {
+        override fun removeEldestEntry(e: MutableMap.MutableEntry<String, H>?) = size > 400
+    }
+
+    /** Remembers dates already worked out: the fasting search looks at up to 40 days on every refresh. */
     fun hijri(date: LocalDate, adj: Int): H {
+        val key = "$date/$adj"
+        synchronized(memo) { memo[key] }?.let { return it }
+        return hijriCalc(date, adj).also { if (it.m >= 0) synchronized(memo) { memo[key] = it } }
+    }
+
+    private fun hijriCalc(date: LocalDate, adj: Int): H {
         return try {
             val cal = android.icu.util.IslamicCalendar()
             cal.calculationType = android.icu.util.IslamicCalendar.CalculationType.ISLAMIC_UMALQURA
