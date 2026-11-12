@@ -94,6 +94,11 @@ echo "| Sahl apps open time: before cleaning → after (median) | ${WA} ms → *
 echo
 if [ "$KEPT" != "-" ] && [ "$KEPT" -lt 25 ]; then echo "> Cleaning gives little lasting benefit here: memory refills within a minute, and apps open slower afterwards."; fi
 if [ "$ALIVE" != "yes" ] || [ "$CRASH" != "0" ]; then echo "> ⚠️ Sahl TV stopped or crashed during the test — see the logcat artifact."; fi
+if [ "$CRASH" != "0" ]; then
+  echo; echo "<details><summary>Crash details</summary>"; echo; echo '```'
+  adb logcat -d -b crash 2>/dev/null | tr -d '\r' | grep -E "FATAL EXCEPTION|Process:|Exception|Error|at com\.aly" | head -30
+  echo '```'; echo "</details>"
+fi
 } > "$OUT"
 adb logcat -d > "logcat-$RAM.txt" 2>/dev/null || true
 cat "$OUT"
