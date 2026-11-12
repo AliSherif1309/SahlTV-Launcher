@@ -54,6 +54,8 @@ object Alerts {
         return h.m == 8 || (prefs(ctx).getBoolean("fastOn", true) && Islamic.sunnahFast(day, h, false) != null)
     }
     private const val SUHOOR_MIN = 30
+    private const val JUMUAH_MIN = 45
+    private fun fridayOn(ctx: Context) = prefs(ctx).getBoolean("fridayOn", true)
 
     /** Sets one alarm for the next banner. Called by the launcher and again after every banner. */
     fun schedule(ctx: Context) {
@@ -65,7 +67,7 @@ object Alerts {
         Prayer.load(ctx)
         am.cancel(pi)
         val suhoor = suhoorOn(ctx)
-        if ((mode == OFF && !suhoor) || city !in CITIES.indices) return
+        if ((mode == OFF && !suhoor && !fridayOn(ctx)) || city !in CITIES.indices) return
         val (_, la, lo) = CITIES[city]
         val tz = ZonedDateTime.now().offset.totalSeconds / 3600.0
         val now = System.currentTimeMillis()
@@ -73,6 +75,10 @@ object Alerts {
         for (k in 0..1) {
             val day = LocalDate.now().plusDays(k.toLong())
             val t = Prayer.compute(day, la, lo, tz)
+            if (fridayOn(ctx) && day.dayOfWeek == java.time.DayOfWeek.FRIDAY) {
+                val j = epochAt(day, t.dhuhr) - JUMUAH_MIN * 60_000L
+                if (j > now + 1000 && j < best) best = j
+            }
             if (suhoor && fastDay(ctx, day)) {
                 val s = epochAt(day, t.fajr) - SUHOOR_MIN * 60_000L
                 if (s > now + 1000 && s < best) best = s
@@ -92,7 +98,7 @@ object Alerts {
     /** Works out which prayer is now (or in 10 minutes) and shows its banner. */
     fun fire(ctx: Context) {
         val city = prefs(ctx).getInt("city", 0)
-        if (city !in CITIES.indices || (mode(ctx) == OFF && !suhoorOn(ctx))) return
+        if (city !in CITIES.indices || (mode(ctx) == OFF && !suhoorOn(ctx) && !fridayOn(ctx))) return
         Prayer.load(ctx)
         val (_, la, lo) = CITIES[city]
         val tz = ZonedDateTime.now().offset.totalSeconds / 3600.0
@@ -104,6 +110,15 @@ object Alerts {
         val names = if (ar) listOf("الفجر", if (friday) "الجمعة" else "الظهر", "العصر", "المغرب", "العشاء")
                     else listOf("Fajr", if (friday) "Jumu'ah" else "Dhuhr", "Asr", "Maghrib", "Isha")
         val hours = listOf(t.fajr, t.dhuhr, t.asr, t.maghrib, t.isha)
+        if (fridayOn(ctx) && today.dayOfWeek == java.time.DayOfWeek.FRIDAY) {
+            val j = epochAt(today, t.dhuhr) - JUMUAH_MIN * 60_000L
+            if ((now - j) in -60_000L..5 * 60_000L) {
+                if (!once(ctx, "j$j")) return
+                show(ctx, if (ar) "صلاة الجمعة بعد $JUMUAH_MIN دقيقة" else "Jumu'ah prayer in $JUMUAH_MIN minutes",
+                    if (ar) "${Prayer.hm(t.dhuhr)}  ·  الغسل والطيب والتبكير إلى المسجد" else "${Prayer.hm(t.dhuhr)}  ·  ghusl, perfume, and go early", 60_000L)
+                return
+            }
+        }
         if (suhoorOn(ctx) && fastDay(ctx, today)) {
             val s = epochAt(today, t.fajr) - SUHOOR_MIN * 60_000L
             if ((now - s) in -60_000L..5 * 60_000L) {

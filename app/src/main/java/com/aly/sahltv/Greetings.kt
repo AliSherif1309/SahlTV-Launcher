@@ -90,21 +90,21 @@ internal fun MainActivity.greeting(key: String): Triple<String, String, Int> {
 internal fun MainActivity.updateGreeting() {
     if (!greetCardReady) return
     val preview = greetPreview?.takeIf { System.currentTimeMillis() < greetPreviewUntil }
-    val key = preview ?: if (greetOn) occasion(LocalDate.now()) else null
+    val key = preview ?: (if (greetOn) occasion(LocalDate.now()) else null) ?: fridayPhase()?.let { fridayKey(it) }
     if (key == null) { greetCard.visibility = View.GONE; greetShown = null; return }
     greetCard.visibility = View.VISIBLE
     if (greetShown == key) return
     greetShown = key
-    val (title, sub, icon) = greeting(key)
+    val (title, sub, icon) = if (key.startsWith("fri_")) fridayCard(key) else greeting(key)
     greetTitle.text = title; greetSub.text = sub
     greetIconBox.removeAllViews()
     greetIconBox.addView(GoldIcon(this, icon, GOLD), FrameLayout.LayoutParams(dp(28), dp(28), Gravity.CENTER))
 }
 
 internal fun MainActivity.greetingMenu() {
-    val keys = listOf("ramadan", "lastten", "fitr", "dhulhijja", "arafah", "adha", "newyear", "national")
+    val keys = listOf("ramadan", "lastten", "fitr", "dhulhijja", "arafah", "adha", "newyear", "national", "fri_eve", "fri_day", "fri_jumuah_40", "fri_hour")
     val items = arrayOf((if (greetOn) t("✓ Show on occasions (on)", "✓ الإظهار في المناسبات (مُفعّل)") else t("Show on occasions (off)", "الإظهار في المناسبات (متوقف)"))) +
-        keys.map { t("Preview: ", "معاينة: ") + greeting(it).first }.toTypedArray()
+        keys.map { t("Preview: ", "معاينة: ") + (if (it.startsWith("fri_")) fridayCard(it) else greeting(it)).first }.toTypedArray()
     dialog().setTitle(t("Seasonal greetings", "تهاني المناسبات")).setItems(items) { _, w ->
         if (w == 0) { prefs.edit().putBoolean("greetOn", !greetOn).apply(); greetPreview = null }
         else { greetPreview = keys[w - 1]; greetPreviewUntil = System.currentTimeMillis() + 60_000L

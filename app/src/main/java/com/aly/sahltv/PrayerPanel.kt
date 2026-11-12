@@ -176,7 +176,7 @@ internal fun MainActivity.buildPanel(): LinearLayout {
     col.addView(newsCard, 0, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply { bottomMargin = dp(12) })
 
     // Seasonal greeting (Ramadan, Eid, Arafah, Hijri new year, Qatar National Day): Thmanyah Display with its swash
-    greetCard = card(true) { greetingMenu() }.apply { setPadding(dp(22), dp(12), dp(22), dp(12)); tag = "glow"; visibility = View.GONE }
+    greetCard = card(true) { greetClick() }.apply { setPadding(dp(22), dp(12), dp(22), dp(12)); tag = "glow"; visibility = View.GONE }
     greetIconBox = FrameLayout(this).apply { background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(Color.argb(46, 227, 184, 92)) } }
     greetCard.addView(greetIconBox, LinearLayout.LayoutParams(dp(52), dp(52)).apply { marginEnd = dp(18) })
     val gc = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }

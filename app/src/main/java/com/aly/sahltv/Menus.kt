@@ -131,6 +131,8 @@ internal fun MainActivity.menuAction(which: Int) {
             26 -> { prefs.edit().putBoolean("arDigits", !arDigits).apply(); updateClock(); tickCountdowns(); prefs.edit().putLong("wxTry", 0L).apply(); refreshWeather(); render(true) }
             27 -> greetingMenu()
             30 -> com.aly.sahl.common.Family.show(this)
+            31 -> { prefs.edit().putBoolean("fridayOn", !fridayOn).apply(); Alerts.schedule(this); greetShown = null; updateGreeting()
+                    toast(t("Friday mode: ", "وضع الجمعة: ") + onOff(fridayOn)) }
             29 -> dialog().setTitle(t("Diagnostics", "التشخيص")).setMessage(Diagnostics.report(this, ar))
                 .setPositiveButton(t("Free memory now", "حرّر الذاكرة الآن")) { _, _ -> freeMemory() }
                 .setNegativeButton(t("Close", "إغلاق"), null).show()
