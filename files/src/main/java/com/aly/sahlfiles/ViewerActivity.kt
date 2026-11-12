@@ -50,7 +50,7 @@ class ViewerActivity : Activity() {
 
     private fun showText(f: File) {
         window.decorView.background = backdrop()
-        val tv = label(t("Loading…", "جارٍ التحميل…"), 19f, C.TEXT).apply {
+        val tv = label(t("Loading…", "جارٍ التحميل…"), 20f, C.TEXT).apply { typeface = Fonts.text();
             setPadding(dp(56), dp(30), dp(56), dp(40)); setLineSpacing(0f, 1.3f); setTextIsSelectable(false)
         }
         val sc = ScrollView(this).apply { isFocusable = true; addView(tv) }

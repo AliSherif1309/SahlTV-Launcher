@@ -1,17 +1,15 @@
 {
- "version": "1.13",
+ "version": "1.14",
  "en": [
-  "All Sahl apps now use the Thmanyah font (Sahl TV, Sahl Quran, Sahl PDF, Sahl Files); Quran pages keep their Mushaf font",
-  "New TV banners for Sahl Quran, Sahl PDF and Sahl Files, with their names",
-  "New Sahl PDF 2.0: our own simpler reader in the Sahl style — Continue reading, big covers, two pages, warm or dark paper",
-  "New Sahl Files: browse the TV and USB drives, open videos, photos and PDFs, and receive files from your phone with an address and code",
-  "Fixed: the gold ring around a selected app is no longer cut at the top and bottom"
+  "Thmanyah font everywhere: Serif Display for titles, Serif Text for reading, Sans for screens and numbers",
+  "Bigger, bolder clock; a larger calm clock on the screensaver",
+  "New setting: Text size (Normal, Large, Extra large) for all Sahl apps",
+  "New TV banners for Sahl Quran, Sahl PDF and Sahl Files, with their names"
  ],
  "ar": [
-  "كل تطبيقات سهل تستخدم الآن خط ثمانية (سهل TV، سهل القرآن، سهل PDF، سهل الملفات)، وصفحات المصحف تبقى بخط المصحف",
-  "صور جديدة للتطبيقات على التلفاز تحمل أسماءها: سهل القرآن، سهل PDF، سهل الملفات",
-  "سهل PDF 2.0 الجديد: قارئ أبسط من تصميمنا — متابعة القراءة، أغلفة كبيرة، صفحتان، ورق دافئ أو داكن",
-  "سهل · الملفات الجديد: تصفّح التلفاز وذاكرة USB، وافتح الفيديو والصور وملفات PDF، واستلم الملفات من هاتفك بعنوان ورمز",
-  "إصلاح: الإطار الذهبي حول التطبيق المحدد لم يعد مقطوعًا من الأعلى والأسفل"
+  "خط ثمانية في كل مكان: ثمانية للعناوين للعناوين، وثمانية للنصوص للقراءة، وثمانية الرقمي للشاشة والأرقام",
+  "ساعة أكبر وأوضح، وساعة أكبر وهادئة في شاشة التوقف",
+  "إعداد جديد: حجم الخط (عادي، كبير، كبير جدًا) لكل تطبيقات سهل",
+  "صور جديدة للتطبيقات على التلفاز تحمل أسماءها: سهل القرآن، سهل PDF، سهل الملفات"
  ]
 }

@@ -5,6 +5,10 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
+    <queries>
+        <package android:name="com.aly.sahltv" />
+    </queries>
+
     <application
         android:name=".SahlApp"
         android:allowBackup="true"

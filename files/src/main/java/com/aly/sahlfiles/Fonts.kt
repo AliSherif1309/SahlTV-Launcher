@@ -25,6 +25,14 @@ object Fonts {
     private var regular: Typeface? = null
     private var medium: Typeface? = null
     private var bold: Typeface? = null
+    private var dispMed: Typeface? = null      // Thmanyah Serif Display: titles and headings
+    private var dispBold: Typeface? = null
+    private var textReg: Typeface? = null      // Thmanyah Serif Text: text you read (messages, notes, book titles)
+    private var textBold: Typeface? = null
+
+    /** Text size for all Sahl apps (set in Sahl TV → Settings → Text size): 1.0, 1.1 or 1.2. */
+    @Volatile var scale = 1f
+    private val sizes = java.util.WeakHashMap<TextView, Pair<Float, Float>>()
     private var map: Map<Typeface, Typeface> = emptyMap()
     private var ours: Set<Typeface> = emptySet()
 
@@ -34,6 +42,8 @@ object Fonts {
         light = load(ctx, "l") ?: regular
         medium = load(ctx, "m") ?: regular
         bold = load(ctx, "b") ?: regular
+        dispMed = load(ctx, "dm"); dispBold = load(ctx, "db") ?: dispMed
+        textReg = load(ctx, "tr"); textBold = load(ctx, "tb") ?: textReg
         val r = regular!!; val l = light!!; val m = medium!!; val b = bold!!
         val mm = HashMap<Typeface, Typeface>()
         fun put(tf: Typeface?, to: Typeface) { if (tf != null && tf !in mm) mm[tf] = to }   // first match wins (a missing family can fall back to the default one)
@@ -44,7 +54,7 @@ object Fonts {
         put(Typeface.create("sans-serif-medium", Typeface.NORMAL), m); put(Typeface.create("sans-serif-medium", Typeface.BOLD), b)
         // these are other font families on this TV; never replace them (monospace stays for codes)
         for (k in listOf(Typeface.MONOSPACE, Typeface.SERIF)) mm.remove(k)
-        map = mm; ours = setOf(r, l, m, b)
+        map = mm; ours = setOfNotNull(r, l, m, b, dispMed, dispBold, textReg, textBold)
     }
 
     private fun load(ctx: Context, name: String): Typeface? = try {
@@ -61,12 +71,29 @@ object Fonts {
     /** The font for a weight, for code that needs it directly (falls back to the TV font). */
     fun get(boldOrMedium: Int = 0): Typeface = when (boldOrMedium) { 2 -> bold; 1 -> medium; -1 -> light; else -> regular } ?: Typeface.DEFAULT
 
+    /** Serif Display, for titles and headings. */
+    fun display(bold: Boolean = true): Typeface = (if (bold) dispBold else dispMed) ?: get(if (bold) 2 else 1)
+    /** Serif Text, for text you read. */
+    fun text(bold: Boolean = false): Typeface = (if (bold) textBold else textReg) ?: get(if (bold) 2 else 0)
+    /** Sans Light, for very large numbers (the clock). */
+    fun light(): Typeface = light ?: Typeface.create("sans-serif-light", Typeface.NORMAL)
+
     fun applyTree(v: View) {
-        if (map.isEmpty()) return
         if (v is TextView) {
-            val tf = v.typeface
-            if (tf == null) v.typeface = regular
-            else if (tf !in ours) map[tf]?.let { v.typeface = it }
+            if (map.isNotEmpty()) {
+                val tf = v.typeface
+                if (tf == null) v.typeface = regular
+                else if (tf !in ours) map[tf]?.let { v.typeface = it }
+            }
+            // text size: remember the app's own size, so it is scaled once (and again only if the app changes it)
+            val rec = sizes[v]
+            if (scale != 1f || rec != null) {
+                if (rec == null || kotlin.math.abs(v.textSize - rec.second) > 0.5f) {
+                    val o = v.textSize; val want = o * scale
+                    sizes[v] = o to want
+                    if (want != o) v.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, want)
+                }
+            }
         }
         if (v is ViewGroup) for (i in 0 until v.childCount) applyTree(v.getChildAt(i))
     }
@@ -75,7 +102,7 @@ object Fonts {
     private val watched = java.util.WeakHashMap<Window, Boolean>()
 
     fun watch(w: Window?) {
-        if (w == null || map.isEmpty() || watched.put(w, true) != null) return
+        if (w == null || (map.isEmpty() && scale == 1f) || watched.put(w, true) != null) return
         val d = w.decorView
         d.viewTreeObserver.addOnGlobalLayoutListener { applyTree(d) }
         applyTree(d)
@@ -87,8 +114,9 @@ class SahlApp : Application() {
     override fun onCreate() {
         super.onCreate()
         Fonts.init(this)
+        readScale()
         registerActivityLifecycleCallbacks(object : ActivityLifecycleCallbacks {
-            override fun onActivityCreated(a: Activity, b: Bundle?) {}
+            override fun onActivityCreated(a: Activity, b: Bundle?) { readScale() }
             override fun onActivityStarted(a: Activity) = Fonts.watch(a.window)   // after the screen is built
             override fun onActivityResumed(a: Activity) {}
             override fun onActivityPaused(a: Activity) {}
@@ -97,15 +125,30 @@ class SahlApp : Application() {
             override fun onActivityDestroyed(a: Activity) {}
         })
     }
+
+    /** The text size chosen in Sahl TV (shared with all Sahl apps through Sahl TV). */
+    private fun readScale() {
+        try {
+            contentResolver.query(android.net.Uri.parse("content://com.aly.sahltv.prefs/scale"), null, null, null, null)?.use { c ->
+                if (c.moveToFirst()) Fonts.scale = c.getFloat(0).coerceIn(1f, 1.25f)
+            }
+        } catch (_: Exception) {}
+    }
 }
 
-/** AlertDialog in the Sahl font. */
+/** AlertDialog in the Sahl font: titles in Serif Display, messages in Serif Text. */
 class FontDialog(ctx: Context, theme: Int) : AlertDialog.Builder(ctx, theme) {
     override fun create(): AlertDialog = super.create().also { d ->
         // wait until it is shown (its layout is built then), checking for a few seconds
         val h = android.os.Handler(android.os.Looper.getMainLooper())
         var tries = 0
-        val check = object : Runnable { override fun run() { if (d.isShowing) Fonts.watch(d.window) else if (++tries < 50) h.postDelayed(this, 100) } }
+        val check = object : Runnable { override fun run() {
+            if (!d.isShowing) { if (++tries < 50) h.postDelayed(this, 100); return }
+            val res = d.context.resources
+            (d.findViewById<View>(res.getIdentifier("alertTitle", "id", "android")) as? TextView)?.typeface = Fonts.display(true)
+            (d.findViewById<View>(android.R.id.message) as? TextView)?.let { it.typeface = Fonts.text(); it.setLineSpacing(0f, 1.2f) }
+            Fonts.watch(d.window)
+        } }
         h.post(check)
     }
 }

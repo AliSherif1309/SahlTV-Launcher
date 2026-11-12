@@ -291,10 +291,10 @@ class MainActivity : Activity(), RemoteServer.Host {
     private fun buildTopBar(): View {
         val bar = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         val left = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        clockTv = TextView(this).apply { textSize = 58f; setTextColor(Color.WHITE); typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL); includeFontPadding = false
-            setShadowLayer(14f, 0f, 2f, Color.argb(220, 0, 0, 0)); letterSpacing = 0.02f }
+        clockTv = TextView(this).apply { textSize = 72f; setTextColor(Color.WHITE); typeface = Fonts.get(2); includeFontPadding = false
+            setShadowLayer(14f, 0f, 2f, Color.argb(220, 0, 0, 0)); letterSpacing = 0.01f; fontFeatureSettings = "tnum" }
         dateTv = TextView(this).apply { textSize = 17f; setTextColor(Color.parseColor("#E6EEEA")); setShadowLayer(8f, 0f, 1f, Color.BLACK); setPadding(0, dp(4), 0, 0) }
-        hijriTv = TextView(this).apply { textSize = 16f; setTextColor(GOLD); setPadding(0, dp(1), 0, 0); setShadowLayer(8f, 0f, 1f, Color.BLACK) }
+        hijriTv = TextView(this).apply { textSize = 18f; setTextColor(GOLD); typeface = Fonts.display(false); setPadding(0, dp(1), 0, 0); setShadowLayer(8f, 0f, 1f, Color.BLACK) }
         prayerTv = TextView(this).apply { textSize = 15f; setTextColor(ACCENT); visibility = View.GONE }
         val hRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         hRow.addView(GoldIcon(this, GoldIcon.CRESCENT, GOLD), LinearLayout.LayoutParams(dp(16), dp(16)).apply { marginEnd = dp(6) })
@@ -843,7 +843,7 @@ class MainActivity : Activity(), RemoteServer.Host {
     }
 
     private fun showSaver() {
-        val clock = TextView(this).apply { textSize = 72f; setTextColor(Color.parseColor("#B8C4BF")); typeface = Typeface.create("sans-serif-thin", Typeface.NORMAL) }
+        val clock = TextView(this).apply { textSize = 104f; setTextColor(Color.parseColor("#B8C4BF")); typeface = Fonts.light() }
         val date = TextView(this).apply { textSize = 18f; setTextColor(Color.parseColor("#6E7C76")) }
         val pray = TextView(this).apply { textSize = 18f; setTextColor(Color.parseColor("#2E8F66")); setPadding(0, dp(6), 0, 0) }
         val box = LinearLayout(this).apply {
@@ -1116,6 +1116,7 @@ class MainActivity : Activity(), RemoteServer.Host {
                 21 -> prayerAdjustMenu()
                 22 -> { prefs.edit().putBoolean("wxOn", !wxOn).putLong("wxTry", 0L).apply(); updateClock() }
                 23 -> { prefs.edit().putBoolean("ayahOn", !ayahOn).apply(); ayahToday = null; updateClock() }
+                24 -> textSizeMenu()
                 17 -> dialog().setTitle("Sahl TV  ·  سهل")
                     .setMessage(t("A fast, ad-free home screen for Android TV.\n\nNo tracking, no background services. Internet is used only for preview pictures, the weather, and checking for updates. Nothing about you is sent anywhere.\n\nPrayer times are calculated on the TV (Qatar method: Fajr 18°, Asr Shafi'i, Isha 90 min after Maghrib). Please compare with the official Awqaf timetable.\n\nTip: hold OK on an app (or press Menu) for options.\n\nFree & open source (MIT).\n" + photoCredits() + "Weather: Open-Meteo.com (CC BY 4.0). Ayah of the day: Tanzil Quran text (CC BY 3.0), Amiri Quran font (SIL OFL).\nContact: alysherif1309@gmail.com",
                                   "واجهة رئيسية سريعة وبلا إعلانات لأجهزة Android TV.\n\nبلا تتبّع وبلا خدمات تعمل في الخلفية. يُستخدم الإنترنت فقط لصور المعاينات والطقس والبحث عن تحديثات. لا يُرسل أي شيء عنك.\n\nتُحسب مواقيت الصلاة على التلفاز (طريقة قطر: الفجر 18°، العصر شافعي، العشاء بعد المغرب بـ 90 دقيقة). يُرجى مقارنتها بتقويم الأوقاف الرسمي.\n\nنصيحة: اضغط مطولًا على OK فوق تطبيق (أو زر القائمة) لعرض الخيارات.\n\nمجاني ومفتوح المصدر (MIT).\n" + photoCredits() + "الطقس: Open-Meteo.com (CC BY 4.0). آية اليوم: نص القرآن من مشروع تنزيل (CC BY 3.0) وخط Amiri Quran (SIL OFL).\nللتواصل: alysherif1309@gmail.com"))
@@ -1241,7 +1242,7 @@ class MainActivity : Activity(), RemoteServer.Host {
         val a = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         val lbl = iconLabel(GoldIcon.MOSQUE, t("Next prayer", "الصلاة القادمة")); nextLabelTv = lbl.getChildAt(1) as TextView
         a.addView(lbl)
-        nextNameTv = TextView(this).apply { textSize = 26f; setTextColor(TEXT); setTypeface(typeface, Typeface.BOLD); maxLines = 1 }
+        nextNameTv = TextView(this).apply { textSize = 28f; setTextColor(TEXT); typeface = Fonts.display(true); maxLines = 1; includeFontPadding = false }
         a.addView(nextNameTv)
         hero.addView(a, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
         hero.addView(View(this).apply { setBackgroundColor(Color.argb(90, 227, 184, 92)) }, LinearLayout.LayoutParams(dp(1), dp(46)).apply { setMargins(dp(12), 0, dp(12), 0) })
@@ -1274,7 +1275,7 @@ class MainActivity : Activity(), RemoteServer.Host {
         ramCard = card(false) { islamicDatesDialog() }
         ramCard.addView(GoldIcon(this, GoldIcon.LANTERN, GOLD), LinearLayout.LayoutParams(dp(34), dp(34)).apply { marginEnd = dp(14) })
         val rc = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        ramTitle = TextView(this).apply { textSize = 17f; setTextColor(TEXT); setTypeface(typeface, Typeface.BOLD); maxLines = 1 }
+        ramTitle = TextView(this).apply { textSize = 18f; setTextColor(TEXT); typeface = Fonts.display(true); maxLines = 1 }
         ramSub = TextView(this).apply { textSize = 14f; setTextColor(GOLD); maxLines = 1; fontFeatureSettings = "tnum" }
         rc.addView(ramTitle); rc.addView(ramSub)
         ramCard.addView(rc, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
@@ -1283,7 +1284,7 @@ class MainActivity : Activity(), RemoteServer.Host {
         fastCard = card(false) { fastDialog() }
         fastCard.addView(GoldIcon(this, GoldIcon.DATES, GOLD), LinearLayout.LayoutParams(dp(34), dp(34)).apply { marginEnd = dp(14) })
         val fc = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        fastTitle = TextView(this).apply { textSize = 17f; setTextColor(TEXT); setTypeface(typeface, Typeface.BOLD); maxLines = 1 }
+        fastTitle = TextView(this).apply { textSize = 18f; setTextColor(TEXT); typeface = Fonts.display(true); maxLines = 1 }
         fastSub = TextView(this).apply { textSize = 14f; setTextColor(MUTED); maxLines = 1 }
         fc.addView(fastTitle); fc.addView(fastSub)
         fastCard.addView(fc, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
@@ -1314,7 +1315,7 @@ class MainActivity : Activity(), RemoteServer.Host {
         nb.addView(GoldIcon(this, GoldIcon.STAR, GOLD), FrameLayout.LayoutParams(dp(22), dp(22), Gravity.CENTER))
         newsCard.addView(nb, LinearLayout.LayoutParams(dp(40), dp(40)).apply { marginEnd = dp(14) })
         val nc = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        nc.addView(TextView(this).apply { text = t("Updated to Sahl TV ", "تم التحديث إلى سهل TV ") + (whatsNew?.optString("version") ?: ""); textSize = 16f; setTextColor(TEXT); setTypeface(typeface, Typeface.BOLD) })
+        nc.addView(TextView(this).apply { text = t("Updated to Sahl TV ", "تم التحديث إلى سهل TV ") + (whatsNew?.optString("version") ?: ""); textSize = 17f; setTextColor(TEXT); typeface = Fonts.display(true) })
         newsSub = small("", GOLD); nc.addView(newsSub)
         newsCard.addView(nc, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
         col.addView(newsCard, 0, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply { bottomMargin = dp(12) })
@@ -1610,6 +1611,24 @@ class MainActivity : Activity(), RemoteServer.Host {
         "${pi.versionName}  ·  " + t("build ", "رقم ") + (if (Build.VERSION.SDK_INT >= 28) pi.longVersionCode else @Suppress("DEPRECATION") pi.versionCode.toLong())
     } catch (_: Exception) { "" }
 
+    // ------------------------------------------------------------------ text size (shared with all Sahl apps)
+
+    private val textScale get() = prefs.getFloat("textScale", 1f)
+    private fun textSizeName() = when { textScale >= 1.19f -> t("Extra large", "كبير جدًا"); textScale >= 1.09f -> t("Large", "كبير"); else -> t("Normal", "عادي") }
+
+    private fun textSizeMenu() {
+        val sizes = floatArrayOf(1f, 1.1f, 1.2f)
+        val names = arrayOf(t("Normal", "عادي"), t("Large", "كبير"), t("Extra large", "كبير جدًا"))
+        dialog().setTitle(t("Text size", "حجم الخط"))
+            .setSingleChoiceItems(names, sizes.indexOfFirst { kotlin.math.abs(it - textScale) < 0.01f }.coerceAtLeast(0)) { d, w ->
+                d.dismiss()
+                prefs.edit().putFloat("textScale", sizes[w]).commit()
+                Fonts.scale = sizes[w]
+                toast(t("Text size: ", "حجم الخط: ") + names[w] + t("  ·  other Sahl apps use it next time they open", "  ·  تطبيقات سهل الأخرى تستخدمه عند فتحها"))
+                recreate()
+            }.setNegativeButton(t("Cancel", "إلغاء"), null).show()
+    }
+
     private fun settingsSections(): List<Pair<String, List<SRow>>> {
         val city = if (cityIndex in cities.indices) (if (ar) cityAr(cityIndex) else cities[cityIndex].first) else t("Off", "متوقف")
         val alert = when (Alerts.mode(this)) { Alerts.OFF -> t("Off", "متوقف"); Alerts.WITH_REMINDER -> t("On + 10 min before", "مُفعّل + قبله بـ 10 د"); else -> t("On", "مُفعّل") } +
@@ -1627,6 +1646,7 @@ class MainActivity : Activity(), RemoteServer.Host {
                 SRow(GoldIcon.IMAGE, t("Background", "الخلفية"), t("The Kaaba, the Prophet's Mosque, Al-Aqsa — or automatic day / night", "الكعبة أو المسجد النبوي أو الأقصى — أو تلقائي نهار / ليل"), if (islamic) bgName() else t("Classic theme", "المظهر الكلاسيكي"), 18),
                 SRow(GoldIcon.SUN, t("Photo brightness", "سطوع الصورة"), t("Darker is calmer and easier to read", "الأغمق أهدأ وأسهل للقراءة"), dimName(), 19),
                 SRow(GoldIcon.EYE, t("Calm mode", "الوضع الهادئ"), t("Gentle for little eyes: minute countdown, soft focus, dims at night", "لطيف لعيون الصغار: عدّ بالدقائق، تركيز هادئ، تعتيم ليلًا"), onOff(calm), 7),
+                SRow(GoldIcon.EYE, t("Text size", "حجم الخط"), t("For all Sahl apps: Sahl TV, Quran, PDF and Files", "لكل تطبيقات سهل: سهل TV والقرآن وPDF والملفات"), textSizeName(), 24),
                 SRow(GoldIcon.CLOCK, t("Clock", "الساعة"), t("Show time as 24-hour or 12-hour", "عرض الوقت بنظام 24 أو 12 ساعة"), if (clock24) t("24-hour", "24 ساعة") else t("12-hour", "12 ساعة"), 3),
                 SRow(GoldIcon.SCREEN, t("Clock screensaver", "شاشة توقف الساعة"), t("A dim moving clock when the TV sits idle", "ساعة خافتة متحركة عند عدم الاستخدام"), if (saverMin == 0) t("Off", "متوقفة") else t("After $saverMin min", "بعد $saverMin د"), 12)),
             t("Home screen", "الشاشة الرئيسية") to listOf(
@@ -1689,7 +1709,7 @@ class MainActivity : Activity(), RemoteServer.Host {
         val head = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(dp(4), 0, dp(4), dp(14)) }
         head.addView(GoldIcon(this, GoldIcon.STAR, GOLD), LinearLayout.LayoutParams(dp(30), dp(30)).apply { marginEnd = dp(12) })
         val ht = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        ht.addView(TextView(this).apply { text = t("Settings", "الإعدادات"); textSize = 28f; setTextColor(TEXT); setTypeface(typeface, Typeface.BOLD) })
+        ht.addView(TextView(this).apply { text = t("Settings", "الإعدادات"); textSize = 30f; setTextColor(TEXT); typeface = Fonts.display(true) })
         ht.addView(TextView(this).apply { text = t("Sahl TV  ·  press Back to return home", "سهل TV  ·  اضغط رجوع للعودة"); textSize = 13f; setTextColor(MUTED) })
         head.addView(ht, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
         list.addView(head)
@@ -1703,7 +1723,7 @@ class MainActivity : Activity(), RemoteServer.Host {
         var focusView: View? = null
         for ((title, rows) in settingsSections()) {
             list.addView(TextView(this).apply {
-                text = title; textSize = 14f; setTextColor(GOLD); setTypeface(typeface, Typeface.BOLD); letterSpacing = 0.04f
+                text = title; textSize = 17f; setTextColor(GOLD); typeface = Fonts.display(false)
                 setPadding(dp(6), dp(20), dp(6), dp(8))
             })
             for (r in rows) { val v = settingsRow(r, false); list.addView(v); if (r.action == settingsFocus) focusView = v }

@@ -69,13 +69,13 @@ class FilesActivity : Activity() {
         }
         // ---- places
         val side = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; clipChildren = false; clipToPadding = false }
-        side.addView(label(t("Sahl Files", "سهل · الملفات"), 26f, C.TEXT, true).apply { setPadding(dp(8), 0, 0, dp(14)) })
+        side.addView(label(t("Sahl Files", "سهل · الملفات"), 28f, C.TEXT, true).apply { typeface = Fonts.display(true); setPadding(dp(8), 0, 0, dp(14)) })
         places = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; clipChildren = false; clipToPadding = false; setPadding(dp(6), dp(4), dp(6), dp(4)) }
         side.addView(ScrollView(this).apply { isVerticalScrollBarEnabled = false; clipChildren = false; clipToPadding = false; addView(places) }, LinearLayout.LayoutParams(MATCH_PARENT, 0, 1f))
         root.addView(side, LinearLayout.LayoutParams(dp(250), MATCH_PARENT))
         // ---- folder
         val right = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(24), 0, 0, 0); clipChildren = false; clipToPadding = false }
-        pathTv = label("", 20f, C.TEXT, true).apply { maxLines = 1; ellipsize = TextUtils.TruncateAt.START }
+        pathTv = label("", 22f, C.TEXT).apply { typeface = Fonts.display(false); maxLines = 1; ellipsize = TextUtils.TruncateAt.START }
         infoTv = label("", 14f, C.MUTED).apply { setPadding(0, dp(2), 0, dp(10)) }
         right.addView(pathTv); right.addView(infoTv)
         actions = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; clipChildren = false; clipToPadding = false; setPadding(dp(4), dp(4), dp(4), dp(10)) }
@@ -86,7 +86,7 @@ class FilesActivity : Activity() {
             divider = null; selector = ColorDrawable(Color.TRANSPARENT); isVerticalScrollBarEnabled = true
             itemsCanFocus = false; isFocusable = true
         }
-        empty = label("", 17f, C.MUTED).apply { gravity = Gravity.CENTER; visibility = View.GONE }
+        empty = label("", 18f, C.MUTED).apply { typeface = Fonts.text(); setLineSpacing(0f, 1.3f); gravity = Gravity.CENTER; visibility = View.GONE }
         listBox.addView(list); listBox.addView(empty, android.widget.FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
         right.addView(listBox, LinearLayout.LayoutParams(MATCH_PARENT, 0, 1f))
         root.addView(right, LinearLayout.LayoutParams(0, MATCH_PARENT, 1f))

@@ -13,7 +13,7 @@ secret = os.environ.get("FONT_KEY", "")
 if not secret:
     print("FONT_KEY not set: building with the TV's normal font")
     sys.exit(0)
-for name in ["l", "r", "m", "b"]:
+for name in ["l", "r", "m", "b", "dm", "db", "tr", "tb"]:
     data = subprocess.run(["openssl", "enc", "-d", "-aes-256-cbc", "-pbkdf2", "-iter", "200000", "-pass", "env:FONT_KEY",
                            "-in", f"fonts-locked/{name}.enc"], check=True, capture_output=True).stdout
     assert data[:4] in (b"OTTO", b"\x00\x01\x00\x00"), "not a font: wrong FONT_KEY?"

@@ -94,7 +94,7 @@ object Dlg {
             layoutDirection = if (isAr) View.LAYOUT_DIRECTION_RTL else View.LAYOUT_DIRECTION_LTR
             clipChildren = false; clipToPadding = false
         }
-        if (title != null) panel.addView(a.label(title, 19f, C.GOLD, true).apply { setPadding(a.dp(4), 0, a.dp(4), a.dp(10)) })
+        if (title != null) panel.addView(a.label(title, 21f, C.GOLD, true).apply { typeface = Fonts.display(true); setPadding(a.dp(4), 0, a.dp(4), a.dp(10)) })
         panel.addView(body)
         d.setContentView(panel)
         Fonts.watch(d.window)
@@ -126,7 +126,7 @@ object Dlg {
 
     fun confirm(a: Activity, title: String, msg: String, yes: String, onYes: () -> Unit) {
         val box = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL }
-        box.addView(a.label(msg, 16f, C.TEXT).apply { setPadding(a.dp(4), 0, a.dp(4), a.dp(14)) })
+        box.addView(a.label(msg, 17f, C.TEXT).apply { typeface = Fonts.text(); setLineSpacing(0f, 1.2f); setPadding(a.dp(4), 0, a.dp(4), a.dp(14)) })
         lateinit var d: Dialog
         val btns = LinearLayout(a).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.END; clipChildren = false }
         val no = a.pill(t("Cancel", "إلغاء")) { d.dismiss() }
@@ -140,7 +140,7 @@ object Dlg {
 
     fun message(a: Activity, title: String, msg: CharSequence) {
         val box = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL }
-        box.addView(a.label(msg, 16f, C.TEXT).apply { setPadding(a.dp(4), 0, a.dp(4), a.dp(14)) })
+        box.addView(a.label(msg, 17f, C.TEXT).apply { typeface = Fonts.text(); setLineSpacing(0f, 1.2f); setPadding(a.dp(4), 0, a.dp(4), a.dp(14)) })
         lateinit var d: Dialog
         val ok = a.pill(t("OK", "حسنًا")) { d.dismiss() }
         box.addView(ok, LinearLayout.LayoutParams(-2, -2).apply { gravity = Gravity.END })

@@ -86,5 +86,10 @@
             <intent-filter><action android:name="android.intent.action.BOOT_COMPLETED" /></intent-filter>
         </receiver>
         <receiver android:name=".InstallReceiver" android:exported="false" />
+        <!-- the text size setting, read by Sahl Quran / PDF / Files -->
+        <provider
+            android:name=".PrefsProvider"
+            android:authorities="com.aly.sahltv.prefs"
+            android:exported="true" />
     </application>
 </manifest>

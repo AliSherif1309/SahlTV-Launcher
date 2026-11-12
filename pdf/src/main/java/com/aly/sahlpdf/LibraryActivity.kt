@@ -73,7 +73,7 @@ class LibraryActivity : Activity() {
     private fun header() {
         val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; clipChildren = false; clipToPadding = false; setPadding(0, 0, 0, dp(6)) }
         val titles = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        titles.addView(label(t("Sahl PDF", "سهل · كتب"), 30f, C.TEXT, true))
+        titles.addView(label(t("Sahl PDF", "سهل · كتب"), 32f, C.TEXT, true).apply { typeface = Fonts.display(true) })
         titles.addView(label(if (files.isEmpty()) t("Your books on the TV", "كتبك على التلفاز") else t("${files.size} books", "${files.size} كتاب"), 15f, C.MUTED))
         row.addView(titles, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
         val send = pill(t("📲  Send from phone", "📲  إرسال من الهاتف")) { sendFromPhone() }.apply { tag = "btn/send" }
@@ -84,7 +84,7 @@ class LibraryActivity : Activity() {
         col.addView(row)
     }
 
-    private fun section(text: String) = col.addView(label(text, 17f, C.MUTED, true).apply { setPadding(dp(2), dp(22), 0, dp(4)) })
+    private fun section(text: String) = col.addView(label(text, 20f, C.GOLD).apply { typeface = Fonts.display(false); setPadding(dp(2), dp(22), 0, dp(4)) })
 
     private fun build() {
         col.removeAllViews()
@@ -111,7 +111,7 @@ class LibraryActivity : Activity() {
 
         if (books.isEmpty()) {
             col.addView(label(t("No books yet.\n\nPress “Send from phone” above, then choose PDF files on your phone. They are saved on the TV, so you send each book only once.",
-                "لا توجد كتب بعد.\n\nاضغط «إرسال من الهاتف» في الأعلى، ثم اختر ملفات PDF من هاتفك. تُحفظ على التلفاز، فترسل كل كتاب مرة واحدة فقط."), 18f, C.TEXT).apply { setPadding(dp(4), dp(40), dp(4), 0); setLineSpacing(0f, 1.25f) })
+                "لا توجد كتب بعد.\n\nاضغط «إرسال من الهاتف» في الأعلى، ثم اختر ملفات PDF من هاتفك. تُحفظ على التلفاز، فترسل كل كتاب مرة واحدة فقط."), 19f, C.TEXT).apply { typeface = Fonts.text(); setPadding(dp(4), dp(40), dp(4), 0); setLineSpacing(0f, 1.3f) })
         } else {
             section(t("All books  ·  ${books.size}", "كل الكتب  ·  ${books.size}"))
             val sorted = if (sortRecent) books.sortedWith(compareByDescending<Book> { maxOf(it.opened, it.file.lastModified()) })
@@ -165,7 +165,7 @@ class LibraryActivity : Activity() {
         card.tag = "all/${b.path}"
         val inner = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         inner.addView(cover(b, 150, 210), LinearLayout.LayoutParams(dp(150), dp(210)))
-        val name = label(b.title, 13f, C.TEXT).apply { maxLines = 2; ellipsize = TextUtils.TruncateAt.END; setPadding(dp(2), dp(6), dp(2), 0); gravity = Gravity.CENTER_HORIZONTAL }
+        val name = label(b.title, 14f, C.TEXT).apply { typeface = Fonts.text(); maxLines = 2; ellipsize = TextUtils.TruncateAt.END; setPadding(dp(2), dp(6), dp(2), 0); gravity = Gravity.CENTER_HORIZONTAL }
         inner.addView(name, LinearLayout.LayoutParams(dp(150), dp(46)))
         card.addView(inner)
         card.addView(ring, FrameLayout.LayoutParams(dp(150), dp(210)))
@@ -181,7 +181,7 @@ class LibraryActivity : Activity() {
         val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(dp(10), dp(10), dp(14), dp(10)) }
         row.addView(cover(b, 120, 168), LinearLayout.LayoutParams(dp(120), dp(168)))
         val info = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(14), dp(4), 0, 0) }
-        info.addView(label(b.title, 17f, C.TEXT, true).apply { maxLines = 3; ellipsize = TextUtils.TruncateAt.END })
+        info.addView(label(b.title, 18f, C.TEXT, true).apply { typeface = Fonts.text(true); maxLines = 3; ellipsize = TextUtils.TruncateAt.END })
         info.addView(label(t("Page ${b.page + 1} of ${b.count}", "صفحة ${b.page + 1} من ${b.count}"), 14f, C.MUTED).apply { setPadding(0, dp(8), 0, dp(6)) })
         val track = FrameLayout(this).apply { background = rounded(Color.parseColor("#33FFFFFF"), 3) }
         track.addView(View(this).apply { background = rounded(C.GOLD, 3) }, FrameLayout.LayoutParams((dp(200) * b.progress).toInt().coerceAtLeast(dp(6)), MATCH_PARENT))
