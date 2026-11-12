@@ -8,6 +8,10 @@
     <uses-permission android:name="android.permission.READ_TV_LISTINGS" />
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Phone remote: optional automatic keyboard switching (granted once with ADB) -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" />
     <!-- Backup & restore to the Download folder (Android 10 and older; newer versions need no permission) -->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />
@@ -73,5 +77,8 @@
                 <action android:name="android.service.notification.NotificationListenerService" />
             </intent-filter>
         </service>
+        <receiver android:name=".AlertReceiver" android:exported="false">
+            <intent-filter><action android:name="android.intent.action.BOOT_COMPLETED" /></intent-filter>
+        </receiver>
     </application>
 </manifest>

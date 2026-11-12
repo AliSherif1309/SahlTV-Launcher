@@ -134,16 +134,15 @@ class MainActivity : Activity(), RemoteServer.Host {
     private val remoteOn get() = prefs.getBoolean("remoteOn", false)
     private val hijriAdj get() = prefs.getInt("hijriAdj", 0)
     private val fastOn get() = prefs.getBoolean("fastOn", true)
+    /** Calm mode (for little eyes): minute countdown instead of ticking seconds, softer focus, home screen dims at night. */
+    private val calm by lazy { prefs.getBoolean("calm", true) }
+    private lateinit var dimView: View
     private val locked get() = list("locked")
     private val pinSet get() = prefs.getString("pinHash", null) != null
     private val lockSettings get() = prefs.getBoolean("lockSettings", false)
 
     // prayer-time locations (Qatar). Index stored in prefs; -1 = prayer times off.
-    private val cities = listOf(
-        Triple("Doha", 25.2854, 51.5310), Triple("Al Wakrah", 25.1715, 51.6034), Triple("Al Rayyan", 25.2919, 51.4244),
-        Triple("Lusail", 25.4230, 51.4900), Triple("Umm Salal", 25.4697, 51.3975), Triple("Al Khor", 25.6839, 51.5058),
-        Triple("Mesaieed", 24.9909, 51.5493), Triple("Dukhan", 25.4248, 50.7820), Triple("Madinat ash Shamal", 26.1293, 51.2009)
-    )
+    private val cities = Alerts.CITIES
     private val cityIndex get() = prefs.getInt("city", 0)
 
     // ------------------------------------------------------------------ lifecycle
@@ -151,7 +150,7 @@ class MainActivity : Activity(), RemoteServer.Host {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val root = FrameLayout(this).also { rootFrame = it }.apply {
-            background = if (islamic) IslamicBackdrop(resources.displayMetrics.density)
+            background = if (islamic) IslamicBackdrop(resources.displayMetrics.density, ar)
                          else GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(BG_TOP, BG_BOTTOM))
         }
         val col = LinearLayout(this).apply {
@@ -174,6 +173,8 @@ class MainActivity : Activity(), RemoteServer.Host {
         panel = buildPanel()
         panel.layoutDirection = col.layoutDirection
         root.addView(col)
+        dimView = View(this).apply { setBackgroundColor(Color.BLACK); alpha = 0f }
+        root.addView(dimView, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
         setContentView(root)
         window.setBackgroundDrawable(null)      // the gradient covers everything: skip one full-screen draw
 
@@ -203,6 +204,7 @@ class MainActivity : Activity(), RemoteServer.Host {
         handler.post(secondTick)
         if (dirty && !loading) loadApps() else if (apps.isNotEmpty()) render(keepFocus = true)
         maybeAutoClean()
+        Alerts.schedule(this)
         refreshPreviews(force = false)
         setupMedia()
         lastInput = System.currentTimeMillis()
@@ -249,7 +251,10 @@ class MainActivity : Activity(), RemoteServer.Host {
         dateTv = TextView(this).apply { textSize = 15f; setTextColor(MUTED) }
         hijriTv = TextView(this).apply { textSize = 15f; setTextColor(GOLD); setPadding(0, dp(1), 0, 0) }
         prayerTv = TextView(this).apply { textSize = 15f; setTextColor(ACCENT); visibility = View.GONE }
-        left.addView(clockTv); left.addView(dateTv); left.addView(hijriTv)
+        val hRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+        hRow.addView(GoldIcon(this, GoldIcon.CRESCENT, GOLD), LinearLayout.LayoutParams(dp(16), dp(16)).apply { marginEnd = dp(6) })
+        hRow.addView(hijriTv)
+        left.addView(clockTv); left.addView(dateTv); left.addView(hRow)
         bar.addView(left, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
 
         memBtn = pill(t("🧹  Free memory", "🧹  تحرير الذاكرة")) { freeMemory() }
@@ -281,7 +286,7 @@ class MainActivity : Activity(), RemoteServer.Host {
         val now = Date()
         clockTv.text = SimpleDateFormat(if (clock24) "HH:mm" else "h:mm a", Locale.US).format(now)
         dateTv.text = SimpleDateFormat("EEEE d MMMM yyyy", if (ar) Locale.forLanguageTag("ar") else Locale.US).format(now)
-        hijriTv.text = "☪  " + hijriText(LocalDate.now())
+        hijriTv.text = hijriText(LocalDate.now())
         updatePrayer()
         updateIslamic()
     }
@@ -1033,6 +1038,8 @@ class MainActivity : Activity(), RemoteServer.Host {
             t("Prayer times: ", "مواقيت الصلاة: ") + city + ch,
             t("🎨  Theme: ", "🎨  المظهر: ") + (if (islamic) t("Islamic", "إسلامي") else t("Classic", "كلاسيكي")) + ch,
             t("☪  Hijri date & fasting reminders", "☪  التاريخ الهجري وتذكير الصيام"),
+            t("👶  Calm mode (for little eyes): ", "👶  الوضع الهادئ (لعيون الصغار): ") + onOff(calm) + ch,
+            t("🔔  Prayer-time banner: ", "🔔  تنبيه وقت الصلاة: ") + alertName() + t("  (settings)", "  (إعدادات)"),
             t("Auto clean when memory is low: ", "التنظيف التلقائي عند انخفاض الذاكرة: ") + onOff(autoClean) + ch,
             t("🔒  PIN & locks", "🔒  الرمز السري والأقفال") + (if (pinSet) t("  (${locked.size} apps locked)", "  (${locked.size} تطبيقات مقفلة)") else t("  (no PIN set)", "  (لا يوجد رمز)")),
             t("Show hidden apps (${hidden.size})", "إظهار التطبيقات المخفية (${hidden.size})"),
@@ -1051,22 +1058,51 @@ class MainActivity : Activity(), RemoteServer.Host {
                 4 -> cityMenu()
                 5 -> { prefs.edit().putBoolean("islamic", !islamic).apply(); recreate() }
                 6 -> islamicMenu()
-                7 -> { prefs.edit().putBoolean("autoClean", !autoClean).apply(); toast(t("Auto clean: ", "التنظيف التلقائي: ") + onOff(autoClean)) }
-                8 -> pinMenu()
-                9 -> guarded { hiddenMenu() }
-                10 -> {
+                7 -> { prefs.edit().putBoolean("calm", !calm).apply(); recreate() }
+                8 -> alertMenu()
+                9 -> { prefs.edit().putBoolean("autoClean", !autoClean).apply(); toast(t("Auto clean: ", "التنظيف التلقائي: ") + onOff(autoClean)) }
+                10 -> pinMenu()
+                11 -> guarded { hiddenMenu() }
+                12 -> {
                     val next = when (saverMin) { 0 -> 3; 3 -> 5; 5 -> 10; else -> 0 }
                     prefs.edit().putInt("saverMin", next).apply()
                     toast(t("Clock screensaver: ", "شاشة توقف الساعة: ") + if (next == 0) t("Off", "متوقفة") else t("after $next min", "بعد $next دقائق"))
                 }
-                11 -> nowMenu()
-                12 -> backupMenu()
-                13 -> remoteMenu()
-                14 -> dialog().setTitle("Sahl TV  ·  سهل")
+                13 -> nowMenu()
+                14 -> backupMenu()
+                15 -> remoteMenu()
+                16 -> dialog().setTitle("Sahl TV  ·  سهل")
                     .setMessage(t("A fast, ad-free home screen for Android TV.\n\nNo tracking, no background services. Internet is used only to download preview pictures when you turn App previews on.\n\nPrayer times are calculated on the TV (Qatar method: Fajr 18°, Asr Shafi'i, Isha 90 min after Maghrib). Please compare with the official Awqaf timetable.\n\nTip: hold OK on an app (or press Menu) for options.\n\nFree & open source (MIT).\nContact: alysherif1309@gmail.com",
                                   "واجهة رئيسية سريعة وبلا إعلانات لأجهزة Android TV.\n\nبلا تتبّع وبلا خدمات تعمل في الخلفية. يُستخدم الإنترنت فقط لتنزيل صور المعاينات عند تفعيل «معاينات التطبيقات».\n\nتُحسب مواقيت الصلاة على التلفاز (طريقة قطر: الفجر 18°، العصر شافعي، العشاء بعد المغرب بـ 90 دقيقة). يُرجى مقارنتها بتقويم الأوقاف الرسمي.\n\nنصيحة: اضغط مطولًا على OK فوق تطبيق (أو زر القائمة) لعرض الخيارات.\n\nمجاني ومفتوح المصدر (MIT).\nللتواصل: alysherif1309@gmail.com"))
                     .setPositiveButton(t("OK", "حسنًا"), null).show()
             }
+        }.show()
+    }
+
+    private fun alertName() = when (Alerts.mode(this)) {
+        Alerts.OFF -> t("Off", "متوقف"); Alerts.WITH_REMINDER -> t("At prayer time + 10 min before", "عند الأذان + قبله بـ 10 دقائق")
+        else -> t("At prayer time", "عند وقت الصلاة") } + if (Alerts.mode(this) != Alerts.OFF && !Alerts.canShow(this)) t("  (needs setup)", "  (يحتاج إعدادًا)") else ""
+
+    private fun alertMenu() {
+        val items = arrayOf(t("At prayer time", "عند وقت الصلاة"), t("At prayer time + 10 minutes before", "عند وقت الصلاة + قبله بـ 10 دقائق"),
+            t("Off", "إيقاف"), t("Show a test banner now", "عرض تنبيه تجريبي الآن"))
+        val msg = if (Alerts.canShow(this)) null else t("One-time setup so the banner can appear over SmartTube and other apps. On your PC run:\n\nadb shell appops set com.aly.sahltv SYSTEM_ALERT_WINDOW allow",
+            "إعداد لمرة واحدة ليظهر التنبيه فوق SmartTube والتطبيقات الأخرى. شغّل على الكمبيوتر:\n\nadb shell appops set com.aly.sahltv SYSTEM_ALERT_WINDOW allow")
+        val d = dialog().setTitle(t("Prayer-time banner (no sound)", "تنبيه وقت الصلاة (بدون صوت)"))
+        if (msg != null) d.setMessage(msg).setPositiveButton(t("Choose…", "اختيار…")) { _, _ -> alertChoices(items) }.setNegativeButton(t("Close", "إغلاق"), null).show()
+        else alertChoices(items)
+    }
+
+    private fun alertChoices(items: Array<String>) {
+        dialog().setTitle(t("Prayer-time banner (no sound)", "تنبيه وقت الصلاة (بدون صوت)")).setItems(items) { _, w ->
+            when (w) {
+                0 -> prefs.edit().putInt("alertMode", Alerts.AT_TIME).apply()
+                1 -> prefs.edit().putInt("alertMode", Alerts.WITH_REMINDER).apply()
+                2 -> prefs.edit().putInt("alertMode", Alerts.OFF).apply()
+                3 -> if (Alerts.canShow(this)) Alerts.show(this, t("It's time for Dhuhr", "حان الآن موعد صلاة الظهر"), t("11:18  ·  This is a test", "11:18  ·  هذا تنبيه تجريبي"), 8000)
+                     else toast(t("Run the adb command first", "شغّل أمر adb أولًا"))
+            }
+            if (w < 3) { Alerts.schedule(this); toast(t("Prayer-time banner: ", "تنبيه وقت الصلاة: ") + alertName()) }
         }.show()
     }
 
@@ -1086,7 +1122,7 @@ class MainActivity : Activity(), RemoteServer.Host {
     private fun cityMenu() {
         val names = cities.indices.map { if (ar) cityAr(it) else cities[it].first } + t("Turn prayer times off", "إيقاف مواقيت الصلاة")
         dialog().setTitle(t("Prayer times for", "مواقيت الصلاة في")).setItems(names.toTypedArray()) { _, which ->
-            prefs.edit().putInt("city", if (which < cities.size) which else -1).apply(); updateClock()
+            prefs.edit().putInt("city", if (which < cities.size) which else -1).apply(); updateClock(); Alerts.schedule(this)
         }.show()
     }
 
@@ -1117,10 +1153,12 @@ class MainActivity : Activity(), RemoteServer.Host {
     }
 
     private fun cardBg(strong: Boolean, focused: Boolean, glow: Boolean = false) = GradientDrawable().apply {
-        setColor(if (focused) Color.parseColor("#E6143A30") else Color.parseColor("#B30D2420"))
-        cornerRadius = dp(14).toFloat()
+        orientation = GradientDrawable.Orientation.TOP_BOTTOM
+        colors = if (focused) intArrayOf(Color.parseColor("#F2183A31"), Color.parseColor("#F2102A24"))
+                 else intArrayOf(Color.parseColor("#E8102521"), Color.parseColor("#E80A1A17"))
+        cornerRadius = dp(16).toFloat()
         val w = if (focused) dp(3) else if (strong || glow) dp(2) else dp(1)
-        setStroke(w, if (focused) Color.WHITE else if (strong || glow) GOLD else Color.argb(80, 227, 184, 92))
+        setStroke(w, if (focused) Color.parseColor("#F3D58A") else if (strong || glow) GOLD else Color.argb(60, 227, 184, 92))
     }
 
     private fun card(strong: Boolean, onClick: () -> Unit) = LinearLayout(this).apply {
@@ -1130,10 +1168,16 @@ class MainActivity : Activity(), RemoteServer.Host {
         setPadding(dp(16), dp(8), dp(16), dp(8))
         setOnFocusChangeListener { v, has ->
             v.background = cardBg(strong, has, v.tag == "glow")
-            v.animate().scaleX(if (has) 1.03f else 1f).scaleY(if (has) 1.03f else 1f).setInterpolator(ease).setDuration(150).start()
+            v.animate().scaleX(if (has) 1.02f else 1f).scaleY(if (has) 1.02f else 1f).setInterpolator(ease).setDuration(if (calm) 220 else 150).start()
             if (has) scroll.smoothScrollTo(0, 0)
         }
         setOnClickListener { onClick() }
+    }
+
+    private fun iconLabel(kind: Int, text: String) = LinearLayout(this).apply {
+        orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
+        addView(GoldIcon(this@MainActivity, kind, GOLD), LinearLayout.LayoutParams(dp(15), dp(15)).apply { marginEnd = dp(6) })
+        addView(small(text))
     }
 
     private fun small(text: String, color: Int = MUTED) = TextView(this).apply { this.text = text; textSize = 13f; setTextColor(color); maxLines = 1 }
@@ -1145,13 +1189,13 @@ class MainActivity : Activity(), RemoteServer.Host {
         prayRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; clipChildren = false }
         val hero = card(true) { prayerDialog() }
         val a = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        a.addView(small(t("🕌  Next prayer", "🕌  الصلاة القادمة")))
+        a.addView(iconLabel(GoldIcon.MOSQUE, t("Next prayer", "الصلاة القادمة")))
         nextNameTv = TextView(this).apply { textSize = 26f; setTextColor(TEXT); setTypeface(typeface, Typeface.BOLD); maxLines = 1 }
         a.addView(nextNameTv)
         hero.addView(a, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
         hero.addView(View(this).apply { setBackgroundColor(Color.argb(90, 227, 184, 92)) }, LinearLayout.LayoutParams(dp(1), dp(46)).apply { setMargins(dp(12), 0, dp(12), 0) })
         val b = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        b.addView(small(t("⏱  Countdown", "⏱  الوقت المتبقي")))
+        b.addView(iconLabel(GoldIcon.HOURGLASS, t("Time left", "الوقت المتبقي")))
         nextCountTv = TextView(this).apply {
             textSize = 28f; setTextColor(GOLD); setTypeface(Typeface.create("sans-serif-medium", Typeface.BOLD)); maxLines = 1
             fontFeatureSettings = "tnum"; textDirection = View.TEXT_DIRECTION_LTR
@@ -1161,10 +1205,9 @@ class MainActivity : Activity(), RemoteServer.Host {
         prayRow.addView(hero, LinearLayout.LayoutParams(0, dp(84), 0.42f))
 
         val strip = card(false) { prayerDialog() }.apply { setPadding(dp(6), dp(6), dp(6), dp(6)) }
-        val icons = listOf("🌄", "☀️", "🌤️", "🌇", "🌙")
         for (i in 0 until 5) {
             val cell = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER }
-            cell.addView(TextView(this).apply { text = icons[i]; textSize = 14f; gravity = Gravity.CENTER })
+            cell.addView(GoldIcon(this, i, GOLD), LinearLayout.LayoutParams(dp(20), dp(20)).apply { bottomMargin = dp(2) })
             val n = TextView(this).apply { textSize = 13f; setTextColor(MUTED); gravity = Gravity.CENTER; maxLines = 1 }
             val tm = TextView(this).apply { textSize = 16f; setTextColor(TEXT); setTypeface(typeface, Typeface.BOLD); gravity = Gravity.CENTER; maxLines = 1 }
             cell.addView(n); cell.addView(tm)
@@ -1177,7 +1220,7 @@ class MainActivity : Activity(), RemoteServer.Host {
         // row 2: Ramadan / Hijri occasions, and the next Sunnah fast
         val row2 = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(0, dp(12), 0, 0); clipChildren = false }
         ramCard = card(false) { islamicDatesDialog() }
-        ramCard.addView(TextView(this).apply { text = "🌙"; textSize = 24f }, LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply { marginEnd = dp(12) })
+        ramCard.addView(GoldIcon(this, GoldIcon.LANTERN, GOLD), LinearLayout.LayoutParams(dp(34), dp(34)).apply { marginEnd = dp(14) })
         val rc = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         ramTitle = TextView(this).apply { textSize = 17f; setTextColor(TEXT); setTypeface(typeface, Typeface.BOLD); maxLines = 1 }
         ramSub = TextView(this).apply { textSize = 14f; setTextColor(GOLD); maxLines = 1; fontFeatureSettings = "tnum" }
@@ -1186,7 +1229,7 @@ class MainActivity : Activity(), RemoteServer.Host {
         row2.addView(ramCard, LinearLayout.LayoutParams(0, dp(64), 1f))
 
         fastCard = card(false) { fastDialog() }
-        fastCard.addView(TextView(this).apply { text = "🤲"; textSize = 24f }, LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply { marginEnd = dp(12) })
+        fastCard.addView(GoldIcon(this, GoldIcon.DATES, GOLD), LinearLayout.LayoutParams(dp(34), dp(34)).apply { marginEnd = dp(14) })
         val fc = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         fastTitle = TextView(this).apply { textSize = 17f; setTextColor(TEXT); setTypeface(typeface, Typeface.BOLD); maxLines = 1 }
         fastSub = TextView(this).apply { textSize = 14f; setTextColor(MUTED); maxLines = 1 }
@@ -1202,6 +1245,10 @@ class MainActivity : Activity(), RemoteServer.Host {
 
     private fun fmtLeft(ms: Long): String {
         val s = (ms / 1000).coerceAtLeast(0)
+        if (calm) {
+            val m = (s + 59) / 60
+            return if (m >= 60) t("${m / 60}h ${m % 60}m", "${m / 60}س ${m % 60}د") else if (m > 0) t("$m min", "$m د") else t("now", "الآن")
+        }
         return String.format(Locale.US, "%02d:%02d:%02d", s / 3600, (s / 60) % 60, s % 60)
     }
 
@@ -1243,9 +1290,10 @@ class MainActivity : Activity(), RemoteServer.Host {
                 cellTimes[i].text = Prayer.hm(if (i == 0 && epochAt(today, tt.isha) < now) tm.fajr else hours[i])
                 val on = i == nextI
                 cellBoxes[i].background = if (on) GradientDrawable().apply {
-                    setColor(Color.parseColor("#1F7A5A")); cornerRadius = dp(10).toFloat(); setStroke(dp(1), GOLD)
+                    setColor(Color.parseColor("#1C4337")); cornerRadius = dp(12).toFloat(); setStroke(dp(1), GOLD)
                 } else null
-                cellNames[i].setTextColor(if (on) Color.WHITE else MUTED)
+                cellNames[i].setTextColor(if (on) GOLD else MUTED)
+                cellTimes[i].setTextColor(if (on) Color.parseColor("#FFF6E0") else TEXT)
             }
         } else { prayRow.visibility = View.GONE; nextAt = 0 }
 
@@ -1309,6 +1357,10 @@ class MainActivity : Activity(), RemoteServer.Host {
             }
             if (!fastCard.hasFocus()) fastCard.background = cardBg(false, false, fastCard.tag == "glow")
         }
+        // calm mode: soften the whole home screen from an hour after Isha until Fajr
+        val night = if (tt != null) now > epochAt(today, tt.isha) + 3_600_000L || now < epochAt(today, tt.fajr)
+                    else java.time.LocalTime.now().let { it.hour >= 21 || it.hour < 5 }
+        dimView.animate().alpha(if (calm && night) 0.35f else 0f).setDuration(1500).start()
         panel.visibility = if (prayRow.visibility == View.GONE && ramCard.visibility == View.GONE && fastCard.visibility == View.GONE) View.GONE else View.VISIBLE
         tickCountdowns()
     }
@@ -1320,7 +1372,6 @@ class MainActivity : Activity(), RemoteServer.Host {
         if (nextAt > 0) {
             val left = nextAt - now
             nextCountTv.text = fmtLeft(left)
-            nextCountTv.setTextColor(if (left < 10 * 60_000) Color.parseColor("#FFE29A") else GOLD)
         }
         if (ramAt > 0) ramSub.text = "$ramLabel  ${fmtLeft(ramAt - now)}"
     }

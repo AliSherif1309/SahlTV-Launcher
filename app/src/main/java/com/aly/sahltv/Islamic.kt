@@ -10,6 +10,7 @@ import android.graphics.Path
 import android.graphics.PixelFormat
 import android.graphics.RadialGradient
 import android.graphics.Rect
+import android.graphics.RectF
 import android.graphics.Shader
 import android.graphics.drawable.Drawable
 import java.time.DayOfWeek
@@ -87,16 +88,14 @@ object Islamic {
 }
 
 /**
- * Night-sky background in the Islamic theme: deep green gradient, a faint gold eight-point-star pattern,
- * a crescent with a few stars and a soft mosque silhouette. Drawn once into a bitmap, so it costs nothing while browsing.
+ * Calm night background for the Islamic theme: deep navy-green, a soft crescent, a very faint star pattern,
+ * and a dark mosque on the horizon at the bottom right. Drawn once into a bitmap: no animation, no flicker.
  */
-class IslamicBackdrop(private val density: Float) : Drawable() {
+class IslamicBackdrop(private val density: Float, private val rtl: Boolean = false) : Drawable() {
     private var cache: Bitmap? = null
     private fun dp(v: Float) = v * density
 
-    override fun onBoundsChange(bounds: Rect) {
-        cache = null
-    }
+    override fun onBoundsChange(bounds: Rect) { cache = null }
 
     override fun draw(canvas: Canvas) {
         val b = bounds
@@ -110,21 +109,21 @@ class IslamicBackdrop(private val density: Float) : Drawable() {
         val c = Canvas(bmp)
         val p = Paint(Paint.ANTI_ALIAS_FLAG)
 
-        // sky: night blue at the top fading to deep green
-        p.shader = LinearGradient(0f, 0f, 0f, h.toFloat(), intArrayOf(Color.parseColor("#0A1B2A"), Color.parseColor("#0B2620"), Color.parseColor("#071A15")),
-            floatArrayOf(0f, 0.55f, 1f), Shader.TileMode.CLAMP)
+        p.shader = LinearGradient(0f, 0f, 0f, h.toFloat(), intArrayOf(Color.parseColor("#071320"), Color.parseColor("#0A1C1B"), Color.parseColor("#06110E")),
+            floatArrayOf(0f, 0.6f, 1f), Shader.TileMode.CLAMP)
         c.drawRect(0f, 0f, w.toFloat(), h.toFloat(), p)
+
+        // a little warm light around the moon and on the horizon
+        val mx = w * (if (rtl) 0.60f else 0.40f); val my = dp(50f)
+        p.shader = RadialGradient(mx, my, dp(220f), intArrayOf(Color.argb(34, 240, 205, 140), Color.argb(0, 240, 205, 140)), null, Shader.TileMode.CLAMP)
+        c.drawCircle(mx, my, dp(220f), p)
+        p.shader = RadialGradient(w * 0.8f, h.toFloat(), w * 0.45f, intArrayOf(Color.argb(30, 227, 184, 92), Color.argb(0, 227, 184, 92)), null, Shader.TileMode.CLAMP)
+        c.drawCircle(w * 0.8f, h.toFloat(), w * 0.45f, p)
         p.shader = null
 
-        // warm glow behind the mosque
-        val gx = w * 0.62f; val gy = dp(150f)
-        p.shader = RadialGradient(gx, gy, w * 0.38f, intArrayOf(Color.argb(70, 227, 170, 90), Color.argb(0, 227, 170, 90)), null, Shader.TileMode.CLAMP)
-        c.drawCircle(gx, gy, w * 0.38f, p)
-        p.shader = null
-
-        // eight-point stars (two overlapping squares) in a lattice, very faint gold
-        p.style = Paint.Style.STROKE; p.strokeWidth = dp(1f); p.color = Color.argb(20, 227, 184, 92)
-        val step = dp(72f); val r = dp(20f)
+        // eight-point stars: barely there, a texture rather than a picture
+        p.style = Paint.Style.STROKE; p.strokeWidth = dp(1f); p.color = Color.argb(9, 227, 184, 92)
+        val step = dp(92f); val r = dp(22f)
         var y = 0f; var row = 0
         while (y < h + step) {
             var x = if (row % 2 == 0) 0f else step / 2
@@ -132,29 +131,25 @@ class IslamicBackdrop(private val density: Float) : Drawable() {
             y += step / 2; row++
         }
 
-        // stars in the sky
+        // a few quiet stars in the sky
         p.style = Paint.Style.FILL
         val rnd = java.util.Random(7)
-        repeat(40) {
-            p.color = Color.argb(60 + rnd.nextInt(120), 255, 240, 210)
-            c.drawCircle(rnd.nextFloat() * w, rnd.nextFloat() * dp(170f), dp(0.6f + rnd.nextFloat() * 1.1f), p)
+        repeat(28) {
+            p.color = Color.argb(40 + rnd.nextInt(70), 255, 240, 210)
+            c.drawCircle(rnd.nextFloat() * w, rnd.nextFloat() * dp(150f), dp(0.6f + rnd.nextFloat() * 0.9f), p)
         }
 
         // crescent
-        val mx = w * 0.47f; val my = dp(62f); val mr = dp(24f)
+        val mr = dp(19f)
         val moon = Path().apply { addCircle(mx, my, mr, Path.Direction.CW) }
-        val bite = Path().apply { addCircle(mx + mr * 0.45f, my - mr * 0.25f, mr * 0.88f, Path.Direction.CW) }
-        moon.op(bite, Path.Op.DIFFERENCE)
-        p.color = Color.parseColor("#F3D58A"); p.setShadowLayer(dp(14f), 0f, 0f, Color.argb(160, 243, 213, 138))
+        moon.op(Path().apply { addCircle(mx + mr * 0.45f, my - mr * 0.25f, mr * 0.86f, Path.Direction.CW) }, Path.Op.DIFFERENCE)
+        p.color = Color.parseColor("#EED39A"); p.setShadowLayer(dp(10f), 0f, 0f, Color.argb(110, 238, 211, 154))
         c.drawPath(moon, p)
         p.clearShadowLayer()
 
-        mosque(c, p, w * 0.62f, dp(206f), w * 0.40f)
-
-        // fade the bottom of the silhouette into the background, so the panels stay easy to read
-        p.shader = LinearGradient(0f, dp(120f), 0f, dp(240f), intArrayOf(Color.argb(0, 11, 38, 32), Color.argb(235, 11, 38, 32)), null, Shader.TileMode.CLAMP)
-        c.drawRect(0f, dp(120f), w.toFloat(), dp(240f), p)
-        p.shader = null
+        // mosque on the horizon, darker than the sky: a silhouette, not a picture to look at
+        val u = minOf(w * 0.30f / 20f, h * 0.30f / 15.6f)
+        mosque(c, p, w * 0.82f, h.toFloat(), u)
         return bmp
     }
 
@@ -172,22 +167,15 @@ class IslamicBackdrop(private val density: Float) : Drawable() {
         c.drawPath(path, p)
     }
 
-    /** A simple mosque: big dome, two side domes, two minarets with crescents; lit arched windows. */
-    private fun mosque(c: Canvas, p: Paint, cx: Float, base: Float, width: Float) {
-        val body = Color.parseColor("#13302A"); val rim = Color.argb(110, 243, 213, 138)
-        val u = width / 20f
+    private fun mosque(c: Canvas, p: Paint, cx: Float, base: Float, u: Float) {
         val s = Path()
-        // main hall
         s.addRect(cx - 6 * u, base - 5 * u, cx + 6 * u, base, Path.Direction.CW)
-        // main dome (onion shape)
-        val dome = Path().apply {
+        s.addPath(Path().apply {
             moveTo(cx - 4.2f * u, base - 5 * u)
             cubicTo(cx - 5.2f * u, base - 9.5f * u, cx - 1.2f * u, base - 10.5f * u, cx, base - 12.5f * u)
             cubicTo(cx + 1.2f * u, base - 10.5f * u, cx + 5.2f * u, base - 9.5f * u, cx + 4.2f * u, base - 5 * u)
             close()
-        }
-        s.addPath(dome)
-        // side wings with small domes
+        })
         for (side in listOf(-1f, 1f)) {
             val wx = cx + side * 8f * u
             s.addRect(wx - 2.2f * u, base - 3.5f * u, wx + 2.2f * u, base, Path.Direction.CW)
@@ -197,46 +185,88 @@ class IslamicBackdrop(private val density: Float) : Drawable() {
                 cubicTo(wx + 0.5f * u, base - 5.8f * u, wx + 2.2f * u, base - 5.6f * u, wx + 1.8f * u, base - 3.5f * u)
                 close()
             })
-            // minaret
             val mx = cx + side * 11.6f * u
             s.addRect(mx - 0.55f * u, base - 13f * u, mx + 0.55f * u, base, Path.Direction.CW)
             s.addRect(mx - 0.95f * u, base - 10.2f * u, mx + 0.95f * u, base - 9.6f * u, Path.Direction.CW)
-            s.addRect(mx - 0.85f * u, base - 13.4f * u, mx + 0.85f * u, base - 12.9f * u, Path.Direction.CW)
-            s.addPath(Path().apply {
-                moveTo(mx - 0.6f * u, base - 13.4f * u); lineTo(mx, base - 15.6f * u); lineTo(mx + 0.6f * u, base - 13.4f * u); close()
-            })
+            s.addPath(Path().apply { moveTo(mx - 0.6f * u, base - 13f * u); lineTo(mx, base - 15.2f * u); lineTo(mx + 0.6f * u, base - 13f * u); close() })
         }
-        p.style = Paint.Style.FILL; p.color = body
+        p.style = Paint.Style.FILL; p.color = Color.parseColor("#050F0D")
         c.drawPath(s, p)
-        p.style = Paint.Style.STROKE; p.strokeWidth = density * 1.2f; p.color = rim
+        p.style = Paint.Style.STROKE; p.strokeWidth = density; p.color = Color.argb(55, 238, 211, 154)
         c.drawPath(s, p)
-
-        // finials: small crescents on the main dome and minarets
-        p.style = Paint.Style.FILL; p.color = Color.parseColor("#E3B85C")
-        for (fx in listOf(cx to base - 12.5f * u, cx - 11.6f * u to base - 15.6f * u, cx + 11.6f * u to base - 15.6f * u)) {
-            c.drawRect(fx.first - u * 0.06f, fx.second - u * 0.9f, fx.first + u * 0.06f, fx.second, p)
-            val m = Path().apply { addCircle(fx.first, fx.second - u * 1.1f, u * 0.32f, Path.Direction.CW) }
-            m.op(Path().apply { addCircle(fx.first + u * 0.14f, fx.second - u * 1.18f, u * 0.27f, Path.Direction.CW) }, Path.Op.DIFFERENCE)
-            c.drawPath(m, p)
-        }
-        // lit arched windows
-        p.color = Color.argb(150, 243, 196, 110)
+        p.style = Paint.Style.FILL; p.color = Color.argb(70, 243, 196, 110)
         for (i in -2..2) arch(c, p, cx + i * 2.2f * u, base - 0.6f * u, 0.7f * u, 2.6f * u)
-        for (side in listOf(-1f, 1f)) arch(c, p, cx + side * 8f * u, base - 0.5f * u, 0.6f * u, 1.8f * u)
     }
 
     private fun arch(c: Canvas, p: Paint, x: Float, bottom: Float, w: Float, h: Float) {
-        val path = Path().apply {
+        c.drawPath(Path().apply {
             moveTo(x - w / 2, bottom); lineTo(x - w / 2, bottom - h + w * 0.6f)
             quadTo(x - w / 2, bottom - h, x, bottom - h - w * 0.2f)
             quadTo(x + w / 2, bottom - h, x + w / 2, bottom - h + w * 0.6f)
             lineTo(x + w / 2, bottom); close()
-        }
-        c.drawPath(path, p)
+        }, p)
     }
 
     override fun setAlpha(alpha: Int) {}
     override fun setColorFilter(colorFilter: ColorFilter?) {}
     @Deprecated("Deprecated in Java")
     override fun getOpacity(): Int = PixelFormat.OPAQUE
+}
+
+/** Small line icons drawn in one colour, so every icon matches (no mixed emoji styles). */
+class GoldIcon(ctx: android.content.Context, private val kind: Int, private val color: Int) : android.view.View(ctx) {
+    companion object { const val FAJR = 0; const val DHUHR = 1; const val ASR = 2; const val MAGHRIB = 3; const val ISHA = 4
+        const val MOSQUE = 5; const val HOURGLASS = 6; const val LANTERN = 7; const val DATES = 8; const val CRESCENT = 9 }
+    private val p = Paint(Paint.ANTI_ALIAS_FLAG)
+
+    private fun crescent(c: Canvas, x: Float, y: Float, r: Float) {
+        val m = Path().apply { addCircle(x, y, r, Path.Direction.CW) }
+        m.op(Path().apply { addCircle(x + r * 0.45f, y - r * 0.3f, r * 0.85f, Path.Direction.CW) }, Path.Op.DIFFERENCE)
+        p.style = Paint.Style.FILL; c.drawPath(m, p); p.style = Paint.Style.STROKE
+    }
+    private fun rays(c: Canvas, x: Float, y: Float, r1: Float, r2: Float, from: Int, to: Int) {
+        for (i in from..to) { val a = Math.PI / 4 * i
+            c.drawLine(x + r1 * Math.cos(a).toFloat(), y - r1 * Math.sin(a).toFloat(), x + r2 * Math.cos(a).toFloat(), y - r2 * Math.sin(a).toFloat(), p) }
+    }
+
+    override fun onDraw(c: Canvas) {
+        val w = width.toFloat(); val h = height.toFloat(); val s = minOf(w, h); val cx = w / 2; val cy = h / 2
+        p.color = color; p.strokeWidth = s * 0.08f; p.strokeCap = Paint.Cap.ROUND; p.style = Paint.Style.STROKE
+        when (kind) {
+            FAJR -> { val hy = cy + s * 0.18f
+                c.drawLine(cx - s * 0.42f, hy, cx + s * 0.42f, hy, p)
+                c.drawPath(Path().apply { addArc(RectF(cx - s * 0.2f, hy - s * 0.2f, cx + s * 0.2f, hy + s * 0.2f), 180f, 180f) }, p)
+                rays(c, cx, hy, s * 0.29f, s * 0.4f, 1, 3) }
+            DHUHR -> { p.style = Paint.Style.FILL; c.drawCircle(cx, cy, s * 0.17f, p); p.style = Paint.Style.STROKE; rays(c, cx, cy, s * 0.27f, s * 0.4f, 0, 7) }
+            ASR -> { val hy = cy + s * 0.3f
+                c.drawLine(cx - s * 0.42f, hy, cx + s * 0.42f, hy, p)
+                p.style = Paint.Style.FILL; c.drawCircle(cx + s * 0.1f, cy - s * 0.05f, s * 0.15f, p); p.style = Paint.Style.STROKE
+                rays(c, cx + s * 0.1f, cy - s * 0.05f, s * 0.23f, s * 0.32f, 0, 4) }
+            MAGHRIB -> { val hy = cy + s * 0.05f
+                c.drawLine(cx - s * 0.42f, hy, cx + s * 0.42f, hy, p)
+                c.drawPath(Path().apply { addArc(RectF(cx - s * 0.2f, hy - s * 0.2f, cx + s * 0.2f, hy + s * 0.2f), 180f, 180f) }, p)
+                c.drawLine(cx, hy + s * 0.12f, cx, hy + s * 0.36f, p)
+                c.drawLine(cx - s * 0.1f, hy + s * 0.26f, cx, hy + s * 0.36f, p); c.drawLine(cx + s * 0.1f, hy + s * 0.26f, cx, hy + s * 0.36f, p) }
+            ISHA -> { crescent(c, cx - s * 0.04f, cy + s * 0.02f, s * 0.3f); p.style = Paint.Style.FILL; c.drawCircle(cx + s * 0.28f, cy - s * 0.24f, s * 0.05f, p) }
+            CRESCENT -> crescent(c, cx, cy, s * 0.36f)
+            MOSQUE -> { val b = cy + s * 0.36f
+                c.drawLine(cx - s * 0.42f, b, cx + s * 0.42f, b, p)
+                c.drawPath(Path().apply { moveTo(cx - s * 0.22f, b); lineTo(cx - s * 0.22f, cy)
+                    cubicTo(cx - s * 0.26f, cy - s * 0.22f, cx - s * 0.05f, cy - s * 0.24f, cx, cy - s * 0.36f)
+                    cubicTo(cx + s * 0.05f, cy - s * 0.24f, cx + s * 0.26f, cy - s * 0.22f, cx + s * 0.22f, cy); lineTo(cx + s * 0.22f, b) }, p)
+                c.drawLine(cx + s * 0.38f, b, cx + s * 0.38f, cy - s * 0.3f, p); c.drawLine(cx - s * 0.38f, b, cx - s * 0.38f, cy - s * 0.3f, p) }
+            HOURGLASS -> { c.drawLine(cx - s * 0.24f, cy - s * 0.38f, cx + s * 0.24f, cy - s * 0.38f, p); c.drawLine(cx - s * 0.24f, cy + s * 0.38f, cx + s * 0.24f, cy + s * 0.38f, p)
+                c.drawPath(Path().apply { moveTo(cx - s * 0.18f, cy - s * 0.38f); lineTo(cx + s * 0.18f, cy + s * 0.38f); moveTo(cx + s * 0.18f, cy - s * 0.38f); lineTo(cx - s * 0.18f, cy + s * 0.38f) }, p) }
+            LANTERN -> { c.drawCircle(cx, cy - s * 0.4f, s * 0.05f, p)
+                c.drawPath(Path().apply { moveTo(cx - s * 0.16f, cy - s * 0.22f); lineTo(cx, cy - s * 0.34f); lineTo(cx + s * 0.16f, cy - s * 0.22f); close() }, p)
+                c.drawRoundRect(cx - s * 0.2f, cy - s * 0.2f, cx + s * 0.2f, cy + s * 0.26f, s * 0.08f, s * 0.08f, p)
+                p.style = Paint.Style.FILL; p.alpha = 90; c.drawRoundRect(cx - s * 0.12f, cy - s * 0.12f, cx + s * 0.12f, cy + s * 0.18f, s * 0.05f, s * 0.05f, p); p.alpha = 255; p.style = Paint.Style.STROKE
+                c.drawLine(cx - s * 0.12f, cy + s * 0.36f, cx + s * 0.12f, cy + s * 0.36f, p) }
+            DATES -> { p.style = Paint.Style.FILL
+                for (i in -1..1) c.drawOval(RectF(cx + i * s * 0.17f - s * 0.08f, cy - s * 0.24f, cx + i * s * 0.17f + s * 0.08f, cy + s * 0.02f), p)
+                p.style = Paint.Style.STROKE
+                c.drawPath(Path().apply { addArc(RectF(cx - s * 0.4f, cy - s * 0.24f, cx + s * 0.4f, cy + s * 0.4f), 0f, 180f) }, p)
+                c.drawLine(cx - s * 0.4f, cy + s * 0.08f, cx + s * 0.4f, cy + s * 0.08f, p) }
+        }
+    }
 }

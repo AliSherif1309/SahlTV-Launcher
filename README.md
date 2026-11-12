@@ -78,3 +78,9 @@ Quran text: Tanzil Project (tanzil.net), Uthmani, CC BY 3.0, used unchanged. Fon
 - Hijri date under the clock, with a ±2 day adjustment for local moon sighting.
 - Ramadan card: days until Ramadan; during Ramadan, the day number and a live Iftar / Suhoor countdown; Eid and Arafah greetings. Press OK for upcoming Islamic dates.
 - Sunnah fast card: next Monday/Thursday, White days, Arafah, Ashura, Dhu al-Hijjah and Shawwal fasts; glows the day before. Press OK for the next 30 days.
+
+## v1.6: calmer look, prayer-time banner, calm mode
+- Calmer Islamic theme: deeper colours, very faint pattern, small dark mosque on the horizon, matching gold line icons.
+- 🔔 Prayer-time banner (no sound): a quiet card in the corner at each prayer time, even over SmartTube; optional heads-up 10 minutes before. One-time setup:
+  `adb shell appops set com.aly.sahltv SYSTEM_ALERT_WINDOW allow`
+- 👶 Calm mode (on by default): countdown changes once a minute instead of every second, softer focus, home screen dims from an hour after Isha until Fajr.
