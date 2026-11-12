@@ -291,15 +291,19 @@ class MainActivity : Activity(), RemoteServer.Host {
     private fun buildTopBar(): View {
         val bar = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         val left = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        clockTv = TextView(this).apply { textSize = 72f; setTextColor(Color.WHITE); typeface = Fonts.get(2); includeFontPadding = false
-            setShadowLayer(14f, 0f, 2f, Color.argb(220, 0, 0, 0)); letterSpacing = 0.01f; fontFeatureSettings = "tnum" }
-        dateTv = TextView(this).apply { textSize = 17f; setTextColor(Color.parseColor("#E6EEEA")); setShadowLayer(8f, 0f, 1f, Color.BLACK); setPadding(0, dp(4), 0, 0) }
-        hijriTv = TextView(this).apply { textSize = 18f; setTextColor(GOLD); typeface = Fonts.display(false); setPadding(0, dp(1), 0, 0); setShadowLayer(8f, 0f, 1f, Color.BLACK) }
+        // one line only: the clock shrinks a little instead of wrapping (the column is shared with the weather and buttons)
+        clockTv = TextView(this).apply { textSize = 56f; setTextColor(Color.WHITE); typeface = Fonts.get(2); includeFontPadding = false
+            setShadowLayer(14f, 0f, 2f, Color.argb(220, 0, 0, 0)); fontFeatureSettings = "tnum"; maxLines = 1
+            setAutoSizeTextTypeUniformWithConfiguration(34, 56, 2, android.util.TypedValue.COMPLEX_UNIT_SP) }
+        dateTv = TextView(this).apply { textSize = 17f; setTextColor(Color.parseColor("#E6EEEA")); setShadowLayer(8f, 0f, 1f, Color.BLACK); setPadding(0, dp(2), 0, 0)
+            maxLines = 1; setAutoSizeTextTypeUniformWithConfiguration(11, 17, 1, android.util.TypedValue.COMPLEX_UNIT_SP) }
+        hijriTv = TextView(this).apply { textSize = 18f; setTextColor(GOLD); typeface = Fonts.display(false); setPadding(0, dp(1), 0, 0); setShadowLayer(8f, 0f, 1f, Color.BLACK)
+            maxLines = 1; setAutoSizeTextTypeUniformWithConfiguration(11, 18, 1, android.util.TypedValue.COMPLEX_UNIT_SP) }
         prayerTv = TextView(this).apply { textSize = 15f; setTextColor(ACCENT); visibility = View.GONE }
         val hRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         hRow.addView(GoldIcon(this, GoldIcon.CRESCENT, GOLD), LinearLayout.LayoutParams(dp(16), dp(16)).apply { marginEnd = dp(6) })
-        hRow.addView(hijriTv)
-        left.addView(clockTv); left.addView(dateTv); left.addView(hRow)
+        hRow.addView(hijriTv, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
+        left.addView(clockTv, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT)); left.addView(dateTv, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT)); left.addView(hRow, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT))
         bar.addView(left, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
         bar.addView(buildWeather(), LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply { marginEnd = dp(20) })
 
@@ -335,8 +339,8 @@ class MainActivity : Activity(), RemoteServer.Host {
     private fun updateClock() {
         val now = Date()
         clockTv.text = digits(SimpleDateFormat(if (clock24) "HH:mm" else "h:mm a", if (ar) Locale.forLanguageTag("ar") else Locale.US).format(now))
-        dateTv.text = SimpleDateFormat("EEEE d MMMM yyyy", if (ar) Locale.forLanguageTag("ar") else Locale.US).format(now)
-        hijriTv.text = hijriText(LocalDate.now())
+        dateTv.text = digits(SimpleDateFormat("EEEE d MMMM yyyy", if (ar) Locale.forLanguageTag("ar") else Locale.US).format(now))
+        hijriTv.text = digits(hijriText(LocalDate.now()))
         updatePrayer()
         updateIslamic()
     }
@@ -473,13 +477,7 @@ class MainActivity : Activity(), RemoteServer.Host {
         if (fav.isNotEmpty()) {
             content.addView(rowTitle(t("Favorites", "المفضلة")))
             content.addView(hRow("fav", fav.mapNotNull { apps[it] }, big = true))
-        } else {
-            content.addView(rowTitle(t("Favorites", "المفضلة")))
-            content.addView(TextView(this).apply {
-                text = t("Tip: hold OK on any app (or press Menu) and choose “Add to Favorites”.", "نصيحة: اضغط مطولًا على OK فوق أي تطبيق (أو زر القائمة) واختر «إضافة إلى المفضلة».")
-                textSize = 14f; setTextColor(MUTED); setPadding(0, dp(4), 0, dp(8))
-            })
-        }
+        }   // no favorites yet: no empty section, so the Recent apps show right after the cards (tip: hold OK on an app)
         renderPreviews()
         if (rec.size >= 2) {
             content.addView(rowTitle(t("Recent", "المستخدمة مؤخرًا")))
@@ -843,12 +841,13 @@ class MainActivity : Activity(), RemoteServer.Host {
     }
 
     private fun showSaver() {
-        val clock = TextView(this).apply { textSize = 104f; setTextColor(Color.parseColor("#B8C4BF")); typeface = Fonts.light() }
-        val date = TextView(this).apply { textSize = 18f; setTextColor(Color.parseColor("#6E7C76")) }
+        val clock = TextView(this).apply { textSize = 96f; setTextColor(Color.parseColor("#C9C2AE")); typeface = Fonts.display(false); includeFontPadding = false; fontFeatureSettings = "tnum" }
+        val day = TextView(this).apply { textSize = 34f; setTextColor(Color.parseColor("#B08F4A")); typeface = Fonts.display(true); Fonts.heading(this) }
+        val date = TextView(this).apply { textSize = 18f; setTextColor(Color.parseColor("#6E7C76")); typeface = Fonts.text(); setPadding(0, dp(6), 0, 0) }
         val pray = TextView(this).apply { textSize = 18f; setTextColor(Color.parseColor("#2E8F66")); setPadding(0, dp(6), 0, 0) }
         val box = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL; tag = "box"
-            addView(clock); addView(date); addView(pray)
+            addView(clock); addView(day); addView(date); addView(pray)
         }
         val f = FrameLayout(this).apply {
             setBackgroundColor(Color.BLACK); alpha = 0f
@@ -856,7 +855,7 @@ class MainActivity : Activity(), RemoteServer.Host {
         }
         rootFrame.addView(f, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
         saver = f
-        fun fill() { clock.text = clockTv.text; date.text = dateTv.text; date.text = "${dateTv.text}\n${hijriTv.text}"; pray.text = listOf(if (cityIndex in cities.indices) prayerTv.text.toString() else "", fastLine).filter { it.isNotEmpty() }.joinToString("\n") }
+        fun fill() { clock.text = clockTv.text; day.text = SimpleDateFormat("EEEE", if (ar) Locale.forLanguageTag("ar") else Locale.US).format(Date()); date.text = digits(SimpleDateFormat("d MMMM yyyy", if (ar) Locale.forLanguageTag("ar") else Locale.US).format(Date())) + "\n" + hijriTv.text; pray.text = listOf(if (cityIndex in cities.indices) prayerTv.text.toString() else "", fastLine).filter { it.isNotEmpty() }.joinToString("\n") }
         fill()
         f.tag = Runnable { fill() }
         f.animate().alpha(1f).setDuration(800).start()
@@ -1119,6 +1118,7 @@ class MainActivity : Activity(), RemoteServer.Host {
                 24 -> textSizeMenu()
                 25 -> { prefs.edit().putBoolean("nightStyle", !nightStyle).commit(); Fonts.night = PrefsProvider.isNight(this); recreate() }
                 26 -> { prefs.edit().putBoolean("arDigits", !arDigits).apply(); updateClock(); tickCountdowns() }
+                27 -> greetingMenu()
                 17 -> dialog().setTitle("Sahl TV  ·  سهل")
                     .setMessage(t("A fast, ad-free home screen for Android TV.\n\nNo tracking, no background services. Internet is used only for preview pictures, the weather, and checking for updates. Nothing about you is sent anywhere.\n\nPrayer times are calculated on the TV (Qatar method: Fajr 18°, Asr Shafi'i, Isha 90 min after Maghrib). Please compare with the official Awqaf timetable.\n\nTip: hold OK on an app (or press Menu) for options.\n\nFree & open source (MIT).\n" + photoCredits() + "Weather: Open-Meteo.com (CC BY 4.0). Ayah of the day: Tanzil Quran text (CC BY 3.0), Amiri Quran font (SIL OFL).\nContact: alysherif1309@gmail.com",
                                   "واجهة رئيسية سريعة وبلا إعلانات لأجهزة Android TV.\n\nبلا تتبّع وبلا خدمات تعمل في الخلفية. يُستخدم الإنترنت فقط لصور المعاينات والطقس والبحث عن تحديثات. لا يُرسل أي شيء عنك.\n\nتُحسب مواقيت الصلاة على التلفاز (طريقة قطر: الفجر 18°، العصر شافعي، العشاء بعد المغرب بـ 90 دقيقة). يُرجى مقارنتها بتقويم الأوقاف الرسمي.\n\nنصيحة: اضغط مطولًا على OK فوق تطبيق (أو زر القائمة) لعرض الخيارات.\n\nمجاني ومفتوح المصدر (MIT).\n" + photoCredits() + "الطقس: Open-Meteo.com (CC BY 4.0). آية اليوم: نص القرآن من مشروع تنزيل (CC BY 3.0) وخط Amiri Quran (SIL OFL).\nللتواصل: alysherif1309@gmail.com"))
@@ -1193,6 +1193,13 @@ class MainActivity : Activity(), RemoteServer.Host {
     private lateinit var ayahTv: TextView
     private lateinit var ayahRef: TextView
     private lateinit var newsCard: LinearLayout
+    private lateinit var greetCard: LinearLayout
+    private lateinit var greetIconBox: FrameLayout
+    private lateinit var greetTitle: TextView
+    private lateinit var greetSub: TextView
+    private var greetPreview: String? = null
+    private var greetPreviewUntil = 0L
+    private var greetShown: String? = null
     private lateinit var newsSub: TextView
     private var nextAt = 0L
     private var ramAt = 0L
@@ -1281,7 +1288,8 @@ class MainActivity : Activity(), RemoteServer.Host {
         ramSub = TextView(this).apply { textSize = 14f; setTextColor(GOLD); maxLines = 1; fontFeatureSettings = "tnum" }
         rc.addView(ramTitle); rc.addView(ramSub)
         ramCard.addView(rc, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
-        row2.addView(ramCard, LinearLayout.LayoutParams(0, dp(64), 1f))
+        ramCard.minimumHeight = dp(64)
+        row2.addView(ramCard, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
 
         fastCard = card(false) { fastDialog() }
         fastCard.addView(GoldIcon(this, GoldIcon.DATES, GOLD), LinearLayout.LayoutParams(dp(34), dp(34)).apply { marginEnd = dp(14) })
@@ -1290,7 +1298,8 @@ class MainActivity : Activity(), RemoteServer.Host {
         fastSub = TextView(this).apply { textSize = 14f; setTextColor(MUTED); maxLines = 1 }
         fc.addView(fastTitle); fc.addView(fastSub)
         fastCard.addView(fc, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
-        row2.addView(fastCard, LinearLayout.LayoutParams(0, dp(64), 1f).apply { marginStart = dp(12) })
+        fastCard.minimumHeight = dp(64)
+        row2.addView(fastCard, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f).apply { marginStart = dp(12) })
         col.addView(row2)
 
         // row 3: Ayah of the day (text copied unchanged from the verified Quran text at build time)
@@ -1321,6 +1330,17 @@ class MainActivity : Activity(), RemoteServer.Host {
         newsSub = small("", GOLD); nc.addView(newsSub)
         newsCard.addView(nc, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
         col.addView(newsCard, 0, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply { bottomMargin = dp(12) })
+
+        // Seasonal greeting (Ramadan, Eid, Arafah, Hijri new year, Qatar National Day): Thmanyah Display with its swash
+        greetCard = card(true) { greetingMenu() }.apply { setPadding(dp(22), dp(12), dp(22), dp(12)); tag = "glow"; visibility = View.GONE }
+        greetIconBox = FrameLayout(this).apply { background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(Color.argb(46, 227, 184, 92)) } }
+        greetCard.addView(greetIconBox, LinearLayout.LayoutParams(dp(52), dp(52)).apply { marginEnd = dp(18) })
+        val gc = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        greetTitle = TextView(this).apply { textSize = 30f; setTextColor(Color.parseColor("#F6E7C1")); typeface = Fonts.display(true); maxLines = 1; includeFontPadding = false; Fonts.heading(this) }
+        greetSub = TextView(this).apply { textSize = 15f; setTextColor(GOLD); typeface = Fonts.text(); maxLines = 1; setPadding(0, dp(4), 0, 0) }
+        gc.addView(greetTitle); gc.addView(greetSub)
+        greetCard.addView(gc, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
+        col.addView(greetCard, 0, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply { bottomMargin = dp(12) })
         return col
     }
 
@@ -1443,7 +1463,8 @@ class MainActivity : Activity(), RemoteServer.Host {
             }
             if (!fastCard.hasFocus()) fastCard.background = cardBg(false, false, fastCard.tag == "glow")
         }
-        updateAyah(); updateNews(); refreshWeather()
+        for (tv in listOf(ramTitle, ramSub, fastTitle, fastSub)) { val d = digits(tv.text.toString()); if (d != tv.text.toString()) tv.text = d }
+        updateAyah(); updateNews(); updateGreeting(); refreshWeather()
         refreshBackground()
         // calm mode: soften the whole home screen from an hour after Isha until Fajr
         val night = if (tt != null) now > epochAt(today, tt.isha) + 3_600_000L || now < epochAt(today, tt.fajr)
@@ -1468,7 +1489,7 @@ class MainActivity : Activity(), RemoteServer.Host {
             val left = nextAt - now
             nextCountTv.text = digits(fmtLeft(left))
         }
-        if (ramAt > 0) ramSub.text = "$ramLabel  ${fmtLeft(ramAt - now)}"
+        if (ramAt > 0) ramSub.text = digits("$ramLabel  ${fmtLeft(ramAt - now)}")
     }
 
     private fun prayerDialog() {
@@ -1620,6 +1641,67 @@ class MainActivity : Activity(), RemoteServer.Host {
         "${pi.versionName}  ·  " + t("build ", "رقم ") + (if (Build.VERSION.SDK_INT >= 28) pi.longVersionCode else @Suppress("DEPRECATION") pi.versionCode.toLong())
     } catch (_: Exception) { "" }
 
+    // ------------------------------------------------------------------ seasonal greeting card
+
+    private val greetOn get() = prefs.getBoolean("greetOn", true)
+
+    /** The occasion today (by the Hijri date as set in the launcher, and Qatar National Day), or null. */
+    private fun occasion(today: LocalDate): String? {
+        val h = Islamic.hijri(today, hijriAdj)
+        return when {
+            today.monthValue == 12 && today.dayOfMonth == 18 -> "national"
+            h.m == 8 && h.d >= 20 -> "lastten"
+            h.m == 8 -> "ramadan"
+            h.m == 9 && h.d <= 3 -> "fitr"
+            h.m == 11 && h.d in 1..8 -> "dhulhijja"
+            h.m == 11 && h.d == 9 -> "arafah"
+            h.m == 11 && h.d in 10..13 -> "adha"
+            h.m == 0 && h.d == 1 -> "newyear"
+            else -> null
+        }
+    }
+
+    /** Title (short, for the swash), line under it, icon. */
+    private fun greeting(key: String): Triple<String, String, Int> {
+        val hy = Islamic.hijri(LocalDate.now(), hijriAdj).y
+        return when (key) {
+            "ramadan" -> Triple(t("Ramadan Kareem", "رمضان كريم"), t("May Allah accept your fasting and prayers", "تقبّل الله صيامكم وقيامكم"), GoldIcon.LANTERN)
+            "lastten" -> Triple(t("The last ten nights", "العشر الأواخر"), t("O Allah, You pardon and love to pardon, so pardon us", "اللهم إنك عفوٌّ تحب العفو فاعفُ عنّا"), GoldIcon.LANTERN)
+            "fitr" -> Triple(t("Eid Mubarak", "عيد مبارك"), t("Eid al-Fitr · May Allah accept from us and from you", "عيد الفطر · تقبّل الله منّا ومنكم"), GoldIcon.CRESCENT)
+            "dhulhijja" -> Triple(t("The ten days of Dhul Hijjah", "عشر ذي الحجة"), t("The best days of the year for good deeds", "أفضل أيام الدنيا للعمل الصالح"), GoldIcon.STAR)
+            "arafah" -> Triple(t("Day of Arafah", "يوم عرفة"), t("The best supplication is on the Day of Arafah", "خير الدعاء دعاء يوم عرفة"), GoldIcon.MOSQUE)
+            "adha" -> Triple(t("Eid al-Adha Mubarak", "عيد أضحى مبارك"), t("May Allah accept from us and from you", "تقبّل الله منّا ومنكم"), GoldIcon.CRESCENT)
+            "newyear" -> Triple(t("Happy Hijri New Year", "عام هجري سعيد"), t("$hy AH", "$hy هـ"), GoldIcon.CRESCENT)
+            else -> Triple(t("Qatar National Day", "اليوم الوطني"), t("18 December · Qatar", "١٨ ديسمبر · قطر"), GoldIcon.STAR)
+        }
+    }
+
+    private fun updateGreeting() {
+        if (!::greetCard.isInitialized) return
+        val preview = greetPreview?.takeIf { System.currentTimeMillis() < greetPreviewUntil }
+        val key = preview ?: if (greetOn) occasion(LocalDate.now()) else null
+        if (key == null) { greetCard.visibility = View.GONE; greetShown = null; return }
+        greetCard.visibility = View.VISIBLE
+        if (greetShown == key) return
+        greetShown = key
+        val (title, sub, icon) = greeting(key)
+        greetTitle.text = title; greetSub.text = sub
+        greetIconBox.removeAllViews()
+        greetIconBox.addView(GoldIcon(this, icon, GOLD), FrameLayout.LayoutParams(dp(28), dp(28), Gravity.CENTER))
+    }
+
+    private fun greetingMenu() {
+        val keys = listOf("ramadan", "lastten", "fitr", "dhulhijja", "arafah", "adha", "newyear", "national")
+        val items = arrayOf((if (greetOn) t("✓ Show on occasions (on)", "✓ الإظهار في المناسبات (مُفعّل)") else t("Show on occasions (off)", "الإظهار في المناسبات (متوقف)"))) +
+            keys.map { t("Preview: ", "معاينة: ") + greeting(it).first }.toTypedArray()
+        dialog().setTitle(t("Seasonal greetings", "تهاني المناسبات")).setItems(items) { _, w ->
+            if (w == 0) { prefs.edit().putBoolean("greetOn", !greetOn).apply(); greetPreview = null }
+            else { greetPreview = keys[w - 1]; greetPreviewUntil = System.currentTimeMillis() + 60_000L
+                toast(t("Shown for one minute", "تظهر لمدة دقيقة")); scroll.smoothScrollTo(0, 0) }
+            greetShown = null; updateGreeting()
+        }.setNegativeButton(t("Close", "إغلاق"), null).show()
+    }
+
     // ------------------------------------------------------------------ text size (shared with all Sahl apps)
 
     private val textScale get() = prefs.getFloat("textScale", 1f)
@@ -1661,6 +1743,7 @@ class MainActivity : Activity(), RemoteServer.Host {
                 SRow(GoldIcon.IMAGE, t("Background", "الخلفية"), t("The Kaaba, the Prophet's Mosque, Al-Aqsa — or automatic day / night", "الكعبة أو المسجد النبوي أو الأقصى — أو تلقائي نهار / ليل"), if (islamic) bgName() else t("Classic theme", "المظهر الكلاسيكي"), 18),
                 SRow(GoldIcon.SUN, t("Photo brightness", "سطوع الصورة"), t("Darker is calmer and easier to read", "الأغمق أهدأ وأسهل للقراءة"), dimName(), 19),
                 SRow(GoldIcon.EYE, t("Calm mode", "الوضع الهادئ"), t("Gentle for little eyes: minute countdown, soft focus, dims at night", "لطيف لعيون الصغار: عدّ بالدقائق، تركيز هادئ، تعتيم ليلًا"), onOff(calm), 7),
+                SRow(GoldIcon.STAR, t("Seasonal greetings", "تهاني المناسبات"), t("Ramadan, Eid, Arafah, Hijri new year and Qatar National Day, on the home screen", "رمضان والعيدين وعرفة ورأس السنة الهجرية واليوم الوطني، على الشاشة الرئيسية"), onOff(greetOn), 27),
                 SRow(GoldIcon.CRESCENT, t("Night style", "النمط الليلي"), t("From Isha until Fajr: warmer, softer colours and the reading font, in all Sahl apps", "من العشاء حتى الفجر: ألوان أدفأ وأهدأ وخط القراءة، في كل تطبيقات سهل"), onOff(nightStyle), 25),
                 SRow(GoldIcon.CLOCK, t("Numbers", "الأرقام"), t("Clock, prayer times and countdown", "الساعة ومواقيت الصلاة والعدّ التنازلي"), if (arDigits) "١٢٣" else "123", 26),
                 SRow(GoldIcon.EYE, t("Text size", "حجم الخط"), t("For all Sahl apps: Sahl TV, Quran, PDF and Files", "لكل تطبيقات سهل: سهل TV والقرآن وPDF والملفات"), textSizeName(), 24),
