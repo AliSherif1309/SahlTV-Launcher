@@ -6,6 +6,7 @@
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
     <application
+        android:name=".SahlApp"
         android:allowBackup="true"
         android:banner="@drawable/banner_img"
         android:icon="@mipmap/ic_launcher"

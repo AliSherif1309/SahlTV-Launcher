@@ -97,6 +97,7 @@ object Dlg {
         if (title != null) panel.addView(a.label(title, 19f, C.GOLD, true).apply { setPadding(a.dp(4), 0, a.dp(4), a.dp(10)) })
         panel.addView(body)
         d.setContentView(panel)
+        Fonts.watch(d.window)
         d.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
         d.window?.setLayout(a.dp(if (wide) 620 else 460), ViewGroup.LayoutParams.WRAP_CONTENT)
         return d

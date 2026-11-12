@@ -4,8 +4,12 @@ Run once; the PNGs are committed. Needs Pillow with Arabic shaping (raqm)."""
 from PIL import Image, ImageDraw, ImageFont
 
 W, H = 640, 360
-BOLD = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
-REG = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+import os
+# Thmanyah Sans when available (FONT_DIR = folder with the .otf files, kept off the repository by its licence);
+# only pictures of the text are saved, not the font.
+_fd = os.environ.get("FONT_DIR", "")
+BOLD = os.path.join(_fd, "thmanyahsans-Bold.otf") if _fd else "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+REG = os.path.join(_fd, "thmanyahsans-Medium.otf") if _fd else "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
 GOLD, CREAM, CREAM2 = (227, 184, 92), (243, 233, 207), (232, 219, 184)
 
 
@@ -48,7 +52,7 @@ def text(d, x, en, ar):
     while ImageFont.truetype(BOLD, size).getlength(en) > W - x - 44:
         size -= 2
     d.text((x, 118 + (64 - size) // 2), en, font=ImageFont.truetype(BOLD, size), fill=(238, 243, 241))
-    d.text((x, 206), ar, font=ImageFont.truetype(REG, 34), fill=GOLD, direction="rtl", language="ar", features=["liga"])
+    d.text((x, 200), ar, font=ImageFont.truetype(REG, 38), fill=GOLD, direction="rtl", language="ar", features=["liga"])
 
 
 def make(path, top, bottom, icon, en, ar):

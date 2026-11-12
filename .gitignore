@@ -7,3 +7,9 @@ local.properties
 *.keystore
 *.p12
 signing/
+# Thmanyah font: its licence forbids sharing the font files, so only the locked copy (fonts-locked/) is kept here
+*.otf
+*.ttf
+*.woff
+*.woff2
+**/src/main/assets/f/

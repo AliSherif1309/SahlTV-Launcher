@@ -47,6 +47,10 @@ jobs:
           mkdir -p app/src/main/assets
           cp quran/src/main/assets/AmiriQuran.ttf app/src/main/assets/AmiriQuran.ttf; cp quran/src/main/assets/Amiri-OFL.txt app/src/main/assets/ 2>/dev/null || true
           python3 tools/make_ayat.py
+      - name: Thmanyah font (unlocked here, packed scrambled into the apps; the font files are never published)
+        env:
+          FONT_KEY: ${{ secrets.FONT_KEY }}
+        run: python3 tools/pack_fonts.py
       - name: Build signed release APK
         env:
           KEYSTORE_B64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
