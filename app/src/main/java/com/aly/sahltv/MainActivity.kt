@@ -1151,6 +1151,7 @@ class MainActivity : Activity(), RemoteServer.Host {
     private fun cardBg(strong: Boolean, focused: Boolean, glow: Boolean = false) = GradientDrawable().apply {
         orientation = GradientDrawable.Orientation.TOP_BOTTOM
         colors = if (focused) intArrayOf(Color.parseColor("#F2183A31"), Color.parseColor("#F2102A24"))
+                 else if (islamic) intArrayOf(Color.parseColor("#B00E211D"), Color.parseColor("#B8091714"))      // frosted glass: the Kaaba shows through
                  else intArrayOf(Color.parseColor("#E8102521"), Color.parseColor("#E80A1A17"))
         cornerRadius = dp(16).toFloat()
         val w = if (focused) dp(3) else if (strong || glow) dp(2) else dp(1)
