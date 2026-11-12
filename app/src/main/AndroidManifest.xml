@@ -37,7 +37,7 @@
     </queries>
 
     <application
-        android:name=".SahlApp"
+        android:name="com.aly.sahl.common.SahlApp"
         android:supportsRtl="true"
         android:allowBackup="true"
         android:banner="@drawable/banner"

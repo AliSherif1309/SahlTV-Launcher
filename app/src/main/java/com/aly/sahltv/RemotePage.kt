@@ -69,12 +69,12 @@ textarea{min-height:64px;resize:vertical}
 var token = localStorage.getItem('sahlToken') || '';
 var ar = false;
 var L = {
-  en: {pairH:'Pair with your TV', pairP:'Enter the 6-digit code shown on the TV (☰ Launcher → Phone remote).', pairBtn:'Pair',
+  en: {pairH:'Pair with your TV', pairP:'On the TV open Settings → Phone remote → Pair a phone, then enter the 6-digit code shown there (valid 3 minutes).', pairBtn:'Pair', closed:'Pairing is not open on the TV — choose “Pair a phone” there first.',
        wrong:'Wrong code — check the TV', mediaH:'Playing', nothing:'Nothing playing', typeH:'Type on the TV', send:'Send',
        ph:'Search, login…', appsH:'Apps', sent:'Sent ✓',
        kbNo:'Open a text box on the TV first. If nothing appears, finish the one-time keyboard setup (☰ Launcher → Phone remote).',
        off:'TV not reachable', on:'Connected'},
-  ar: {pairH:'الاقتران بالتلفاز', pairP:'أدخل الرمز المكوّن من 6 أرقام الظاهر على التلفاز (☰ الواجهة ← الريموت من الهاتف).', pairBtn:'اقتران',
+  ar: {pairH:'الاقتران بالتلفاز', pairP:'على التلفاز افتح الإعدادات ← الريموت من الهاتف ← اقتران هاتف، ثم أدخل الرمز المكوّن من 6 أرقام الظاهر هناك (صالح 3 دقائق).', pairBtn:'اقتران', closed:'الاقتران غير مفتوح على التلفاز — اختر «اقتران هاتف» هناك أولًا.',
        wrong:'رمز خاطئ — تحقّق من التلفاز', mediaH:'يعمل الآن', nothing:'لا شيء قيد التشغيل', typeH:'الكتابة على التلفاز', send:'إرسال',
        ph:'بحث، تسجيل دخول…', appsH:'التطبيقات', sent:'تم الإرسال ✓',
        kbNo:'افتح خانة كتابة على التلفاز أولًا. إن لم يحدث شيء، أكمل إعداد لوحة المفاتيح لمرة واحدة (☰ الواجهة ← الريموت من الهاتف).',
@@ -114,7 +114,7 @@ function refresh(){
 el('pairBtn').onclick = function(){
   fetch('/api/pair', {method:'POST', body: el('code').value.trim()}).then(function(r){ return r.json(); }).then(function(j){
     if (j.ok) { token = j.token; localStorage.setItem('sahlToken', token); refresh(); }
-    else el('pairMsg').textContent = T('wrong');
+    else el('pairMsg').textContent = j.closed ? T('closed') : T('wrong');
   });
 };
 document.querySelectorAll('[data-m]').forEach(function(b){ b.onclick = function(){ api('/api/media?a=' + b.dataset.m, '').then(refresh); }; });

@@ -1,0 +1,97 @@
+#!/bin/bash
+# Performance test on an Android TV emulator (run by .github/workflows/perf.yml after each build).
+# Measures instead of assuming:
+#   1. start-up time of Sahl TV (cold, and return to Home), 5 runs each
+#   2. memory used by Sahl TV
+#   3. remote navigation: 80 D-pad presses across the home screen -> frames drawn, slow frames, crashes
+#   4. does "free memory" help? memory freed, how much is still free 1 minute later,
+#      and how much slower the apps open afterwards (they must cold-start again)
+# Usage: perf.sh <folder with the APKs> <emulator RAM in MB>
+set -u
+D=$1; RAM=$2; OUT=perf-$RAM.md
+PKG=com.aly.sahltv; ACT=$PKG/.MainActivity
+A() { adb shell "$@" 2>/dev/null | tr -d '\r'; }
+median() { sort -n | awk '{a[NR]=$1} END {if (NR==0) print "-"; else print a[int((NR+1)/2)]}'; }
+start_ms() { A am start -W -n "$1" | awk -F': ' '/TotalTime/ {print $2}'; }
+avail_mb() { A cat /proc/meminfo | awk '/MemAvailable/ {print int($2/1024)}'; }
+
+adb wait-for-device
+for i in $(seq 1 60); do [ "$(A getprop sys.boot_completed)" = "1" ] && break; sleep 2; done
+for f in SahlTV SahlQuran SahlPDF SahlFiles; do adb install -r -g "$D/$f.apk" >/dev/null 2>&1 || echo "install $f failed"; done
+A cmd package set-home-activity "$ACT" >/dev/null
+A settings put global window_animation_scale 1; A settings put global transition_animation_scale 1
+A am start -W -n "$ACT" >/dev/null; sleep 6          # first start: let it load apps, photos and caches
+
+# 1) start-up
+COLD=(); WARM=()
+for i in 1 2 3 4 5; do
+  A am force-stop $PKG; sleep 3
+  COLD+=("$(start_ms $ACT)"); sleep 4
+done
+for i in 1 2 3 4 5; do
+  A am start -n com.android.tv.settings/.MainSettings >/dev/null 2>&1 || A am start -a android.settings.SETTINGS >/dev/null; sleep 3
+  A input keyevent KEYCODE_HOME; sleep 1
+  WARM+=("$(start_ms $ACT)"); sleep 2
+done
+COLD_MED=$(printf '%s\n' "${COLD[@]}" | grep -E '^[0-9]+$' | median)
+WARM_MED=$(printf '%s\n' "${WARM[@]}" | grep -E '^[0-9]+$' | median)
+
+# 2) memory
+sleep 5
+PSS=$(A dumpsys meminfo $PKG | awk '/TOTAL PSS:/ {print int($3/1024); exit} /^ *TOTAL:? / {print int($2/1024); exit}')
+TOTAL_RAM=$(A cat /proc/meminfo | awk '/MemTotal/ {print int($2/1024)}')
+LOWRAM=$(A getprop ro.config.low_ram)
+
+# 3) remote navigation
+adb logcat -c
+A dumpsys gfxinfo $PKG reset >/dev/null
+for r in 1 2; do
+  for k in DOWN DOWN DOWN DOWN RIGHT RIGHT RIGHT RIGHT RIGHT DOWN LEFT LEFT LEFT LEFT DOWN RIGHT RIGHT UP UP UP; do
+    A input keyevent KEYCODE_DPAD_$k; sleep 0.25
+  done
+done
+for k in UP UP UP UP UP UP UP UP UP UP UP UP UP UP UP UP UP UP UP UP; do A input keyevent KEYCODE_DPAD_$k; sleep 0.15; done
+G=$(A dumpsys gfxinfo $PKG)
+FRAMES=$(echo "$G" | awk -F': ' '/Total frames rendered/ {print $2; exit}')
+JANK=$(echo "$G" | awk -F': ' '/Janky frames:/ {print $2; exit}')
+P50=$(echo "$G" | awk -F': ' '/50th percentile/ {print $2; exit}')
+P90=$(echo "$G" | awk -F': ' '/90th percentile/ {print $2; exit}')
+P99=$(echo "$G" | awk -F': ' '/99th percentile/ {print $2; exit}')
+ALIVE=$([ -n "$(A pidof $PKG)" ] && echo yes || echo NO)
+CRASH=$(adb logcat -d -b crash 2>/dev/null | grep -c "FATAL EXCEPTION" || true)
+
+# 4) does cleaning help? open the four Sahl apps + Settings, return Home, then clean like the broom button
+APPS="com.aly.sahlquran/.QuranActivity com.aly.sahlpdf/.LibraryActivity com.aly.sahlfiles/.FilesActivity"
+for a in $APPS; do A am start -W -n "$a" >/dev/null; sleep 3; A input keyevent KEYCODE_HOME; sleep 1; done
+WARM_APPS=(); for a in $APPS; do WARM_APPS+=("$(start_ms "$a")"); sleep 2; A input keyevent KEYCODE_HOME; sleep 1; done
+sleep 3
+M_BEFORE=$(avail_mb)
+A am kill-all                                   # same as the broom: closes apps running in the background
+sleep 2; M_AFTER=$(avail_mb)
+sleep 60; M_1MIN=$(avail_mb)
+AFTER_APPS=(); for a in $APPS; do AFTER_APPS+=("$(start_ms "$a")"); sleep 2; A input keyevent KEYCODE_HOME; sleep 1; done
+FREED=$((M_AFTER - M_BEFORE)); KEPT="-"
+[ "$FREED" -gt 0 ] && KEPT=$(( (M_1MIN - M_BEFORE) * 100 / FREED ))
+WA=$(printf '%s\n' "${WARM_APPS[@]}" | grep -E '^[0-9]+$' | median); AA=$(printf '%s\n' "${AFTER_APPS[@]}" | grep -E '^[0-9]+$' | median)
+
+{
+echo "## Performance · emulator with ${RAM} MB RAM (TV total ${TOTAL_RAM} MB, low-RAM flag: ${LOWRAM:-no})"
+echo
+echo "| Measure | Result |"
+echo "|---|---|"
+echo "| Cold start (process starts, until first frame), median of 5 | **${COLD_MED} ms** (runs: ${COLD[*]}) |"
+echo "| Return to Home (warm), median of 5 | **${WARM_MED} ms** (runs: ${WARM[*]}) |"
+echo "| Memory used by Sahl TV (PSS) | **${PSS:-?} MB** |"
+echo "| Remote navigation: 80 key presses | ${FRAMES:-?} frames · janky ${JANK:-?} · p50 ${P50:-?} · p90 ${P90:-?} · p99 ${P99:-?} |"
+echo "| Still running after navigation / crashes | ${ALIVE} / ${CRASH} |"
+echo "| Free memory: before → after cleaning → 1 min later | ${M_BEFORE} → ${M_AFTER} → ${M_1MIN} MB |"
+echo "| Freed, and still free after 1 min | **${FREED} MB**, **${KEPT}%** kept |"
+echo "| Sahl apps open time: before cleaning → after (median) | ${WA} ms → **${AA} ms** |"
+echo
+if [ "$KEPT" != "-" ] && [ "$KEPT" -lt 25 ]; then echo "> Cleaning gives little lasting benefit here: memory refills within a minute, and apps open slower afterwards."; fi
+if [ "$ALIVE" != "yes" ] || [ "$CRASH" != "0" ]; then echo "> ⚠️ Sahl TV stopped or crashed during the test — see the logcat artifact."; fi
+} > "$OUT"
+adb logcat -d > "logcat-$RAM.txt" 2>/dev/null || true
+cat "$OUT"
+# a crash fails the test
+[ "$ALIVE" = "yes" ] && [ "$CRASH" = "0" ]

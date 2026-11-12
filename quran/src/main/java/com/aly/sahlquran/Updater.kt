@@ -1,5 +1,8 @@
 package com.aly.sahlquran
 
+import com.aly.sahl.common.Fonts
+import com.aly.sahl.common.FontDialog
+
 import android.app.Activity
 import android.app.AlertDialog
 import android.app.PendingIntent
@@ -22,12 +25,18 @@ import java.net.URL
  * In-app updates from the public GitHub release "latest".
  * The release carries version.json + the APKs. Android only accepts an update signed with the same key
  * as the installed app, so a tampered APK can never replace Sahl TV or Sahl Quran.
+ * On top of that, every download is checked before installing (UpdateCheck): its SHA-256 fingerprint must match
+ * the one published with the build, and it must be signed with the Sahl key. Files come from the numbered release.
  */
 object Updater {
     private const val BASE = "https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/"
 
-    class Info(val code: Long, val tv: String, val quran: String, val notes: String)
-    private class Item(val pkg: String, val file: String, val name: String, val from: String, val to: String)
+    class Info(val code: Long, val tv: String, val quran: String, val notes: String, val base: String = "", val sums: Map<String, String> = emptyMap()) {
+        /** Each build's files live in their own numbered release; "latest" only says which build that is. */
+        fun url(file: String) = base.ifEmpty { BASE } + file
+        fun sha(file: String) = sums[file] ?: ""
+    }
+    private class Item(val pkg: String, val file: String, val name: String, val from: String, val to: String, val url: String = "", val sha: String = "")
 
     private val main = Handler(Looper.getMainLooper())
     private val queue = ArrayList<Pair<File, String>>()
@@ -39,10 +48,15 @@ object Updater {
         return c
     }
 
+    private fun sums(o: org.json.JSONObject): Map<String, String> {
+        val m = o.optJSONObject("sha256") ?: return emptyMap()
+        return m.keys().asSequence().associateWith { m.getString(it) }
+    }
+
     fun fetch(): Info? = try {
         val c = get(BASE + "version.json")
         val o = org.json.JSONObject(c.inputStream.bufferedReader().use { it.readText() })
-        Info(o.getLong("code"), o.optString("sahltv"), o.optString("quran"), o.optString("notes"))
+        Info(o.getLong("code"), o.optString("sahltv"), o.optString("quran"), o.optString("notes"), o.optString("base"), sums(o))
     } catch (_: Exception) { null }
 
     @Suppress("DEPRECATION")
@@ -59,8 +73,8 @@ object Updater {
         for ((pkg, file, nv) in all) {
             val have = installed(ctx, pkg)
             if (pkg != ctx.packageName && pkg == "com.aly.sahltv") continue      // Sahl Quran only updates itself
-            if (have == null) { if (pkg != ctx.packageName) out.add(Item(pkg, file, nv.first, "", nv.second)) }
-            else if (have.first < info.code) out.add(Item(pkg, file, nv.first, have.second, nv.second))
+            if (have == null) { if (pkg != ctx.packageName) out.add(Item(pkg, file, nv.first, "", nv.second, info.url(file), info.sha(file))) }
+            else if (have.first < info.code) out.add(Item(pkg, file, nv.first, have.second, nv.second, info.url(file), info.sha(file)))
         }
         return out
     }
@@ -126,7 +140,7 @@ object Updater {
             try {
                 for (it in list) {
                     val f = File(dir, it.file)
-                    val c = get(BASE + it.file)
+                    val c = get(it.url.ifEmpty { BASE + it.file })
                     val total = c.contentLength.toLong()
                     c.inputStream.use { inp -> f.outputStream().use { out ->
                         val buf = ByteArray(64 * 1024); var done = 0L; var last = -1
@@ -138,10 +152,14 @@ object Updater {
                         }
                     } }
                     if (total > 0 && f.length() != total) throw java.io.IOException("incomplete")
+                    com.aly.sahl.common.UpdateCheck.verify(a, f, it.sha, it.pkg)?.let { why -> f.delete(); throw SecurityException(why) }
                     files.add(f to it.pkg)
                 }
             } catch (e: Exception) {
-                main.post { prog.dismiss(); dialog(a).setTitle(t("Download failed", "فشل التنزيل")).setMessage(t("Please try again.", "يُرجى المحاولة مرة أخرى."))
+                val bad = e is SecurityException
+                main.post { prog.dismiss(); dialog(a).setTitle(if (bad) t("Update not installed", "لم يُثبَّت التحديث") else t("Download failed", "فشل التنزيل"))
+                    .setMessage(if (bad) t("The downloaded file did not pass the safety check (${e.message}), so nothing was installed. Please try again later.",
+                                           "الملف الذي نُزّل لم يجتز فحص الأمان (${e.message})، لذلك لم يُثبَّت شيء. حاول لاحقًا.") else t("Please try again.", "يُرجى المحاولة مرة أخرى."))
                     .setPositiveButton(t("OK", "حسنًا"), null).show() }
                 return@Thread
             }
@@ -173,7 +191,7 @@ object Updater {
                     val arr = org.json.JSONArray()
                     for (it in list) {
                         val f = File(dir, it.file)
-                        val c = get(BASE + it.file)
+                        val c = get(it.url.ifEmpty { BASE + it.file })
                         val total = c.contentLength.toLong()
                         c.inputStream.use { inp -> f.outputStream().use { out -> inp.copyTo(out, 64 * 1024) } }
                         if (total > 0 && f.length() != total) throw java.io.IOException("incomplete")
@@ -200,7 +218,7 @@ object Updater {
         for (i in 0 until arr.length()) {
             val it = arr.getJSONObject(i); val f = File(dir, it.getString("file")); val pkg = it.getString("pkg")
             val have = installed(ctx, pkg)
-            if (f.exists() && (have == null || have.first < code)) files.add(f to pkg)
+            if (f.exists() && (have == null || have.first < code) && com.aly.sahl.common.UpdateCheck.verify(ctx, f, it.optString("sha"), pkg) == null) files.add(f to pkg)
         }
         if (files.isEmpty()) { dir.listFiles()?.forEach { it.delete() }; return }
         files.sortBy { if (it.second == ctx.packageName) 1 else 0 }      // this app last

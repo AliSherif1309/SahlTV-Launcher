@@ -14,9 +14,18 @@ import java.security.SecureRandom
 import java.util.concurrent.Executors
 
 /**
- * Phone remote: a tiny web server on the TV (port 8765, home Wi-Fi only).
- * Open http://<tv-ip>:8765 on the phone, enter the 6-digit pairing code shown on the TV once.
- * Off by default; started from the launcher menu.
+ * Phone remote: a tiny web server on the TV (port 8765, home network only).
+ *
+ * Security:
+ *  • Pairing works only while "Pair a phone" is open on the TV (3 minutes), with a new one-time code each time.
+ *    5 wrong codes close the window. Outside that window no code is accepted at all, so guessing is impossible.
+ *  • Each paired phone gets its own random key. The TV keeps only a fingerprint (SHA-256) of it, with the phone's
+ *    name and when it was last used. Phones unused for 90 days are forgotten. You can remove any phone in Settings.
+ *  • Only devices on the home network may connect, and only by the TV's IP address (blocks websites — "DNS rebinding").
+ *  • The TV shows a message each time a phone is paired.
+ *  • Off by default; started from Settings → Phone remote.
+ * Note: it is plain HTTP inside your home Wi-Fi (a browser cannot use HTTPS with a TV that has no certificate), so it
+ * relies on your Wi-Fi password, like other TV remotes on the home network.
  */
 object RemoteServer {
     const val PORT = 8765
@@ -29,7 +38,11 @@ object RemoteServer {
         fun nowPlaying(): String
         fun goHome()
         fun arabic(): Boolean
+        fun paired(name: String)                      // shown on the TV
     }
+
+    /** A paired phone: fingerprint of its key, a readable name, when it was paired and last used. */
+    class Phone(val hash: String, val name: String, val since: Long, val seen: Long)
 
     @Volatile var host: Host? = null
     @Volatile private var server: ServerSocket? = null
@@ -43,16 +56,55 @@ object RemoteServer {
 
     val running get() = server != null
 
-    fun code(ctx: Context): String {
-        val p = ctx.getSharedPreferences("sahl", Context.MODE_PRIVATE)
-        return p.getString("rcode", null) ?: String.format("%06d", SecureRandom().nextInt(1_000_000)).also {
-            p.edit().putString("rcode", it).apply()
-        }
-    }
+    // ---------------------------------------------------------------- pairing window
+    @Volatile private var pairCode: String? = null
+    @Volatile private var pairUntil = 0L
+    const val PAIR_MS = 3 * 60_000L
 
-    /** New code: every paired phone must pair again. */
-    fun resetPairing(ctx: Context) {
-        ctx.getSharedPreferences("sahl", Context.MODE_PRIVATE).edit().remove("rcode").remove("rtokens").apply()
+    /** Opens pairing for 3 minutes with a fresh one-time code (shown on the TV). */
+    fun openPairing(): String {
+        val c = String.format("%06d", rnd.nextInt(1_000_000))
+        pairCode = c; pairUntil = System.currentTimeMillis() + PAIR_MS; wrongCodes = 0
+        return c
+    }
+    fun closePairing() { pairCode = null; pairUntil = 0L }
+    fun pairingOpen() = pairCode != null && System.currentTimeMillis() < pairUntil
+
+    // ---------------------------------------------------------------- paired phones
+    private fun sp(ctx: Context) = ctx.getSharedPreferences("sahl", Context.MODE_PRIVATE)
+
+    fun phones(ctx: Context): List<Phone> {
+        val p = sp(ctx)
+        // older versions kept the keys themselves: keep those phones paired, but store only fingerprints from now on
+        val old = (p.getString("rtokens", "") ?: "").split("|").filter { it.isNotEmpty() }
+        if (old.isNotEmpty() || p.contains("rcode")) {
+            val now = System.currentTimeMillis()
+            savePhones(ctx, readPhones(ctx) + old.map { Phone(com.aly.sahl.common.LanGuard.sha256(it), "Phone", now, now) })
+            p.edit().remove("rtokens").remove("rcode").apply()
+        }
+        val cutoff = System.currentTimeMillis() - 90L * 24 * 3_600_000L
+        val l = readPhones(ctx)
+        val keep = l.filter { it.seen > cutoff }
+        if (keep.size != l.size) savePhones(ctx, keep)
+        return keep
+    }
+    private fun readPhones(ctx: Context): List<Phone> = try {
+        val a = org.json.JSONArray(sp(ctx).getString("rphones", "[]"))
+        (0 until a.length()).map { a.getJSONObject(it).let { o -> Phone(o.getString("h"), o.optString("n", "Phone"), o.optLong("s"), o.optLong("u")) } }
+    } catch (_: Exception) { emptyList() }
+    private fun savePhones(ctx: Context, l: List<Phone>) {
+        val a = org.json.JSONArray()
+        l.distinctBy { it.hash }.take(10).forEach { a.put(org.json.JSONObject().put("h", it.hash).put("n", it.name).put("s", it.since).put("u", it.seen)) }
+        sp(ctx).edit().putString("rphones", a.toString()).apply()
+    }
+    fun removePhone(ctx: Context, hash: String) = savePhones(ctx, readPhones(ctx).filter { it.hash != hash })
+    fun removeAll(ctx: Context) = sp(ctx).edit().remove("rphones").remove("rtokens").remove("rcode").apply()
+
+    /** "Honor ALI-NX1", "iPhone", "Android phone" or "Computer", from the browser's description. */
+    private fun deviceName(ua: String?): String {
+        val u = ua ?: return "Phone"
+        Regex("""Android [\d.]+; ([^;)]+?)(?: Build/[^;)]*)?[;)]""").find(u)?.groupValues?.get(1)?.trim()?.takeIf { it.isNotEmpty() && it != "K" }?.let { return it }
+        return when { "iPhone" in u -> "iPhone"; "iPad" in u -> "iPad"; "Android" in u -> "Android phone"; else -> "Computer" }
     }
 
     fun ip(): String? = try {
@@ -87,6 +139,7 @@ object RemoteServer {
     private fun handle(s: Socket) {
         s.use { sock ->
             try {
+                if (!com.aly.sahl.common.LanGuard.allowedPeer(sock.inetAddress)) return     // home network only
                 sock.soTimeout = 8000
                 val input = BufferedInputStream(sock.getInputStream())
                 val head = readHead(input) ?: return
@@ -102,11 +155,13 @@ object RemoteServer {
                 val len = headers["content-length"]?.toIntOrNull() ?: 0
                 val body = if (len in 1..20000) ByteArray(len).also { var r = 0; while (r < len) { val n = input.read(it, r, len - r); if (n < 0) break; r += n } }
                     .toString(Charsets.UTF_8) else ""
-                val (status, type, out) = route(method, path, query, headers["x-token"], body)
+                val (status, type, out) =
+                    if (!com.aly.sahl.common.LanGuard.allowedHost(headers["host"])) Triple("421 Misdirected Request", "text/plain", "Open the TV by its IP address")
+                    else route(method, path, query, headers["x-token"], body, headers["user-agent"])
                 val bytes = out.toByteArray(Charsets.UTF_8)
                 val os = sock.getOutputStream()
                 os.write(("HTTP/1.1 $status\r\nContent-Type: $type; charset=utf-8\r\nContent-Length: ${bytes.size}\r\n" +
-                    "Cache-Control: no-store\r\nConnection: close\r\n\r\n").toByteArray())
+                    "Cache-Control: no-store\r\n" + com.aly.sahl.common.LanGuard.HEADERS + "Connection: close\r\n\r\n").toByteArray())
                 os.write(bytes); os.flush()
             } catch (_: Exception) {}
         }
@@ -130,23 +185,38 @@ object RemoteServer {
 
     private fun json(s: String) = "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", " ") + "\""
 
-    private fun tokens() = (prefs().getString("rtokens", "") ?: "").split("|").filter { it.isNotEmpty() }
+    /** Checks a phone's key against the stored fingerprints, and notes when it was last used (at most every 10 minutes). */
+    private fun known(token: String?): Boolean {
+        if (token.isNullOrEmpty() || token.length > 128) return false
+        val h = com.aly.sahl.common.LanGuard.sha256(token)
+        val l = phones(app)
+        val p = l.firstOrNull { com.aly.sahl.common.LanGuard.same(it.hash, h) } ?: return false
+        val now = System.currentTimeMillis()
+        if (now - p.seen > 10 * 60_000L) savePhones(app, l.map { if (it.hash == p.hash) Phone(it.hash, it.name, it.since, now) else it })
+        return true
+    }
 
-    private fun route(method: String, path: String, q: Map<String, String>, token: String?, body: String): Triple<String, String, String> {
+    private fun route(method: String, path: String, q: Map<String, String>, token: String?, body: String, ua: String?): Triple<String, String, String> {
         val ok = Triple("200 OK", "application/json", "{\"ok\":true}")
         if (method == "GET" && (path == "/" || path == "/index.html")) return Triple("200 OK", "text/html", RemotePage.HTML)
         if (path == "/api/pair" && method == "POST") {
-            if (body.trim() != code(app)) {
-                // too many wrong codes: make a new one (shown in Settings → Phone remote), so guessing never works
-                if (++wrongCodes >= 10) { wrongCodes = 0; prefs().edit().remove("rcode").apply() }
-                Thread.sleep(800); return Triple("403 Forbidden", "application/json", "{\"ok\":false}")
+            synchronized(this) {
+                val c = pairCode
+                if (c == null || !pairingOpen()) { Thread.sleep(500); return Triple("403 Forbidden", "application/json", "{\"ok\":false,\"closed\":true}") }
+                if (!com.aly.sahl.common.LanGuard.same(body.trim(), c)) {
+                    if (++wrongCodes >= 5) closePairing()          // 5 wrong codes: pairing closes until opened again on the TV
+                    Thread.sleep(800); return Triple("403 Forbidden", "application/json", "{\"ok\":false}")
+                }
+                closePairing()                                     // one phone per code
+                val t = ByteArray(32).also { rnd.nextBytes(it) }.joinToString("") { String.format("%02x", it) }
+                val now = System.currentTimeMillis()
+                val name = deviceName(ua)
+                savePhones(app, listOf(Phone(com.aly.sahl.common.LanGuard.sha256(t), name, now, now)) + phones(app))
+                android.os.Handler(android.os.Looper.getMainLooper()).post { host?.paired(name) }
+                return Triple("200 OK", "application/json", "{\"ok\":true,\"token\":${json(t)}}")
             }
-            wrongCodes = 0
-            val t = ByteArray(16).also { rnd.nextBytes(it) }.joinToString("") { String.format("%02x", it) }
-            prefs().edit().putString("rtokens", (listOf(t) + tokens()).take(10).joinToString("|")).apply()
-            return Triple("200 OK", "application/json", "{\"ok\":true,\"token\":${json(t)}}")
         }
-        if (token == null || token !in tokens()) return Triple("401 Unauthorized", "application/json", "{\"ok\":false,\"pair\":true}")
+        if (!known(token)) return Triple("401 Unauthorized", "application/json", "{\"ok\":false,\"pair\":true}")
         val h = host
         val main = android.os.Handler(android.os.Looper.getMainLooper())
         when (path) {

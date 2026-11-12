@@ -1,0 +1,66 @@
+name: Performance tests
+# After each build: start-up time, memory, remote navigation and the memory-cleaning effect, measured on
+# Android TV emulators with normal and low RAM. The report is added to the build's numbered release.
+on:
+  workflow_run:
+    workflows: ["Build APK"]
+    types: [completed]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  perf:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        ram: [2048, 1024]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Enable hardware acceleration for the emulator
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Download the build being tested
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release download latest -p 'Sahl*.apk' -p version.json -D apks
+          echo "BUILD=$(python3 -c "import json;print(json.load(open('apks/version.json')).get('build',''))")" >> $GITHUB_ENV
+          cd apks && python3 - <<'PY'
+          import json, hashlib
+          v = json.load(open("version.json"))
+          for f, h in v.get("sha256", {}).items():
+              got = hashlib.sha256(open(f, "rb").read()).hexdigest()
+              print(f, "OK" if got == h else "MISMATCH")
+              assert got == h
+          PY
+      - name: Run on an Android TV emulator (${{ matrix.ram }} MB RAM)
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 29
+          target: android-tv
+          arch: x86
+          profile: tv_1080p
+          ram-size: ${{ matrix.ram }}M
+          disk-size: 4G
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot
+          disable-animations: false
+          script: bash tools/perf.sh apks ${{ matrix.ram }}
+      - name: Report
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          [ -f perf-${{ matrix.ram }}.md ] && cat perf-${{ matrix.ram }}.md >> $GITHUB_STEP_SUMMARY
+          if [ -n "$BUILD" ] && [ -f perf-${{ matrix.ram }}.md ]; then gh release upload "build-$BUILD" perf-${{ matrix.ram }}.md --clobber || true; fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: perf-${{ matrix.ram }}
+          path: |
+            perf-${{ matrix.ram }}.md
+            logcat-${{ matrix.ram }}.txt

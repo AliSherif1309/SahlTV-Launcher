@@ -1,5 +1,8 @@
 package com.aly.sahlquran
 
+import com.aly.sahl.common.Fonts
+import com.aly.sahl.common.FontDialog
+
 import android.app.Activity
 import android.app.AlertDialog
 import android.graphics.Color

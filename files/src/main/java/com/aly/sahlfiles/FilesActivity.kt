@@ -1,5 +1,7 @@
 package com.aly.sahlfiles
 
+import com.aly.sahl.common.*
+
 import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.Intent

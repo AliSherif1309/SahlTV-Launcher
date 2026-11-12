@@ -1,4 +1,4 @@
-package com.aly.sahlpdf
+package com.aly.sahl.common
 
 import android.os.Handler
 import android.os.Looper
@@ -70,12 +70,13 @@ class UploadServer(
     private fun send(c: Socket, status: String, type: String, body: String) {
         val b = body.toByteArray(Charsets.UTF_8)
         c.getOutputStream().apply {
-            write("HTTP/1.1 $status\r\nContent-Type: $type; charset=utf-8\r\nContent-Length: ${b.size}\r\nCache-Control: no-store\r\nConnection: close\r\n\r\n".toByteArray()); write(b); flush()
+            write(("HTTP/1.1 $status\r\nContent-Type: $type; charset=utf-8\r\nContent-Length: ${b.size}\r\nCache-Control: no-store\r\n" + LanGuard.HEADERS + "Connection: close\r\n\r\n").toByteArray()); write(b); flush()
         }
     }
 
     private fun handle(c: Socket) {
         try {
+            if (!LanGuard.allowedPeer(c.inetAddress)) return                    // home network only
             c.soTimeout = 60_000
             val inp = BufferedInputStream(c.getInputStream(), 256 * 1024)
             val head = StringBuilder()
@@ -83,9 +84,10 @@ class UploadServer(
             val lines = head.lines()
             val (method, path) = lines[0].split(" ").let { (it.getOrNull(0) ?: "") to (it.getOrNull(1) ?: "/") }
             val headers = lines.drop(1).filter { it.contains(":") }.associate { it.substringBefore(":").trim().lowercase() to it.substringAfter(":").trim() }
+            if (!LanGuard.allowedHost(headers["host"])) { send(c, "421 Misdirected Request", "text/plain", "Open the TV by its IP address"); return }
             if (method == "GET") { send(c, "200 OK", "text/html", page()); return }
             if (method != "POST" || !path.startsWith("/upload")) { send(c, "404 Not Found", "text/plain", ""); return }
-            if (headers["x-code"] != code) {
+            if (!LanGuard.same(headers["x-code"] ?: "", code)) {
                 if (++wrong >= 10) stop()
                 Thread.sleep(800); send(c, "403 Forbidden", "text/plain", "wrong code"); return
             }

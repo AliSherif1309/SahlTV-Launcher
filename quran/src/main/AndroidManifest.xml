@@ -10,7 +10,7 @@
     </queries>
 
     <application
-        android:name=".SahlApp"
+        android:name="com.aly.sahl.common.SahlApp"
         android:allowBackup="true"
         android:banner="@drawable/banner_img"
         android:icon="@mipmap/ic_launcher"

@@ -1,4 +1,4 @@
-package com.aly.sahlfiles
+package com.aly.sahl.common
 
 import android.app.Activity
 import android.app.Dialog

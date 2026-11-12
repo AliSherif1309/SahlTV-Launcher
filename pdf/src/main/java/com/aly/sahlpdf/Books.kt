@@ -1,5 +1,7 @@
 package com.aly.sahlpdf
 
+import com.aly.sahl.common.*
+
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory

@@ -1,15 +1,15 @@
 {
- "version": "1.19",
+ "version": "1.20",
  "en": [
-  "Arabic now reads fully right to left: clock top right, prayer times from Fajr on the right, apps start from the right",
-  "Numbers ١٢٣ now also for the weather, Qatar dates and the apps count",
-  "One press to Favorites: on a Recent app, press the Menu key (≡) — a small ☆ shows which app",
-  "Slimmer Islamic cards on ordinary days; full cards in Ramadan, Eid, Arafah and fasting days"
+  "Safer phone remote: pair with a one-time code (Settings → Phone remote → Pair a phone); see and remove paired phones",
+  "Safer updates: every download is checked (fingerprint and Sahl signature) before installing",
+  "New: Settings → Diagnostics — start-up time, smoothness, memory, and whether cleaning really helps",
+  "Arabic reads fully right to left"
  ],
  "ar": [
-  "العربية الآن من اليمين إلى اليسار بالكامل: الساعة أعلى اليمين، ومواقيت الصلاة تبدأ بالفجر من اليمين، والتطبيقات تبدأ من اليمين",
-  "الأرقام ١٢٣ الآن أيضًا للطقس ومناسبات قطر وعدد التطبيقات",
-  "ضغطة واحدة للمفضلة: على تطبيق في «المستخدمة مؤخرًا» اضغط زر القائمة (≡) — تظهر نجمة ☆ صغيرة",
-  "بطاقات إسلامية أنحف في الأيام العادية، وكاملة في رمضان والعيدين وعرفة وأيام الصيام"
+  "ريموت الهاتف أكثر أمانًا: الاقتران برمز لمرة واحدة (الإعدادات ← الريموت من الهاتف ← اقتران هاتف)، مع عرض الهواتف المقترنة وإزالتها",
+  "تحديثات أكثر أمانًا: كل ملف يُفحص (البصمة وتوقيع سهل) قبل التثبيت",
+  "جديد: الإعدادات ← التشخيص — سرعة الفتح، السلاسة، الذاكرة، وهل يفيد التنظيف فعلًا",
+  "العربية من اليمين إلى اليسار بالكامل"
  ]
 }

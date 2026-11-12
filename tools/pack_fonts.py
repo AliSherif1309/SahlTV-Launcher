@@ -7,7 +7,7 @@ Without FONT_KEY nothing happens and the apps use the TV's normal font."""
 import os, subprocess, sys
 
 KEY = b"Sahl-TV/thmanyah-font/scramble-v1"   # must match Fonts.KEY
-APPS = ["app", "quran", "pdf", "files"]
+APPS = ["common"]   # assets of the shared module are merged into all four apps
 
 secret = os.environ.get("FONT_KEY", "")
 if not secret:

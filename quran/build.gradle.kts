@@ -17,7 +17,7 @@ android {
         targetSdk = 34
         // Every cloud build gets a higher number, so a new APK installs over the old one.
         versionCode = 100 + (System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 0)
-        versionName = "1.8"
+        versionName = "1.9"
     }
 
     signingConfigs {
@@ -47,3 +47,7 @@ android {
     }
 }
 // No external libraries: everything (sensors, GPS, World Magnetic Model) is built into Android.
+
+dependencies {
+    implementation(project(":common"))   // the shared Sahl family look and helpers
+}

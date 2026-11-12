@@ -153,3 +153,42 @@ All four apps use the Thmanyah family (ثمانية), following its own guide: *
 **Text size** (Sahl TV → Settings → Look & comfort): Normal, Large or Extra large, for all four apps. The other apps read it from Sahl TV.
 The font's licence allows using it inside apps but not sharing the font files. So this repository keeps only an encrypted copy (`fonts-locked/`). The cloud build unlocks it with the `FONT_KEY` secret and packs it scrambled into each app (`tools/pack_fonts.py`, `Fonts.kt`). Without the secret, the apps build with the TV's normal font.
 Font © thmanyah Publishing and Distribution, used under thmanyah's Font License.
+
+## 🔐 Phone remote security (v1.20)
+- **Pairing only on request:** on the TV, Settings → Phone remote → **Pair a phone** opens pairing for 3 minutes with a new one-time code. 5 wrong codes close it. Outside that window no code is accepted at all.
+- **One key per phone:** each phone gets its own random 256-bit key. The TV stores only its SHA-256 fingerprint, with the phone's name and when it was last used. Phones unused for 90 days are forgotten. **Paired phones** lets you remove any phone, or all of them.
+- **Home network only:** connections from outside private addresses are refused. Requests must use the TV's IP address, not a domain name, which blocks websites from reaching the TV through the phone's browser (DNS rebinding). Pages are sent with anti-framing and no-referrer headers.
+- The TV shows a message whenever a phone is paired.
+- The same network checks protect the "send from phone" pages of Sahl Quran, Sahl PDF and Sahl Files.
+- Limitation: it is plain HTTP inside your Wi-Fi (a browser cannot use HTTPS with a TV that has no certificate), so it relies on your Wi-Fi password, like other home-network TV remotes.
+
+## ⬆ Updates you can trust and recover (v1.20)
+- **Numbered releases:** every build is published as `build-N` with its APKs, `SHA256SUMS`, `version.json` and notes taken from the app's What's new. These releases are never changed afterwards.
+- **`latest` is only a pointer:** it is no longer deleted and recreated. Its files are replaced in place, and `version.json` is uploaded last. It tells the TV which build to use, and gives each APK's address in the numbered release with its SHA-256 fingerprint.
+- **The TV checks before installing** (`UpdateCheck`): the fingerprint must match, the file must be the expected app, and it must be signed with the Sahl key, even for an app being installed for the first time. Otherwise nothing is installed.
+- **Recovery:** if a version misbehaves, go to GitHub → Actions → *Build APK* → **Run workflow**, and type an older tag in *ref* (e.g. `build-128`). That code is published again with a newer number, so TVs update "forward" to it. Android does not allow installing an older version number over a newer one without uninstalling. Recovery works for builds from v1.20 onwards.
+- Optional extra protection: in the repository settings, turn on **immutable releases**, so release files cannot be changed once published.
+
+## 📊 Measured performance (v1.20)
+- **On the TV:** Settings → **Diagnostics** shows:
+  - cold start and return-to-Home times, measured until the first frame;
+  - smoothness (frames on time, slow, frozen, worst);
+  - memory (Sahl TV's own use, free memory, low-RAM flag);
+  - for each memory clean: MB freed, and how much is **still free after 1 and 5 minutes**, with a verdict on whether cleaning really helps on this TV.
+- **After every build** (`.github/workflows/perf.yml`): two Android TV emulators (2 GB and 1 GB RAM) measure:
+  - cold and warm start (5 runs each);
+  - memory use;
+  - 80 remote key presses (frames, jank, p50/p90/p99, crashes);
+  - the cleaning effect: memory freed, kept after 1 minute, and how much slower apps open afterwards.
+
+  The report is attached to the build's numbered release, and a crash fails the test.
+
+## 🧩 Code structure (v1.20)
+- `:common`: the Sahl family, shared by all four apps:
+  - Thmanyah fonts and night style;
+  - colours and dialogs;
+  - the phone upload page;
+  - storage helpers;
+  - network safety (`LanGuard`);
+  - update checks (`UpdateCheck`).
+- `app/.../MainActivity.kt` keeps the home screen's state, lifecycle and callbacks. Each part has its own file: `AppCatalog`, `HomeRows`, `PreviewRows`, `TopBar`, `Wallpaper`, `PrayerPanel`, `Greetings`, `HomeCards`, `Comfort`, `SettingsScreen`, `Menus`, `Pin`, `PhoneRemote`, `NowPlaying`, `Screensaver`, `Backup`, `Memory`, `Diagnostics`.
