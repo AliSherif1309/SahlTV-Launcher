@@ -118,3 +118,9 @@ Updates come from this repository's "latest" release. Android only installs an u
 - Mushaf view: an open Mushaf on the TV — right page odd, left page even, the same 604 pages and the same verses per page as the Madinah Mushaf; cream paper, gold-and-green frame, ornamental surah headers, basmala, round verse markers, surah and juz' at the top, page number at the bottom. "Large text" view is still there.
 - Reading timer: start from the menu; a small chip shows the time and pages; it pauses when you leave; at the end you see the session and today's total.
 - Fixed: Mushaf page numbers and "Go to Mushaf page" were missing (the page list's end marker made it 605 entries).
+
+## Sahl Quran 1.4
+- My Mushaf (PDF): send your own Mushaf PDF (e.g. the Madinah Mushaf or a Tajweed Mushaf) from your phone to the TV (menu → My Mushaf → open the address on the phone, enter the code, pick the file). Line it up once ("this is Al-Fatihah"), then it shows as an open book, page for page. The file stays on your TV only; it is not part of this app.
+- Timer: pause / resume (also the ⏯ key), stop with a summary; time is saved as you read.
+- Daily goal (minutes), auto-start timer, readers (4 family members with their own place, bookmarks and totals).
+- One large page (▲ ▼), night paper (automatic 7 pm – 5 am), go to hizb, ۞ quarter marker, sajdah reminder, pure page.

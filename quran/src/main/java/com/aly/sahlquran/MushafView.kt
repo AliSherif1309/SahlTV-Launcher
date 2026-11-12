@@ -24,6 +24,7 @@ class MushafStyle(val paper: Int, val ink: Int, val gold: Int, val green: Int, v
     companion object {
         fun of(theme: String) = when (theme) {
             "light" -> MushafStyle(Color.parseColor("#FFFEFA"), Color.parseColor("#141414"), Color.parseColor("#B08A35"), Color.parseColor("#5D8A64"), Color.parseColor("#8A7E66"), Color.parseColor("#2A2723"))
+            "night" -> MushafStyle(Color.parseColor("#CBBF9F"), Color.parseColor("#1A140B"), Color.parseColor("#8A6B27"), Color.parseColor("#4E7356"), Color.parseColor("#6B5F45"), Color.parseColor("#141210"))
             "dark" -> MushafStyle(Color.parseColor("#141C18"), Color.parseColor("#E9E3D2"), Color.parseColor("#C9A54F"), Color.parseColor("#6E9A76"), Color.parseColor("#8E9A92"), Color.parseColor("#080C0A"))
             else -> MushafStyle(Color.parseColor("#FBF3DF"), Color.parseColor("#1B1610"), Color.parseColor("#B08A35"), Color.parseColor("#5D8A64"), Color.parseColor("#8A7A5C"), Color.parseColor("#2B241B"))
         }
@@ -171,6 +172,13 @@ class MushafPage(ctx: Context, private val font: Typeface?) : View(ctx) {
         val top = H * 0.055f
         c.drawText("سورة " + QuranData.NAMES_AR[first.first - 1], W - m - W * 0.12f, top, small)
         c.drawText("الجزء " + arNum(q.juzOf(first.first, first.second)), m + W * 0.12f, top, small)
+        // hizb in the middle; ۞ when a new quarter starts on this page (as in print)
+        val qt = q.quarterOf(first.first, first.second)
+        if (qt > 0) {
+            val starts = q.quartersStartingOn(page)
+            val hz = (qt - 1) / 4 + 1
+            c.drawText((if (starts.isNotEmpty()) "۞ " else "") + "الحزب " + arNum(hz), W / 2, top, small)
+        }
 
         // frame: gold outer line, green band, gold inner line, small rosettes in the corners
         val fr = RectF(m, H * 0.075f, W - m, H * 0.915f)

@@ -12,7 +12,11 @@ class QuranData private constructor(
     val ayahs: List<List<String>>,
     /** Madinah Mushaf page starts (page 1 = index 0) as (surah, ayah), or empty when unavailable */
     val pageStarts: List<Pair<Int, Int>>,
-    val juzStarts: List<Pair<Int, Int>>
+    val juzStarts: List<Pair<Int, Int>>,
+    /** 240 hizb quarters (60 hizb × 4), each (surah, ayah) where it starts */
+    val quarterStarts: List<Pair<Int, Int>> = emptyList(),
+    /** the 15 verses of prostration */
+    val sajdas: List<Pair<Int, Int>> = emptyList()
 ) {
     companion object {
         const val TOTAL_AYAHS = 6236
@@ -81,6 +85,8 @@ class QuranData private constructor(
             } catch (_: Exception) { null } ?: return null
             var pages = emptyList<Pair<Int, Int>>()
             var juz = JUZ
+            var quarters = emptyList<Pair<Int, Int>>()
+            var sajda = emptyList<Pair<Int, Int>>()
             try {
                 val js = ctx.assets.open("quran-data.js").bufferedReader(Charsets.UTF_8).readText()
                 // the lists end with a [115, 1] "end" marker: drop it
@@ -88,8 +94,13 @@ class QuranData private constructor(
                 if (p.size == 604) pages = p
                 val j = parseStarts(js, "Juz").filter { it.first in 1..114 }
                 if (j.size == 30) juz = j
+                val q = parseStarts(js, "HizbQaurter").filter { it.first in 1..114 }   // (sic: Tanzil's spelling)
+                if (q.size == 240) quarters = q
+                val sj = Regex("\\[\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*'").findAll(js.substring(js.indexOf("QuranData.Sajda").coerceAtLeast(0)))
+                    .map { it.groupValues[1].toInt() to it.groupValues[2].toInt() }.toList()
+                if (sj.size in 14..15) sajda = sj
             } catch (_: Exception) {}
-            return QuranData(ayahs, pages, juz)
+            return QuranData(ayahs, pages, juz, quarters, sajda)
         }
     }
 
@@ -106,6 +117,23 @@ class QuranData private constructor(
     }
 
     private val pageCache = HashMap<Int, List<Pair<Int, Int>>>()
+
+    /** 1-based hizb quarter (1..240) that contains (s, a), or 0 without data. */
+    fun quarterOf(s: Int, a: Int): Int {
+        if (quarterStarts.isEmpty()) return 0
+        val o = ordinal(s, a); var q = 0
+        for ((i, st) in quarterStarts.withIndex()) if (ordinal(st.first, st.second) <= o) q = i + 1 else break
+        return q
+    }
+
+    /** Quarters that begin on Mushaf page p. */
+    fun quartersStartingOn(p: Int): List<Int> {
+        val set = pageAyahs(p).toSet()
+        return quarterStarts.withIndex().filter { it.value in set }.map { it.index + 1 }
+    }
+
+    /** Verses of prostration on Mushaf page p. */
+    fun sajdasOn(p: Int): List<Pair<Int, Int>> { val set = pageAyahs(p).toSet(); return sajdas.filter { it in set } }
 
     /** Every (surah, ayah) printed on Madinah Mushaf page [p] (1..604). */
     fun pageAyahs(p: Int): List<Pair<Int, Int>> {
