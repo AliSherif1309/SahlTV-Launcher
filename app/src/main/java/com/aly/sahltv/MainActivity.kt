@@ -151,7 +151,7 @@ class MainActivity : Activity(), RemoteServer.Host {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val root = FrameLayout(this).also { rootFrame = it }.apply {
-            background = if (islamic) IslamicBackdrop(resources.displayMetrics.density, ar)
+            background = if (islamic) PhotoBackdrop(this@MainActivity, IslamicBackdrop(resources.displayMetrics.density, ar))
                          else GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(BG_TOP, BG_BOTTOM))
         }
         val col = LinearLayout(this).apply {
@@ -187,6 +187,7 @@ class MainActivity : Activity(), RemoteServer.Host {
         else registerReceiver(pkgReceiver, filter)
         loadApps()
         RemoteServer.host = this
+        if (prefs.getBoolean("reopenSettings", false)) { prefs.edit().putBoolean("reopenSettings", false).apply(); handler.post { showSettings() } }
         if (remoteOn) RemoteServer.start(this)
     }
 
@@ -210,8 +211,8 @@ class MainActivity : Activity(), RemoteServer.Host {
         val lastUpd = prefs.getLong("updChecked", 0L)
         if (System.currentTimeMillis() - lastUpd > 12 * 3_600_000L) {
             prefs.edit().putLong("updChecked", System.currentTimeMillis()).apply()
-            Updater.checkQuietly(this, ar) { has -> prefs.edit().putBoolean("updReady", has).apply(); updBtn.visibility = if (has) View.VISIBLE else View.GONE }
-        } else updBtn.visibility = if (prefs.getBoolean("updReady", false)) View.VISIBLE else View.GONE
+            Updater.checkQuietly(this, ar) { has -> setUpd(has) }
+        } else setUpd(prefs.getBoolean("updReady", false))
         refreshPreviews(force = false)
         setupMedia()
         lastInput = System.currentTimeMillis()
@@ -264,7 +265,7 @@ class MainActivity : Activity(), RemoteServer.Host {
         left.addView(clockTv); left.addView(dateTv); left.addView(hRow)
         bar.addView(left, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
 
-        updBtn = pill(t("⬆  Update ready", "⬆  يتوفّر تحديث")) { Updater.check(this, ar) }.apply { visibility = View.GONE; setTextColor(GOLD) }
+        updBtn = pill(t("⬆  Updates", "⬆  التحديثات")) { setUpd(false); Updater.check(this, ar) }
         bar.addView(updBtn, LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply { marginEnd = dp(12) })
         memBtn = pill(t("🧹  Free memory", "🧹  تحرير الذاكرة")) { freeMemory() }
         bar.addView(memBtn)
@@ -779,6 +780,10 @@ class MainActivity : Activity(), RemoteServer.Host {
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         lastInput = System.currentTimeMillis()
+        if (settingsView != null && saver == null && event.keyCode == KeyEvent.KEYCODE_BACK) {
+            if (event.action == KeyEvent.ACTION_UP) hideSettings()
+            return true
+        }
         if (saver != null) {                       // any key just wakes the screen
             if (event.action == KeyEvent.ACTION_UP) hideSaver()
             return true
@@ -1036,30 +1041,11 @@ class MainActivity : Activity(), RemoteServer.Host {
     private val citiesAr = listOf("الدوحة", "الوكرة", "الريان", "لوسيل", "أم صلال", "الخور", "مسيعيد", "دخان", "مدينة الشمال")
     private fun cityAr(i: Int) = citiesAr.getOrElse(i) { cities[i].first }
 
-    private fun launcherMenu() {
-        val city = if (cityIndex in cities.indices) (if (ar) cityAr(cityIndex) else cities[cityIndex].first) else t("Off", "متوقف")
-        val ch = t("  (change)", "  (تغيير)")
-        val items = arrayOf(
-            t("Language: English  (العربية)", "اللغة: العربية  (English)"),
-            t("App previews (recommended videos…): ", "معاينات التطبيقات (فيديوهات مقترحة…): ") + onOff(previewsOn) + t("  (settings)", "  (إعدادات)"),
-            t("Sort all apps: ", "ترتيب التطبيقات: ") + (if (sortMostUsed) t("Most used first", "الأكثر استخدامًا أولًا") else t("A to Z", "أبجديًا")) + ch,
-            t("Clock: ", "الساعة: ") + (if (clock24) t("24-hour", "24 ساعة") else t("12-hour", "12 ساعة")) + ch,
-            t("Prayer times: ", "مواقيت الصلاة: ") + city + ch,
-            t("🎨  Theme: ", "🎨  المظهر: ") + (if (islamic) t("Islamic", "إسلامي") else t("Classic", "كلاسيكي")) + ch,
-            t("☪  Hijri date & fasting reminders", "☪  التاريخ الهجري وتذكير الصيام"),
-            t("👶  Calm mode (for little eyes): ", "👶  الوضع الهادئ (لعيون الصغار): ") + onOff(calm) + ch,
-            t("🔔  Prayer-time banner: ", "🔔  تنبيه وقت الصلاة: ") + alertName() + t("  (settings)", "  (إعدادات)"),
-            t("Auto clean when memory is low: ", "التنظيف التلقائي عند انخفاض الذاكرة: ") + onOff(autoClean) + ch,
-            t("🔒  PIN & locks", "🔒  الرمز السري والأقفال") + (if (pinSet) t("  (${locked.size} apps locked)", "  (${locked.size} تطبيقات مقفلة)") else t("  (no PIN set)", "  (لا يوجد رمز)")),
-            t("Show hidden apps (${hidden.size})", "إظهار التطبيقات المخفية (${hidden.size})"),
-            t("Clock screensaver: ", "شاشة توقف الساعة: ") + (if (saverMin == 0) t("Off", "متوقفة") else t("after $saverMin min", "بعد $saverMin دقائق")) + ch,
-            t("Now playing controls: ", "التحكم بالتشغيل الحالي: ") + onOff(nowOn) + (if (nowOn && !mediaAllowed) t("  (needs setup)", "  (يحتاج إعدادًا)") else ""),
-            t("💾  Backup & restore settings", "💾  نسخ الإعدادات احتياطيًا واستعادتها"),
-            t("📱  Phone remote: ", "📱  الريموت من الهاتف: ") + onOff(remoteOn) + t("  (settings)", "  (إعدادات)"),
-            t("⬆  Check for updates  (version ", "⬆  البحث عن تحديثات  (الإصدار ") + (try { packageManager.getPackageInfo(packageName, 0).versionName } catch (_: Exception) { "" }) + ")",
-            t("About Sahl TV", "حول سهل TV")
-        )
-        dialog().setTitle(t("Launcher", "الواجهة")).setItems(items) { _, which ->
+    private fun launcherMenu() = showSettings()
+
+    /** One place for every setting: used by the Settings screen rows. */
+    private fun menuAction(which: Int) {
+        if (which in listOf(0, 5, 7)) prefs.edit().putBoolean("reopenSettings", true).apply()
             when (which) {
                 0 -> { prefs.edit().putString("lang", if (ar) "en" else "ar").apply(); recreate() }
                 1 -> previewsMenu()
@@ -1081,13 +1067,12 @@ class MainActivity : Activity(), RemoteServer.Host {
                 13 -> nowMenu()
                 14 -> backupMenu()
                 15 -> remoteMenu()
-                16 -> { prefs.edit().putBoolean("updReady", false).apply(); updBtn.visibility = View.GONE; Updater.check(this, ar) }
+                16 -> { setUpd(false); Updater.check(this, ar) }
                 17 -> dialog().setTitle("Sahl TV  ·  سهل")
-                    .setMessage(t("A fast, ad-free home screen for Android TV.\n\nNo tracking, no background services. Internet is used only to download preview pictures when you turn App previews on.\n\nPrayer times are calculated on the TV (Qatar method: Fajr 18°, Asr Shafi'i, Isha 90 min after Maghrib). Please compare with the official Awqaf timetable.\n\nTip: hold OK on an app (or press Menu) for options.\n\nFree & open source (MIT).\nContact: alysherif1309@gmail.com",
-                                  "واجهة رئيسية سريعة وبلا إعلانات لأجهزة Android TV.\n\nبلا تتبّع وبلا خدمات تعمل في الخلفية. يُستخدم الإنترنت فقط لتنزيل صور المعاينات عند تفعيل «معاينات التطبيقات».\n\nتُحسب مواقيت الصلاة على التلفاز (طريقة قطر: الفجر 18°، العصر شافعي، العشاء بعد المغرب بـ 90 دقيقة). يُرجى مقارنتها بتقويم الأوقاف الرسمي.\n\nنصيحة: اضغط مطولًا على OK فوق تطبيق (أو زر القائمة) لعرض الخيارات.\n\nمجاني ومفتوح المصدر (MIT).\nللتواصل: alysherif1309@gmail.com"))
+                    .setMessage(t("A fast, ad-free home screen for Android TV.\n\nNo tracking, no background services. Internet is used only to download preview pictures when you turn App previews on.\n\nPrayer times are calculated on the TV (Qatar method: Fajr 18°, Asr Shafi'i, Isha 90 min after Maghrib). Please compare with the official Awqaf timetable.\n\nTip: hold OK on an app (or press Menu) for options.\n\nFree & open source (MIT).\nBackground photo: “The Kaaba during Hajj” by Adli Wahid, CC BY-SA 4.0, via Wikimedia Commons (cropped and darkened).\nContact: alysherif1309@gmail.com",
+                                  "واجهة رئيسية سريعة وبلا إعلانات لأجهزة Android TV.\n\nبلا تتبّع وبلا خدمات تعمل في الخلفية. يُستخدم الإنترنت فقط لتنزيل صور المعاينات عند تفعيل «معاينات التطبيقات».\n\nتُحسب مواقيت الصلاة على التلفاز (طريقة قطر: الفجر 18°، العصر شافعي، العشاء بعد المغرب بـ 90 دقيقة). يُرجى مقارنتها بتقويم الأوقاف الرسمي.\n\nنصيحة: اضغط مطولًا على OK فوق تطبيق (أو زر القائمة) لعرض الخيارات.\n\nمجاني ومفتوح المصدر (MIT).\nصورة الخلفية: «The Kaaba during Hajj» للمصوّر Adli Wahid، رخصة CC BY-SA 4.0، عبر Wikimedia Commons (مقصوصة ومعتّمة).\nللتواصل: alysherif1309@gmail.com"))
                     .setPositiveButton(t("OK", "حسنًا"), null).show()
             }
-        }.show()
     }
 
     private fun alertName() = when (Alerts.mode(this)) {
@@ -1179,7 +1164,6 @@ class MainActivity : Activity(), RemoteServer.Host {
         setPadding(dp(16), dp(8), dp(16), dp(8))
         setOnFocusChangeListener { v, has ->
             v.background = cardBg(strong, has, v.tag == "glow")
-            v.animate().scaleX(if (has) 1.02f else 1f).scaleY(if (has) 1.02f else 1f).setInterpolator(ease).setDuration(if (calm) 220 else 150).start()
             if (has) scroll.smoothScrollTo(0, 0)
         }
         setOnClickListener { onClick() }
@@ -1194,7 +1178,7 @@ class MainActivity : Activity(), RemoteServer.Host {
     private fun small(text: String, color: Int = MUTED) = TextView(this).apply { this.text = text; textSize = 13f; setTextColor(color); maxLines = 1 }
 
     private fun buildPanel(): LinearLayout {
-        val col = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(0, dp(12), 0, 0); clipChildren = false; clipToPadding = false }
+        val col = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(4), dp(12), dp(4), dp(2)); clipChildren = false; clipToPadding = false }
 
         // row 1: next prayer + countdown, then the five prayers
         prayRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; clipChildren = false }
@@ -1457,6 +1441,148 @@ class MainActivity : Activity(), RemoteServer.Host {
             .setPositiveButton(t("OK", "حسنًا"), null)
             .setNeutralButton(t("Turn reminders off", "إيقاف التذكير")) { _, _ -> prefs.edit().putBoolean("fastOn", false).apply(); updateClock()
                 toast(t("Fasting reminders off. Turn on again in ☰ Launcher.", "تم إيقاف تذكير الصيام. يمكن تفعيله من ☰ الواجهة.")) }.show()
+    }
+
+    // ------------------------------------------------------------------ Settings screen
+
+    private var settingsView: FrameLayout? = null
+    private var settingsList: LinearLayout? = null
+    private var settingsFocus = -1
+
+    private class SRow(val icon: Int, val title: String, val desc: String, val value: String, val action: Int)
+
+    private fun setUpd(has: Boolean) {
+        prefs.edit().putBoolean("updReady", has).apply()
+        updBtn.text = if (has) t("⬆  Update ready", "⬆  يتوفّر تحديث") else t("⬆  Updates", "⬆  التحديثات")
+        if (!updBtn.hasFocus()) updBtn.setTextColor(if (has) GOLD else TEXT)
+    }
+
+    private fun version(): String = try {
+        val pi = packageManager.getPackageInfo(packageName, 0)
+        "${pi.versionName}  ·  " + t("build ", "رقم ") + (if (Build.VERSION.SDK_INT >= 28) pi.longVersionCode else @Suppress("DEPRECATION") pi.versionCode.toLong())
+    } catch (_: Exception) { "" }
+
+    private fun settingsSections(): List<Pair<String, List<SRow>>> {
+        val city = if (cityIndex in cities.indices) (if (ar) cityAr(cityIndex) else cities[cityIndex].first) else t("Off", "متوقف")
+        val alert = when (Alerts.mode(this)) { Alerts.OFF -> t("Off", "متوقف"); Alerts.WITH_REMINDER -> t("On + 10 min before", "مُفعّل + قبله بـ 10 د"); else -> t("On", "مُفعّل") } +
+            if (Alerts.mode(this) != Alerts.OFF && !Alerts.canShow(this)) t(" · needs setup", " · يحتاج إعدادًا") else ""
+        return listOf(
+            t("Prayer & Islamic", "الصلاة والمناسبات") to listOf(
+                SRow(GoldIcon.MOSQUE, t("Prayer times city", "مدينة مواقيت الصلاة"), t("Times are calculated on the TV with the Qatar method", "تُحسب المواقيت على التلفاز بطريقة قطر"), city, 4),
+                SRow(GoldIcon.BELL, t("Prayer-time banner", "تنبيه وقت الصلاة"), t("A quiet card at each prayer time, even over videos. No sound", "بطاقة هادئة عند كل صلاة حتى فوق الفيديو، بدون صوت"), alert, 8),
+                SRow(GoldIcon.CRESCENT, t("Hijri date & fasting", "التاريخ الهجري والصيام"), t("Adjust the Hijri date, Sunnah fast reminders, Islamic dates", "ضبط التاريخ الهجري، تذكير صيام السنة، المناسبات"), hijriText(LocalDate.now()), 6)),
+            t("Look & comfort", "المظهر والراحة") to listOf(
+                SRow(GoldIcon.GLOBE, t("Language", "اللغة"), t("Language of the home screen and menus", "لغة الشاشة الرئيسية والقوائم"), if (ar) "العربية" else "English", 0),
+                SRow(GoldIcon.STAR, t("Theme", "المظهر"), t("Islamic: Kaaba photo with gold details. Classic: plain dark", "إسلامي: صورة الكعبة بلمسات ذهبية. كلاسيكي: داكن بسيط"), if (islamic) t("Islamic", "إسلامي") else t("Classic", "كلاسيكي"), 5),
+                SRow(GoldIcon.EYE, t("Calm mode", "الوضع الهادئ"), t("Gentle for little eyes: minute countdown, soft focus, dims at night", "لطيف لعيون الصغار: عدّ بالدقائق، تركيز هادئ، تعتيم ليلًا"), onOff(calm), 7),
+                SRow(GoldIcon.CLOCK, t("Clock", "الساعة"), t("Show time as 24-hour or 12-hour", "عرض الوقت بنظام 24 أو 12 ساعة"), if (clock24) t("24-hour", "24 ساعة") else t("12-hour", "12 ساعة"), 3),
+                SRow(GoldIcon.SCREEN, t("Clock screensaver", "شاشة توقف الساعة"), t("A dim moving clock when the TV sits idle", "ساعة خافتة متحركة عند عدم الاستخدام"), if (saverMin == 0) t("Off", "متوقفة") else t("After $saverMin min", "بعد $saverMin د"), 12)),
+            t("Home screen", "الشاشة الرئيسية") to listOf(
+                SRow(GoldIcon.PLAY, t("App previews", "معاينات التطبيقات"), t("Recommended videos from SmartTube and other apps", "فيديوهات مقترحة من SmartTube وغيره"), onOff(previewsOn), 1),
+                SRow(GoldIcon.SORT, t("Sort all apps", "ترتيب التطبيقات"), t("Order of the All apps grid", "ترتيب شبكة كل التطبيقات"), if (sortMostUsed) t("Most used", "الأكثر استخدامًا") else t("A to Z", "أبجديًا"), 2),
+                SRow(GoldIcon.EYE_OFF, t("Hidden apps", "التطبيقات المخفية"), t("Apps you removed from the home screen", "التطبيقات التي أخفيتها من الشاشة الرئيسية"), "${hidden.size}", 11),
+                SRow(GoldIcon.PLAY, t("Now playing controls", "التحكم بالتشغيل"), t("Play/pause bar for videos playing in the background", "شريط تشغيل/إيقاف للفيديو العامل في الخلفية"), onOff(nowOn) + if (nowOn && !mediaAllowed) t(" · needs setup", " · يحتاج إعدادًا") else "", 13)),
+            t("Family & safety", "العائلة والأمان") to listOf(
+                SRow(GoldIcon.LOCK, t("PIN & locks", "الرمز السري والأقفال"), t("Lock apps or TV settings with a 4-digit PIN", "قفل التطبيقات أو إعدادات التلفاز برمز من 4 أرقام"), if (pinSet) t("${locked.size} locked", "${locked.size} مقفلة") else t("No PIN", "بدون رمز"), 10)),
+            t("Phone & TV", "الهاتف والتلفاز") to listOf(
+                SRow(GoldIcon.PHONE, t("Phone remote", "الريموت من الهاتف"), t("Control the TV and type from your phone's browser", "تحكّم بالتلفاز واكتب من متصفح هاتفك"), onOff(remoteOn), 15),
+                SRow(GoldIcon.BROOM, t("Auto clean", "التنظيف التلقائي"), t("Frees memory when the TV gets low", "يحرّر الذاكرة عند انخفاضها"), onOff(autoClean), 9),
+                SRow(GoldIcon.SAVE, t("Backup & restore", "النسخ الاحتياطي والاستعادة"), t("Save all settings to the Download folder, or bring them back", "حفظ كل الإعدادات في مجلد التنزيلات أو استعادتها"), "", 14)),
+            t("About", "حول") to listOf(
+                SRow(GoldIcon.INFO, t("About Sahl TV", "حول سهل TV"), t("Credits, privacy and contact", "الشكر والخصوصية والتواصل"), "", 17)))
+    }
+
+    private fun showSettings() {
+        if (settingsView != null) return
+        val overlay = FrameLayout(this).apply {
+            background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Color.parseColor("#F5061411"), Color.parseColor("#FA040D0B")))
+            alpha = 0f; isClickable = true
+        }
+        val list = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL; layoutDirection = if (ar) View.LAYOUT_DIRECTION_RTL else View.LAYOUT_DIRECTION_LTR
+            setPadding(dp(8), dp(28), dp(8), dp(40)); clipChildren = false; clipToPadding = false
+        }
+        val sc = ScrollView(this).apply { isVerticalScrollBarEnabled = false; clipToPadding = false; addView(list) }
+        val w = minOf(dp(780), resources.displayMetrics.widthPixels - dp(96))
+        overlay.addView(sc, FrameLayout.LayoutParams(w, MATCH_PARENT, Gravity.CENTER_HORIZONTAL))
+        rootFrame.addView(overlay, rootFrame.childCount - 1, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))   // below the night dimmer
+        settingsView = overlay; settingsList = list
+        (rootFrame.getChildAt(0) as android.view.ViewGroup).descendantFocusability = android.view.ViewGroup.FOCUS_BLOCK_DESCENDANTS   // keep focus inside Settings
+        fillSettings()
+        overlay.animate().alpha(1f).setDuration(if (calm) 260 else 180).start()
+    }
+
+    private fun hideSettings() {
+        val v = settingsView ?: return
+        settingsView = null; settingsList = null
+        (rootFrame.getChildAt(0) as android.view.ViewGroup).descendantFocusability = android.view.ViewGroup.FOCUS_AFTER_DESCENDANTS
+        v.animate().alpha(0f).setDuration(160).withEndAction { rootFrame.removeView(v) }.start()
+        settingsFocus = -1
+        render(keepFocus = true, force = true)
+        updateClock()
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus && settingsView != null) fillSettings()      // a dialog closed: show the new values
+    }
+
+    private fun fillSettings() {
+        val list = settingsList ?: return
+        list.removeAllViews()
+        // header
+        val head = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(dp(4), 0, dp(4), dp(14)) }
+        head.addView(GoldIcon(this, GoldIcon.STAR, GOLD), LinearLayout.LayoutParams(dp(30), dp(30)).apply { marginEnd = dp(12) })
+        val ht = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        ht.addView(TextView(this).apply { text = t("Settings", "الإعدادات"); textSize = 28f; setTextColor(TEXT); setTypeface(typeface, Typeface.BOLD) })
+        ht.addView(TextView(this).apply { text = t("Sahl TV  ·  press Back to return home", "سهل TV  ·  اضغط رجوع للعودة"); textSize = 13f; setTextColor(MUTED) })
+        head.addView(ht, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
+        list.addView(head)
+
+        // update card
+        val ready = prefs.getBoolean("updReady", false)
+        list.addView(settingsRow(SRow(GoldIcon.UPDATE, if (ready) t("Update ready — install now", "يتوفّر تحديث — ثبّته الآن") else t("Check for updates", "البحث عن تحديثات"),
+            t("Version ", "الإصدار ") + version() + t("  ·  updates Sahl TV and Sahl Quran", "  ·  يحدّث سهل TV وسهل القرآن"),
+            if (ready) t("New", "جديد") else "", 16), strong = true))
+
+        var focusView: View? = null
+        for ((title, rows) in settingsSections()) {
+            list.addView(TextView(this).apply {
+                text = title; textSize = 14f; setTextColor(GOLD); setTypeface(typeface, Typeface.BOLD); letterSpacing = 0.04f
+                setPadding(dp(6), dp(20), dp(6), dp(8))
+            })
+            for (r in rows) { val v = settingsRow(r, false); list.addView(v); if (r.action == settingsFocus) focusView = v }
+        }
+        handler.post { (focusView ?: firstFocusable(list))?.requestFocus() }
+    }
+
+    private fun firstFocusable(v: View): View? {
+        if (v.isFocusable) return v
+        if (v is android.view.ViewGroup) for (i in 0 until v.childCount) firstFocusable(v.getChildAt(i))?.let { return it }
+        return null
+    }
+
+    private fun settingsRow(r: SRow, strong: Boolean): View {
+        val row = card(strong) { settingsFocus = r.action; menuAction(r.action); handler.postDelayed({ if (settingsView != null && hasWindowFocus()) fillSettings() }, 60) }.apply {
+            orientation = LinearLayout.HORIZONTAL; setPadding(dp(16), dp(12), dp(16), dp(12))
+        }
+        row.setOnFocusChangeListener { v, has -> v.background = cardBg(strong, has); if (has) settingsFocus = r.action }
+        val bubble = FrameLayout(this).apply { background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(Color.argb(38, 227, 184, 92)) } }
+        bubble.addView(GoldIcon(this, r.icon, GOLD), FrameLayout.LayoutParams(dp(22), dp(22), Gravity.CENTER))
+        row.addView(bubble, LinearLayout.LayoutParams(dp(42), dp(42)).apply { marginEnd = dp(16) })
+        val texts = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        texts.addView(TextView(this).apply { text = r.title; textSize = 17f; setTextColor(TEXT); setTypeface(typeface, Typeface.BOLD); maxLines = 1 })
+        texts.addView(TextView(this).apply { text = r.desc; textSize = 13f; setTextColor(MUTED); maxLines = 2; setPadding(0, dp(2), 0, 0) })
+        row.addView(texts, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
+        if (r.value.isNotEmpty()) row.addView(TextView(this).apply {
+            text = r.value; textSize = 13.5f; setTextColor(GOLD); maxLines = 1
+            setPadding(dp(12), dp(5), dp(12), dp(5))
+            background = GradientDrawable().apply { setColor(Color.argb(30, 227, 184, 92)); cornerRadius = dp(12).toFloat() }
+        }, LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply { marginStart = dp(12) })
+        row.addView(TextView(this).apply { text = if (ar) "‹" else "›"; textSize = 22f; setTextColor(MUTED) },
+            LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply { marginStart = dp(10) })
+        row.layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply { setMargins(0, dp(5), 0, dp(5)) }
+        return row
     }
 
     // ------------------------------------------------------------------ PIN

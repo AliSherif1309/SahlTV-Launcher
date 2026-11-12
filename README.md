@@ -94,3 +94,10 @@ adb shell appops set com.aly.sahltv REQUEST_INSTALL_PACKAGES allow
 adb shell appops set com.aly.sahlquran REQUEST_INSTALL_PACKAGES allow
 ```
 Updates come from this repository's "latest" release. Android only installs an update signed with the same key, so a changed APK can never replace the app.
+
+## v1.8
+- Background: real photo of Masjid al-Haram and the Kaaba, darkened for calm, readable text.
+  Photo: “The Kaaba during Hajj” by Adli Wahid, CC BY-SA 4.0, via Wikimedia Commons (cropped and darkened at build time).
+- New Settings screen: grouped sections, a short explanation under every option, current value on the right.
+- ⬆ Updates button always on the home screen (turns gold when an update is ready).
+- Fixed card borders being cut at the edges.

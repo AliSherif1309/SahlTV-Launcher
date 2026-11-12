@@ -216,7 +216,10 @@ class IslamicBackdrop(private val density: Float, private val rtl: Boolean = fal
 /** Small line icons drawn in one colour, so every icon matches (no mixed emoji styles). */
 class GoldIcon(ctx: android.content.Context, private val kind: Int, private val color: Int) : android.view.View(ctx) {
     companion object { const val FAJR = 0; const val DHUHR = 1; const val ASR = 2; const val MAGHRIB = 3; const val ISHA = 4
-        const val MOSQUE = 5; const val HOURGLASS = 6; const val LANTERN = 7; const val DATES = 8; const val CRESCENT = 9 }
+        const val MOSQUE = 5; const val HOURGLASS = 6; const val LANTERN = 7; const val DATES = 8; const val CRESCENT = 9
+        const val GLOBE = 10; const val BELL = 11; const val LOCK = 12; const val PHONE = 13; const val CLOCK = 14; const val EYE = 15
+        const val PLAY = 16; const val SORT = 17; const val EYE_OFF = 18; const val SAVE = 19; const val UPDATE = 20; const val INFO = 21
+        const val STAR = 22; const val BROOM = 23; const val SCREEN = 24 }
     private val p = Paint(Paint.ANTI_ALIAS_FLAG)
 
     private fun crescent(c: Canvas, x: Float, y: Float, r: Float) {
@@ -262,6 +265,33 @@ class GoldIcon(ctx: android.content.Context, private val kind: Int, private val 
                 c.drawRoundRect(cx - s * 0.2f, cy - s * 0.2f, cx + s * 0.2f, cy + s * 0.26f, s * 0.08f, s * 0.08f, p)
                 p.style = Paint.Style.FILL; p.alpha = 90; c.drawRoundRect(cx - s * 0.12f, cy - s * 0.12f, cx + s * 0.12f, cy + s * 0.18f, s * 0.05f, s * 0.05f, p); p.alpha = 255; p.style = Paint.Style.STROKE
                 c.drawLine(cx - s * 0.12f, cy + s * 0.36f, cx + s * 0.12f, cy + s * 0.36f, p) }
+            GLOBE -> { c.drawCircle(cx, cy, s * 0.36f, p); c.drawLine(cx - s * 0.36f, cy, cx + s * 0.36f, cy, p)
+                c.drawOval(RectF(cx - s * 0.15f, cy - s * 0.36f, cx + s * 0.15f, cy + s * 0.36f), p) }
+            BELL -> { c.drawPath(Path().apply { moveTo(cx - s * 0.3f, cy + s * 0.2f); quadTo(cx - s * 0.22f, cy + s * 0.08f, cx - s * 0.22f, cy - s * 0.06f)
+                    cubicTo(cx - s * 0.22f, cy - s * 0.36f, cx + s * 0.22f, cy - s * 0.36f, cx + s * 0.22f, cy - s * 0.06f)
+                    quadTo(cx + s * 0.22f, cy + s * 0.08f, cx + s * 0.3f, cy + s * 0.2f); close() }, p)
+                c.drawLine(cx - s * 0.08f, cy + s * 0.32f, cx + s * 0.08f, cy + s * 0.32f, p) }
+            LOCK -> { c.drawRoundRect(cx - s * 0.28f, cy - s * 0.04f, cx + s * 0.28f, cy + s * 0.36f, s * 0.06f, s * 0.06f, p)
+                c.drawPath(Path().apply { addArc(RectF(cx - s * 0.17f, cy - s * 0.38f, cx + s * 0.17f, cy + s * 0.04f), 180f, 180f) }, p)
+                c.drawLine(cx - s * 0.17f, cy - s * 0.17f, cx - s * 0.17f, cy - s * 0.04f, p); c.drawLine(cx + s * 0.17f, cy - s * 0.17f, cx + s * 0.17f, cy - s * 0.04f, p) }
+            PHONE -> { c.drawRoundRect(cx - s * 0.2f, cy - s * 0.4f, cx + s * 0.2f, cy + s * 0.4f, s * 0.08f, s * 0.08f, p); c.drawLine(cx - s * 0.05f, cy + s * 0.28f, cx + s * 0.05f, cy + s * 0.28f, p) }
+            CLOCK -> { c.drawCircle(cx, cy, s * 0.36f, p); c.drawLine(cx, cy, cx, cy - s * 0.22f, p); c.drawLine(cx, cy, cx + s * 0.16f, cy + s * 0.08f, p) }
+            EYE, EYE_OFF -> { c.drawPath(Path().apply { moveTo(cx - s * 0.42f, cy); quadTo(cx, cy - s * 0.42f, cx + s * 0.42f, cy); quadTo(cx, cy + s * 0.42f, cx - s * 0.42f, cy); close() }, p)
+                c.drawCircle(cx, cy, s * 0.1f, p); if (kind == EYE_OFF) c.drawLine(cx - s * 0.36f, cy - s * 0.36f, cx + s * 0.36f, cy + s * 0.36f, p) }
+            PLAY -> { c.drawRoundRect(cx - s * 0.4f, cy - s * 0.28f, cx + s * 0.4f, cy + s * 0.28f, s * 0.08f, s * 0.08f, p)
+                p.style = Paint.Style.FILL; c.drawPath(Path().apply { moveTo(cx - s * 0.08f, cy - s * 0.13f); lineTo(cx + s * 0.14f, cy); lineTo(cx - s * 0.08f, cy + s * 0.13f); close() }, p) }
+            SORT -> { for (i in 0..2) c.drawLine(cx - s * 0.36f, cy - s * 0.24f + i * s * 0.24f, cx - s * 0.36f + s * (0.72f - i * 0.2f), cy - s * 0.24f + i * s * 0.24f, p) }
+            SAVE -> { c.drawLine(cx, cy - s * 0.38f, cx, cy + s * 0.08f, p); c.drawLine(cx - s * 0.14f, cy - s * 0.06f, cx, cy + s * 0.08f, p); c.drawLine(cx + s * 0.14f, cy - s * 0.06f, cx, cy + s * 0.08f, p)
+                c.drawPath(Path().apply { moveTo(cx - s * 0.36f, cy + s * 0.1f); lineTo(cx - s * 0.36f, cy + s * 0.34f); lineTo(cx + s * 0.36f, cy + s * 0.34f); lineTo(cx + s * 0.36f, cy + s * 0.1f) }, p) }
+            UPDATE -> { c.drawCircle(cx, cy, s * 0.38f, p); c.drawLine(cx, cy + s * 0.2f, cx, cy - s * 0.2f, p)
+                c.drawLine(cx - s * 0.14f, cy - s * 0.06f, cx, cy - s * 0.2f, p); c.drawLine(cx + s * 0.14f, cy - s * 0.06f, cx, cy - s * 0.2f, p) }
+            INFO -> { c.drawCircle(cx, cy, s * 0.38f, p); c.drawLine(cx, cy - s * 0.04f, cx, cy + s * 0.2f, p); p.style = Paint.Style.FILL; c.drawCircle(cx, cy - s * 0.18f, s * 0.045f, p) }
+            STAR -> { val path = Path(); for (k in 0 until 2) { val a0 = Math.PI / 4 * k
+                    for (i in 0..4) { val a = a0 + Math.PI / 2 * i; val x = cx + s * 0.36f * Math.cos(a).toFloat(); val y = cy + s * 0.36f * Math.sin(a).toFloat(); if (i == 0) path.moveTo(x, y) else path.lineTo(x, y) }
+                    path.close() }; c.drawPath(path, p) }
+            BROOM -> { c.drawLine(cx + s * 0.32f, cy - s * 0.38f, cx - s * 0.04f, cy + s * 0.02f, p)
+                c.drawPath(Path().apply { moveTo(cx - s * 0.1f, cy - s * 0.04f); lineTo(cx + s * 0.06f, cy + s * 0.12f); lineTo(cx - s * 0.16f, cy + s * 0.38f); lineTo(cx - s * 0.38f, cy + s * 0.16f); close() }, p) }
+            SCREEN -> { c.drawRoundRect(cx - s * 0.4f, cy - s * 0.28f, cx + s * 0.4f, cy + s * 0.18f, s * 0.05f, s * 0.05f, p); c.drawLine(cx - s * 0.16f, cy + s * 0.34f, cx + s * 0.16f, cy + s * 0.34f, p) }
             DATES -> { p.style = Paint.Style.FILL
                 for (i in -1..1) c.drawOval(RectF(cx + i * s * 0.17f - s * 0.08f, cy - s * 0.24f, cx + i * s * 0.17f + s * 0.08f, cy + s * 0.02f), p)
                 p.style = Paint.Style.STROKE
@@ -269,4 +299,48 @@ class GoldIcon(ctx: android.content.Context, private val kind: Int, private val 
                 c.drawLine(cx - s * 0.4f, cy + s * 0.08f, cx + s * 0.4f, cy + s * 0.08f, p) }
         }
     }
+}
+
+/**
+ * Real photo background (Masjid al-Haram and the Kaaba). Darkened, with deeper shade at the top (clock)
+ * and bottom (apps) so text stays easy and calm to read. Falls back to the drawn background if the photo is missing.
+ */
+class PhotoBackdrop(private val ctx: android.content.Context, private val fallback: Drawable) : Drawable() {
+    private var cache: Bitmap? = null
+    private var failed = false
+    override fun onBoundsChange(bounds: Rect) { cache = null; fallback.setBounds(bounds.left, bounds.top, bounds.right, bounds.bottom) }
+
+    override fun draw(canvas: Canvas) {
+        val b = bounds
+        if (b.width() <= 0 || b.height() <= 0) return
+        if (failed) { fallback.draw(canvas); return }
+        val bmp = cache ?: build(b.width(), b.height())?.also { cache = it }
+        if (bmp == null) { failed = true; fallback.draw(canvas); return }
+        canvas.drawBitmap(bmp, b.left.toFloat(), b.top.toFloat(), null)
+    }
+
+    private fun build(w: Int, h: Int): Bitmap? {
+        val photo = try { ctx.assets.open("kaaba.jpg").use { android.graphics.BitmapFactory.decodeStream(it) } } catch (_: Exception) { null } ?: return null
+        val out = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        val c = Canvas(out)
+        // centre-crop the photo to the screen
+        val scale = maxOf(w.toFloat() / photo.width, h.toFloat() / photo.height)
+        val sw = (w / scale).toInt(); val sh = (h / scale).toInt()
+        val sx = (photo.width - sw) / 2; val sy = (photo.height - sh) / 2
+        val p = Paint(Paint.ANTI_ALIAS_FLAG or 2 /* FILTER_BITMAP_FLAG */)
+        c.drawBitmap(photo, Rect(sx, sy, sx + sw, sy + sh), Rect(0, 0, w, h), p)
+        photo.recycle()
+        // calm it down: an even dark green-black veil, then deeper shade where the text sits
+        c.drawColor(Color.argb(120, 4, 14, 12))
+        p.shader = LinearGradient(0f, 0f, 0f, h * 0.42f, intArrayOf(Color.argb(200, 4, 12, 11), Color.argb(0, 4, 12, 11)), null, Shader.TileMode.CLAMP)
+        c.drawRect(0f, 0f, w.toFloat(), h * 0.42f, p)
+        p.shader = LinearGradient(0f, h * 0.45f, 0f, h.toFloat(), intArrayOf(Color.argb(0, 4, 12, 11), Color.argb(225, 4, 12, 11)), null, Shader.TileMode.CLAMP)
+        c.drawRect(0f, h * 0.45f, w.toFloat(), h.toFloat(), p)
+        return out
+    }
+
+    override fun setAlpha(alpha: Int) {}
+    override fun setColorFilter(colorFilter: ColorFilter?) {}
+    @Deprecated("Deprecated in Java")
+    override fun getOpacity(): Int = PixelFormat.OPAQUE
 }
