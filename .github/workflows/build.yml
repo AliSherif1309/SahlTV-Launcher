@@ -61,6 +61,15 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # version.json: what the apps read for "Check for updates"
+          python3 - <<'PY'
+          import json, os, re, subprocess
+          name = lambda f: re.search(r'versionName = "([^"]+)"', open(f).read()).group(1)
+          notes = subprocess.run(["git", "log", "-1", "--format=%s"], capture_output=True, text=True).stdout.strip()
+          json.dump({"code": 100 + int(os.environ["GITHUB_RUN_NUMBER"]), "sahltv": name("app/build.gradle.kts"),
+                     "quran": name("quran/build.gradle.kts"), "notes": notes}, open("version.json", "w"))
+          PY
+          cat version.json
           gh release delete latest --yes --cleanup-tag || true
-          gh release create latest SahlTV.apk SahlQuran.apk --title "Sahl TV launcher (latest build)" \
-            --notes "Build ${GITHUB_RUN_NUMBER} (${GITHUB_SHA::7}). Download **SahlTV.apk** (launcher) and **SahlQuran.apk** (Quran reader) on your PC, then install it on the TV with ADB (see README)."
+          gh release create latest SahlTV.apk SahlQuran.apk version.json --title "Sahl TV launcher (latest build)" \
+            --notes "Build ${GITHUB_RUN_NUMBER} (${GITHUB_SHA::7}). On the TV: ☰ Launcher → Check for updates. First install: download **SahlTV.apk** / **SahlQuran.apk** and install with ADB (see README)."

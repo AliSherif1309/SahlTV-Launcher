@@ -84,3 +84,13 @@ Quran text: Tanzil Project (tanzil.net), Uthmani, CC BY 3.0, used unchanged. Fon
 - 🔔 Prayer-time banner (no sound): a quiet card in the corner at each prayer time, even over SmartTube; optional heads-up 10 minutes before. One-time setup:
   `adb shell appops set com.aly.sahltv SYSTEM_ALERT_WINDOW allow`
 - 👶 Calm mode (on by default): countdown changes once a minute instead of every second, softer focus, home screen dims from an hour after Isha until Fajr.
+
+## ⬆ Updates from the TV (v1.7)
+After this version, no more ADB for updates: ☰ Launcher → Check for updates (Sahl Quran: OK → Check for updates).
+The launcher also checks by itself twice a day and shows an "Update ready" button.
+One-time setup (only if the TV has no "Install unknown apps" screen):
+```
+adb shell appops set com.aly.sahltv REQUEST_INSTALL_PACKAGES allow
+adb shell appops set com.aly.sahlquran REQUEST_INSTALL_PACKAGES allow
+```
+Updates come from this repository's "latest" release. Android only installs an update signed with the same key, so a changed APK can never replace the app.

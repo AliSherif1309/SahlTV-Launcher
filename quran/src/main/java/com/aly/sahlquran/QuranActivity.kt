@@ -284,6 +284,7 @@ class QuranActivity : Activity() {
         items.add(t("🌐  Language: English  (العربية)", "🌐  اللغة: العربية  (English)") to {
             prefs.edit().putString("lang", if (ar) "en" else "ar").apply(); recreate()
         })
+        items.add(t("⬆  Check for updates", "⬆  البحث عن تحديثات") to { Updater.check(this, ar) })
         items.add(t("ⓘ  About", "ⓘ  حول التطبيق") to { about() })
         dialog().setTitle(surahLabel(surah)).setItems(items.map { it.first }.toTypedArray()) { _, w -> items[w].second() }.show()
     }

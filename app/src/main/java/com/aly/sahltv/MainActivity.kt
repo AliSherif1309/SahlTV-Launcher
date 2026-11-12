@@ -100,6 +100,7 @@ class MainActivity : Activity(), RemoteServer.Host {
     private var controller: MediaController? = null
     private var mediaAllowed = false
     private lateinit var settingsBtn: TextView
+    private lateinit var updBtn: TextView
     private var lastSig = ""
     private var lastAutoClean = 0L
     private val ease = DecelerateInterpolator(1.6f)
@@ -205,6 +206,12 @@ class MainActivity : Activity(), RemoteServer.Host {
         if (dirty && !loading) loadApps() else if (apps.isNotEmpty()) render(keepFocus = true)
         maybeAutoClean()
         Alerts.schedule(this)
+        // look for a new version at most every 12 hours; quietly shows the "Update ready" button
+        val lastUpd = prefs.getLong("updChecked", 0L)
+        if (System.currentTimeMillis() - lastUpd > 12 * 3_600_000L) {
+            prefs.edit().putLong("updChecked", System.currentTimeMillis()).apply()
+            Updater.checkQuietly(this, ar) { has -> prefs.edit().putBoolean("updReady", has).apply(); updBtn.visibility = if (has) View.VISIBLE else View.GONE }
+        } else updBtn.visibility = if (prefs.getBoolean("updReady", false)) View.VISIBLE else View.GONE
         refreshPreviews(force = false)
         setupMedia()
         lastInput = System.currentTimeMillis()
@@ -257,6 +264,8 @@ class MainActivity : Activity(), RemoteServer.Host {
         left.addView(clockTv); left.addView(dateTv); left.addView(hRow)
         bar.addView(left, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
 
+        updBtn = pill(t("⬆  Update ready", "⬆  يتوفّر تحديث")) { Updater.check(this, ar) }.apply { visibility = View.GONE; setTextColor(GOLD) }
+        bar.addView(updBtn, LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply { marginEnd = dp(12) })
         memBtn = pill(t("🧹  Free memory", "🧹  تحرير الذاكرة")) { freeMemory() }
         bar.addView(memBtn)
         settingsBtn = pill(t("⚙  TV settings", "⚙  إعدادات التلفاز")) {
@@ -1047,6 +1056,7 @@ class MainActivity : Activity(), RemoteServer.Host {
             t("Now playing controls: ", "التحكم بالتشغيل الحالي: ") + onOff(nowOn) + (if (nowOn && !mediaAllowed) t("  (needs setup)", "  (يحتاج إعدادًا)") else ""),
             t("💾  Backup & restore settings", "💾  نسخ الإعدادات احتياطيًا واستعادتها"),
             t("📱  Phone remote: ", "📱  الريموت من الهاتف: ") + onOff(remoteOn) + t("  (settings)", "  (إعدادات)"),
+            t("⬆  Check for updates  (version ", "⬆  البحث عن تحديثات  (الإصدار ") + (try { packageManager.getPackageInfo(packageName, 0).versionName } catch (_: Exception) { "" }) + ")",
             t("About Sahl TV", "حول سهل TV")
         )
         dialog().setTitle(t("Launcher", "الواجهة")).setItems(items) { _, which ->
@@ -1071,7 +1081,8 @@ class MainActivity : Activity(), RemoteServer.Host {
                 13 -> nowMenu()
                 14 -> backupMenu()
                 15 -> remoteMenu()
-                16 -> dialog().setTitle("Sahl TV  ·  سهل")
+                16 -> { prefs.edit().putBoolean("updReady", false).apply(); updBtn.visibility = View.GONE; Updater.check(this, ar) }
+                17 -> dialog().setTitle("Sahl TV  ·  سهل")
                     .setMessage(t("A fast, ad-free home screen for Android TV.\n\nNo tracking, no background services. Internet is used only to download preview pictures when you turn App previews on.\n\nPrayer times are calculated on the TV (Qatar method: Fajr 18°, Asr Shafi'i, Isha 90 min after Maghrib). Please compare with the official Awqaf timetable.\n\nTip: hold OK on an app (or press Menu) for options.\n\nFree & open source (MIT).\nContact: alysherif1309@gmail.com",
                                   "واجهة رئيسية سريعة وبلا إعلانات لأجهزة Android TV.\n\nبلا تتبّع وبلا خدمات تعمل في الخلفية. يُستخدم الإنترنت فقط لتنزيل صور المعاينات عند تفعيل «معاينات التطبيقات».\n\nتُحسب مواقيت الصلاة على التلفاز (طريقة قطر: الفجر 18°، العصر شافعي، العشاء بعد المغرب بـ 90 دقيقة). يُرجى مقارنتها بتقويم الأوقاف الرسمي.\n\nنصيحة: اضغط مطولًا على OK فوق تطبيق (أو زر القائمة) لعرض الخيارات.\n\nمجاني ومفتوح المصدر (MIT).\nللتواصل: alysherif1309@gmail.com"))
                     .setPositiveButton(t("OK", "حسنًا"), null).show()
