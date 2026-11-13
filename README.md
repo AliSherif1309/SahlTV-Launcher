@@ -20,7 +20,8 @@ A replacement home screen for Android TV / Mi TV. It opens instantly, shows only
 - **Backup & restore:** saves all settings (favourites, order, hidden and locked apps, previews, language…) to `Download/SahlTV-backup.json` on the TV. Keep a copy on your PC with `adb pull /sdcard/Download/SahlTV-backup.json`.
 - **No tracking, no background services.** Apps load in the background and icons are kept in memory, so the Home button is instant.
 
-## Install (from a Windows PC with ADB)
+## Customize the home layout
+Open **Sahl TV → Settings → Home layout** to access the visual layout preview, upper dashboard card controls, and layout profiles. The visual editor lets you change app tile size, combined or separate rows, and Favorites/Recent visibility before applying. The upper-card editor supports show/hide, height presets and ordering **within existing card groups**; it does not yet support arbitrary card widths or moving cards between groups. Profiles (Default, Minimal, Family) can save and restore the current layout settings. Use the remote arrows and OK to navigate, and choose **Apply** to save changes.\n\n## Install (from a Windows PC with ADB)
 1. On the TV, turn on **Developer options → USB debugging / Network debugging**, and note the TV's IP address (Settings → Network).
 2. On the PC, download `SahlTV.apk`, then run:
    ```
@@ -51,7 +52,7 @@ adb shell settings put global animator_duration_scale 0.5
 To undo, set the three values back to `1`.
 
 ## Build
-Kotlin, one screen, no libraries. Every push to `main` builds a signed APK with GitHub Actions and publishes it as the **latest** release.
+Kotlin and Android framework APIs, with five Gradle modules (`app`, `quran`, `pdf`, `files`, `common`). Every push to `main` builds release APKs with GitHub Actions and publishes a numbered release plus the `latest` update pointer. The release build runs before the downstream emulator performance workflow, so performance checks are not currently a publication gate. Pull requests run a separate debug APK compilation and packaging check.
 Release signing uses the repository secrets `SIGNING_KEYSTORE_BASE64`, `SIGNING_STORE_PASSWORD`, `SIGNING_KEY_PASSWORD` and `SIGNING_KEY_ALIAS`.
 
 ## License
