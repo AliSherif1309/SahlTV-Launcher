@@ -4,7 +4,7 @@ import org.json.JSONObject
 import android.widget.EditText
 import com.aly.sahltv.MainActivity.*
 
-private val layoutFields = listOf("homeTileSize", "homeCombined", "homeShowFavorites", "homeShowRecent", "homeRecentFirst", "dashboardOrder", "dashboardFlexible") +
+private val layoutFields = listOf("homeTileSize", "homeCombined", "homeShowFavorites", "homeShowRecent", "homeRecentFirst", "homeRecentLimit", "homeTileGap", "dashboardOrder", "dashboardFlexible") +
     dashboardKeys.flatMap { listOf("dashboardShow_$it", "dashboardSize_$it", "dashboardWidth_$it") }
 
 /** Named local presets, never altering favorites, installed apps or unrelated preferences. */
@@ -28,7 +28,7 @@ internal fun MainActivity.layoutProfilesMenu() {
                 val data = JSONObject()
                 for (field in layoutFields) {
                     if (!prefs.contains(field)) continue
-                    if (field == "homeTileSize" || field == "dashboardOrder" || (field.startsWith("dashboardSize_") || field.startsWith("dashboardWidth_")))
+                    if (field == "homeTileSize" || field == "homeRecentLimit" || field == "homeTileGap" || field == "dashboardOrder" || (field.startsWith("dashboardSize_") || field.startsWith("dashboardWidth_")))
                         data.put(field, prefs.getString(field, ""))
                     else data.put(field, prefs.getBoolean(field, true))
                 }
@@ -75,7 +75,7 @@ internal fun MainActivity.layoutProfilesMenu() {
                 val edit = prefs.edit()
                 for (field in layoutFields) {
                     if (!data.has(field)) edit.remove(field)
-                    else if (field == "homeTileSize" || field == "dashboardOrder" || field.startsWith("dashboardSize_"))
+                    else if (field == "homeTileSize" || field == "homeRecentLimit" || field == "homeTileGap" || field == "dashboardOrder" || field.startsWith("dashboardSize_") || field.startsWith("dashboardWidth_"))
                         edit.putString(field, data.optString(field))
                     else edit.putBoolean(field, data.optBoolean(field, true))
                 }
