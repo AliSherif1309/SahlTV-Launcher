@@ -104,8 +104,8 @@ internal fun MainActivity.settingsSections(): List<Pair<String, List<SRow>>> {
             SRow(GoldIcon.CLOCK, t("Clock", "الساعة"), t("Show time as 24-hour or 12-hour", "عرض الوقت بنظام 24 أو 12 ساعة"), if (clock24) t("24-hour", "24 ساعة") else t("12-hour", "12 ساعة"), 3),
             SRow(GoldIcon.SCREEN, t("Clock screensaver", "شاشة توقف الساعة"), t("A dim moving clock when the TV sits idle", "ساعة خافتة متحركة عند عدم الاستخدام"), if (saverMin == 0) t("Off", "متوقفة") else t("After $saverMin min", "بعد $saverMin د"), 12)),
         t("Home screen", "الشاشة الرئيسية") to listOf(
-            SRow(GoldIcon.SORT, t("Upper dashboard cards", "بطاقات اللوحة العلوية"), t("Show, hide and reorder cards", "إظهار وإخفاء وترتيب البطاقات"), "", 41),
-            SRow(GoldIcon.SAVE, t("Layout profiles", "ملفات التخطيط"), t("Save and restore home arrangements", "حفظ واستعادة ترتيبات الشاشة"), "", 42),
+            SRow(GoldIcon.SCREEN, t("Upper dashboard cards", "بطاقات اللوحة العلوية"), t("Show, hide and reorder cards", "إظهار وإخفاء وترتيب البطاقات"), "", 41),
+            SRow(GoldIcon.SCREEN, t("Layout profiles", "ملفات التخطيط"), t("Save and restore home arrangements", "حفظ واستعادة ترتيبات الشاشة"), "", 42),
             SRow(GoldIcon.SCREEN, t("Visual layout editor", "محرر التخطيط المرئي"),
                 t("Preview app rows and tile sizes before applying changes", "عاين الصفوف وأحجام التطبيقات قبل تطبيق التغييرات"), "", 40),
             SRow(GoldIcon.SCREEN, t("App tile size", "حجم مربعات التطبيقات"),
