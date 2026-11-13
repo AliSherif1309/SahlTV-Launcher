@@ -4,7 +4,7 @@
 #   1. start-up time of Sahl TV (cold, and return to Home), 5 runs each
 #   2. memory used by Sahl TV
 #   3. remote navigation: 80 D-pad presses across the home screen -> frames drawn, slow frames, crashes
-#   4. does "free memory" help? memory freed, how much is still free 1 minute later,
+#   4. system-wide am kill-all baseline: memory freed, how much is still free 1 minute later,
 #      and how much slower the apps open afterwards (they must cold-start again)
 # Usage: perf.sh <folder with the APKs> <label: RAM in MB, optionally -build>
 set -u
@@ -62,13 +62,15 @@ P99=$(echo "$G" | awk -F': ' '/99th percentile/ {print $2; exit}')
 ALIVE=$([ -n "$(A pidof $PKG)" ] && echo yes || echo NO)
 CRASH=$(adb logcat -d -b crash 2>/dev/null | grep -c "FATAL EXCEPTION" || true)
 
-# 4) does cleaning help? open the four Sahl apps + Settings, return Home, then clean like the broom button
+# 4) System-wide kill-all baseline, NOT the launcher's selective broom cleaner.
+# The launcher protects recent apps and active media; this command does not exercise that logic.
+# Open the three companion apps, return Home, then ask Android to kill background processes.
 APPS="com.aly.sahlquran/.QuranActivity com.aly.sahlpdf/.LibraryActivity com.aly.sahlfiles/.FilesActivity"
 for a in $APPS; do A am start -W -n "$a" >/dev/null; sleep 3; A input keyevent KEYCODE_HOME; sleep 1; done
 WARM_APPS=(); for a in $APPS; do WARM_APPS+=("$(start_ms "$a")"); sleep 2; A input keyevent KEYCODE_HOME; sleep 1; done
 sleep 3
 M_BEFORE=$(avail_mb)
-A am kill-all                                   # same as the broom: closes apps running in the background
+A am kill-all                                   # system-wide baseline only
 sleep 2; M_AFTER=$(avail_mb)
 sleep 60; M_1MIN=$(avail_mb)
 AFTER_APPS=(); for a in $APPS; do AFTER_APPS+=("$(start_ms "$a")"); sleep 2; A input keyevent KEYCODE_HOME; sleep 1; done
@@ -88,11 +90,12 @@ echo "| Return to Home (warm), median of 5 | **${WARM_MED} ms** (runs: ${WARM[*]
 echo "| Memory used by Sahl TV (PSS) | **${PSS:-?} MB** |"
 echo "| Remote navigation: 80 key presses | ${FRAMES:-?} frames · janky ${JANK:-?} · p50 ${P50:-?} · p90 ${P90:-?} · p99 ${P99:-?} |"
 echo "| Still running after navigation / crashes | ${ALIVE} / ${CRASH} |"
-echo "| Free memory: before → after cleaning → 1 min later | ${M_BEFORE} → ${M_AFTER} → ${M_1MIN} MB |"
+echo "| Free memory: before → after system kill-all → 1 min later | ${M_BEFORE} → ${M_AFTER} → ${M_1MIN} MB |"
 echo "| Freed, and still free after 1 min | **${FREED} MB**, **${KEPT}%** kept |"
-echo "| Sahl apps open time: before cleaning → after (median) | ${WA} ms → **${AA} ms** |"
+echo "| Sahl apps open time: before system kill-all → after (median) | ${WA} ms → **${AA} ms** |"
 echo
-if [ "$KEPT" != "-" ] && [ "$KEPT" -lt 25 ]; then echo "> Cleaning gives little lasting benefit here: memory refills within a minute, and apps open slower afterwards."; fi
+echo "> Memory results use Android's system-wide am kill-all baseline, not Sahl TV's selective cleaner. They do not measure the broom button's benefit."
+if [ "$KEPT" != "-" ] && [ "$KEPT" -lt 25 ]; then echo "> System kill-all gives little lasting memory benefit here: less than 25% of the initial gain remains after a minute. See the app-open timings for restart cost."; fi
 if [ "$ALIVE" != "yes" ] || [ "$CRASH" != "0" ]; then echo "> ⚠️ Sahl TV stopped or crashed during the test — see the logcat artifact."; fi
 if [ "$CRASH" != "0" ]; then
   echo; echo "<details><summary>Crash details</summary>"; echo; echo '```'

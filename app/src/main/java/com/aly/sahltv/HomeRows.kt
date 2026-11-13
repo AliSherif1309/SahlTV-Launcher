@@ -183,10 +183,13 @@ internal fun MainActivity.tile(a: App, row: String, big: Boolean): View {
 
     frame.setOnFocusChangeListener { v, has ->
         ring.visibility = if (has) View.VISIBLE else View.INVISIBLE
+        v.animate().cancel()
+        nameStrip?.animate()?.cancel()
+        star?.animate()?.cancel()
         v.animate().scaleX(if (has) 1.1f else 1f).scaleY(if (has) 1.1f else 1f).translationZ(if (has) dp(10).toFloat() else 0f)
-            .setInterpolator(ease).setDuration(150).withLayer().start()
-        nameStrip?.animate()?.alpha(if (has) 1f else 0f)?.setDuration(150)?.start()
-        star?.animate()?.alpha(if (has) 1f else 0f)?.setDuration(150)?.start()
+            .setInterpolator(ease).setDuration(110).start()
+        nameStrip?.animate()?.alpha(if (has) 1f else 0f)?.setDuration(110)?.start()
+        star?.animate()?.alpha(if (has) 1f else 0f)?.setDuration(110)?.start()
         if (has) { focusPkg = a.pkg; focusRow = row; if (row == "fav") scroll.smoothScrollTo(0, 0) }
     }
     frame.setOnClickListener { launch(a) }

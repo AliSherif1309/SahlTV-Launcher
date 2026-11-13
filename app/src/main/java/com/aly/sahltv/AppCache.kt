@@ -13,6 +13,8 @@ import java.io.File
  * An app is redrawn only when it was installed or updated (its "last update" time changed).
  */
 internal class AppCache(private val a: MainActivity) {
+    // Scoped to one scan: reuse decoded artwork without retaining it across activity lifetimes.
+    private val decoded = mutableMapOf<String, MainActivity.App>()
     private val dir = File(a.cacheDir, "apps").apply { mkdirs() }
     private val index = File(dir, "index.json")
     private val entries: MutableMap<String, JSONObject> = try {
@@ -26,9 +28,10 @@ internal class AppCache(private val a: MainActivity) {
 
     private fun toApp(o: JSONObject): MainActivity.App? {
         val pkg = o.getString("p")
+        decoded[pkg]?.let { return it }
         val banner = if (o.optBoolean("b")) load(file(pkg, "b")) ?: return null else null
         val icon = if (o.optBoolean("i")) load(file(pkg, "i")) else null
-        return MainActivity.App(pkg, o.optString("l", pkg), banner, icon, o.optInt("t"))
+        return MainActivity.App(pkg, o.optString("l", pkg), banner, icon, o.optInt("t")).also { decoded[pkg] = it }
     }
 
     /** Everything saved last time, in the same order (shown before the real scan finishes). */
@@ -53,6 +56,7 @@ internal class AppCache(private val a: MainActivity) {
         val o = JSONObject().put("p", app.pkg).put("l", app.label).put("t", app.tint).put("u", updated)
             .put("b", save(app.banner, "b")).put("i", save(app.icon, "i"))
         entries[app.pkg] = o
+        decoded[app.pkg] = app
     }
 
     /** Keeps only the apps still installed, in the order found. */
