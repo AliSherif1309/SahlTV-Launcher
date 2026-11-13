@@ -1,6 +1,7 @@
 {
   "version": "1.23",
   "en": [
+    "Optional flexible upper dashboard: cross-group card ordering, full/half widths and live layout-plan preview",
     "Home Layout 2.0: preview real app names, choose Favorites or Recent first, and save three named custom profiles",
     "New visual home layout preview with staged Apply and Cancel",
     "Customize upper dashboard card visibility, order and height",
@@ -9,6 +10,7 @@
     "Fixed layout profile card-size restoration and TV remote focus"
   ],
   "ar": [
+    "تخطيط علوي مرن اختياري: تغيير ترتيب البطاقات بين المجموعات، وعرض كامل أو نصف، ومعاينة مباشرة للتخطيط",
     "تخطيط الشاشة الرئيسية ٢: معاينة أسماء التطبيقات الحقيقية، وتحديد المفضلة أو الأخيرة أولًا، وحفظ ثلاثة تخطيطات مخصصة بأسماء",
     "معاينة مرئية جديدة لتخطيط الشاشة الرئيسية مع تطبیق أو إلغاء التغييرات",
     "تخصيص إظهار البطاقات العلوية وترتيبها وارتفاعها",
