@@ -14,6 +14,8 @@ if a[:2] == ['shell','getprop']:
     print('0' if mode == 'boot-failure' else '1')
 elif a[:1] == ['install'] and mode == 'install-failure':
     sys.exit(1)
+elif a[:3] == ['shell','am','kill-all'] and mode in ('kill-failure','kill-failure-opt-in'):
+    sys.exit(1)
 elif a[:3] == ['shell','am','start']:
     print('TotalTime: ' + ('20000' if mode == 'slow' else '123'))
 elif a[:3] == ['shell','cat','/proc/meminfo']:
@@ -50,6 +52,7 @@ for case, expected, count in [
     ('boot-failure',1,None), ('log-failure',1,None), ('timeout',124,None),
     ('disconnect',1,None), ('missing-memory',1,None),
     ('slow',1,0), ('high-memory',1,0), ('no-frames',1,0),
+    ('kill-failure',0,0), ('kill-failure-opt-in',1,None),
 ]:
     with tempfile.TemporaryDirectory() as d:
         root = pathlib.Path(d)
@@ -60,7 +63,8 @@ for case, expected, count in [
             'timeout': '#!/bin/bash\nshift 2\nexec /usr/bin/timeout --kill-after=1s 2s "$@"\n',
         }.items():
             p=root/name; p.write_text(source); p.chmod(0o755)
-        env = dict(os.environ, PATH=d+':'+os.environ['PATH'], CASE=case, BUILD='31')
+        env = dict(os.environ, PATH=d+':'+os.environ['PATH'], CASE=case, BUILD='31',
+                   PERF_KILL_ALL_BASELINE='1' if case == 'kill-failure-opt-in' else '0')
         result = subprocess.run(['bash',str(SCRIPT),'apks','1024-31'],cwd=d,env=env,capture_output=True,text=True,timeout=30)
         assert result.returncode == expected, (case,result.returncode,result.stdout,result.stderr)
         report=(root/'perf-1024-31.md').read_text()
@@ -69,6 +73,7 @@ for case, expected, count in [
             alive = 'NO' if case == 'dead' else 'yes'
             assert f'| {alive} / {count} |' in report, (case,report)
             assert 'build 31' in report and '60 key presses' in report
+            assert 'Not run (optional diagnostic)' in report, case
             assert (root/'crash-reads').read_text() == 'read\n'
             assert 'com.google.android.tvrecommendations' not in report
             if case in ('google','mixed'):
