@@ -458,7 +458,7 @@ class MainActivity : Activity(), RemoteServer.Host {
 
     internal val textScale get() = prefs.getFloat("textScale", 1f)
     /** Numbers as 123 or ١٢٣ (Thmanyah's Arabic numerals) for the clock, prayer times and countdown. */
-    internal val arDigits get() = prefs.getBoolean("arDigits", false)
+    internal val arDigits get() = prefs.getBoolean("arDigits", ar)
     internal val nightStyle get() = prefs.getBoolean("nightStyle", true)
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {

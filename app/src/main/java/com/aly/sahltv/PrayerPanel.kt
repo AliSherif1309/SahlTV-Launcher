@@ -319,6 +319,7 @@ internal fun MainActivity.updateIslamic() {
     slimIslamic(ramCard.tag != "glow" && fastCard.tag != "glow")
     updateAdhkar()
     updateAyah(); updateNews(); updateGreeting(); refreshWeather()
+    applyDashboardCardPreferences()
     refreshBackground()
     // calm mode: soften the whole home screen from an hour after Isha until Fajr
     val night = if (tt != null) now > epochAt(today, tt.isha) + 3_600_000L || now < epochAt(today, tt.fajr)
