@@ -67,12 +67,12 @@ internal fun MainActivity.render(keepFocus: Boolean, force: Boolean = false) {
     val wantedPkg = focusPkg
     val hid = hidden.toSet()
     val fav = favorites.filter { apps.containsKey(it) && it !in hid }
-    val rec = recent.filter { apps.containsKey(it) && it !in hid }.take(6)
+    val rec = recent.filter { apps.containsKey(it) && it !in hid }.take(homeRecentLimit)
     val all = apps.values.filter { it.pkg !in hid }.let { l ->
         if (sortMostUsed) l.sortedWith(compareByDescending<App> { launches(it.pkg) }.thenBy { it.label.lowercase() })
         else l.sortedBy { it.label.lowercase() }
     }
-    val style = listOf(ar, arDigits, resources.configuration.screenWidthDp, resources.displayMetrics.density, homeTileSize, homeCombined, homeShowFavorites, homeShowRecent, homeRecentFirst)
+    val style = listOf(ar, arDigits, resources.configuration.screenWidthDp, resources.displayMetrics.density, homeTileSize, homeCombined, homeShowFavorites, homeShowRecent, homeRecentFirst, homeRecentLimit, homeTileGapDp)
     val locks = locked.toSet()
     val desired = mutableListOf<View>(panel)
     fun section(key: String, signature: List<Any?>, build: LinearLayout.() -> Unit) {
@@ -132,7 +132,7 @@ internal fun MainActivity.render(keepFocus: Boolean, force: Boolean = false) {
     }
     section("all", style + listOf(all, all.map { it.pkg in locks })) {
         addView(rowTitle(digits(t("All apps  ·  ${all.size}", "كل التطبيقات  ·  ${all.size}"))))
-        val tileWidth = homeTileDimensions(homeTileSize).widthDp + 12 // including horizontal tile margins
+        val tileWidth = homeTileDimensions(homeTileSize).widthDp + homeTileGapDp * 2 // including horizontal tile margins
         val cols = maxOf(1, (resources.configuration.screenWidthDp - 96) / tileWidth)
         val grid = GridLayout(this@render).apply { columnCount = cols; useDefaultMargins = false; clipChildren = false; clipToPadding = false }
         for (a in all) grid.addView(tile(a, "all", big = false))
@@ -279,8 +279,8 @@ internal fun MainActivity.tile(a: App, row: String, big: Boolean): View {
             true
         } else false
     }
-    val lp = if (row == "all") GridLayout.LayoutParams().apply { width = w; height = h; setMargins(dp(6), dp(6), dp(6), dp(6)) }
-             else LinearLayout.LayoutParams(w, h).apply { setMargins(dp(6), 0, dp(6), 0) }
+    val lp = if (row == "all") GridLayout.LayoutParams().apply { width = w; height = h; setMargins(dp(homeTileGapDp), dp(6), dp(homeTileGapDp), dp(6)) }
+             else LinearLayout.LayoutParams(w, h).apply { setMargins(dp(homeTileGapDp), 0, dp(homeTileGapDp), 0) }
     frame.layoutParams = lp
     return frame
 }

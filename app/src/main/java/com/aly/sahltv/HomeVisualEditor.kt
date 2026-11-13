@@ -17,6 +17,8 @@ internal fun MainActivity.homeVisualEditor(): android.app.AlertDialog {
     var showFav = homeShowFavorites
     var showRecent = homeShowRecent
     var recentFirst = homeRecentFirst
+    var recentLimit = prefs.getString("homeRecentLimit", "6") ?: "6"
+    var tileGap = prefs.getString("homeTileGap", "normal") ?: "normal"
     val root = LinearLayout(this).apply {
         orientation = LinearLayout.VERTICAL
         setPadding(dp(16), dp(12), dp(16), dp(12))
@@ -55,7 +57,8 @@ internal fun MainActivity.homeVisualEditor(): android.app.AlertDialog {
         preview.addView(top)
         val tileCount = when (size) { "large" -> 3; "normal" -> 4; else -> 5 }
         val favoriteNames = favorites.mapNotNull { apps[it] }.filter { it.pkg !in hidden }.map { it.label }
-        val recentNames = recent.mapNotNull { apps[it] }.filter { it.pkg !in hidden }.map { it.label }
+        val recentNames = recent.mapNotNull { apps[it] }.filter { it.pkg !in hidden }
+            .take(homeRecentLimit(recentLimit)).map { it.label }
         fun appRow(title: String, names: List<String>) {
             preview.addView(label(title))
             val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
@@ -72,7 +75,7 @@ internal fun MainActivity.homeVisualEditor(): android.app.AlertDialog {
                         cornerRadius = dp(6).toFloat()
                     }
                 }
-                row.addView(tile, LinearLayout.LayoutParams(0, dp(38), 1f).apply { marginEnd = dp(5) })
+                row.addView(tile, LinearLayout.LayoutParams(0, dp(38), 1f).apply { marginEnd = dp(homeTileGap(tileGap)) })
             }
             preview.addView(row)
         }
@@ -88,6 +91,8 @@ internal fun MainActivity.homeVisualEditor(): android.app.AlertDialog {
             if (recentFirst) { recentRow(); favoriteRow() } else { favoriteRow(); recentRow() }
         }
         preview.addView(label(t("App tile size: ", "حجم التطبيقات: ") + size))
+        preview.addView(label(t("Recent apps: ", "عدد التطبيقات الأخيرة: ") + recentLimit +
+            t(" · Tile spacing: ", " · تباعد التطبيقات: ") + tileGap))
     }
     drawPreview()
     fun option(textValue: String, action: () -> Unit) {
@@ -113,6 +118,12 @@ internal fun MainActivity.homeVisualEditor(): android.app.AlertDialog {
     option(t("Show / hide Favorites", "إظهار / إخفاء المفضلة")) { showFav = !showFav }
     option(t("Show / hide Recent apps", "إظهار / إخفاء التطبيقات الأخيرة")) { showRecent = !showRecent }
     option(t("Show Recent row first", "إظهار التطبيقات الأخيرة أولًا")) { recentFirst = !recentFirst }
+    option(t("Recent apps displayed: ", "عدد التطبيقات الأخيرة: ") + recentLimit) {
+        recentLimit = when (recentLimit) { "3" -> "6"; "6" -> "8"; else -> "3" }
+    }
+    option(t("Tile spacing: ", "تباعد التطبيقات: ") + tileGap) {
+        tileGap = when (tileGap) { "tight" -> "normal"; "normal" -> "spacious"; else -> "tight" }
+    }
     val scrollView = ScrollView(this).apply { addView(root) }
     return dialog().setTitle(t("Visual layout editor", "محرر التخطيط المرئي"))
         .setView(scrollView)
@@ -121,7 +132,9 @@ internal fun MainActivity.homeVisualEditor(): android.app.AlertDialog {
                 .putBoolean("homeCombined", combined)
                 .putBoolean("homeShowFavorites", showFav)
                 .putBoolean("homeShowRecent", showRecent)
-                .putBoolean("homeRecentFirst", recentFirst).apply()
+                .putBoolean("homeRecentFirst", recentFirst)
+                .putString("homeRecentLimit", recentLimit)
+                .putString("homeTileGap", tileGap).apply()
             homeChanged()
         }
         .setNegativeButton(t("Cancel", "إلغاء"), null)

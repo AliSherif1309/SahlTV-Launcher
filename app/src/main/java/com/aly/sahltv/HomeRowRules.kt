@@ -31,3 +31,17 @@ internal fun visibleHomeSections(
         }
     }
 }
+
+/** Conservative selectable Recent limits; invalid imported settings fall back to six. */
+internal fun homeRecentLimit(value: String): Int = when (value) {
+    "3" -> 3
+    "8" -> 8
+    else -> 6
+}
+
+/** Horizontal tile margins in dp. Does not change actual tile or dashboard dimensions. */
+internal fun homeTileGap(value: String): Int = when (value) {
+    "tight" -> 2
+    "spacious" -> 12
+    else -> 6
+}
