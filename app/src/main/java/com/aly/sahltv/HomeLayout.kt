@@ -70,9 +70,9 @@ internal fun MainActivity.homeResetMenu() {
         .setPositiveButton(t("Reset", "إعادة الضبط")) { _, _ ->
             prefs.edit().remove("homeTileSize").remove("homeCombined")
                 .remove("homeShowFavorites").remove("homeShowRecent").remove("homeRecentFirst")
-                .remove("dashboardOrder").apply()
+                .remove("dashboardOrder").remove("dashboardFlexible").apply()
             prefs.edit().apply {
-                for (key in dashboardKeys) { remove("dashboardShow_$key"); remove("dashboardSize_$key") }
+                for (key in dashboardKeys) { remove("dashboardShow_$key"); remove("dashboardSize_$key"); remove("dashboardWidth_$key") }
             }.apply()
             homeChanged()
         }.setNegativeButton(t("Cancel", "إلغاء"), null).show()
