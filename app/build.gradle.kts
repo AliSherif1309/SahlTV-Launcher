@@ -10,6 +10,7 @@ val keystorePath: String? = System.getenv("SIGNING_KEYSTORE_PATH")
 android {
     namespace = "com.aly.sahltv"
     compileSdk = 34
+    testBuildType = "connectPreview"
 
     defaultConfig {
         applicationId = "com.aly.sahltv"
