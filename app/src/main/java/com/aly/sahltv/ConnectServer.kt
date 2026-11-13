@@ -149,7 +149,12 @@ object ConnectServer {
                 val list = JSONArray()
                 host?.let { h -> h.appList().forEach { (pkg, label) -> list.put(JSONObject().put("package", pkg).put("label", label).put("favourite", pkg in h.favorites)) } }
                 val info = android.app.ActivityManager.MemoryInfo().also { (app.getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager).getMemoryInfo(it) }
+                val ime = app.getSystemService(Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
+                val selected = android.provider.Settings.Secure.getString(app.contentResolver, android.provider.Settings.Secure.DEFAULT_INPUT_METHOD).orEmpty()
                 return result(true).put("apps", list).put("navigation", ConnectAccess.active != null)
+                    .put("keyboardEnabled", ime.enabledInputMethodList.any { it.packageName == app.packageName && it.serviceName.endsWith("RemoteKeyboard") })
+                    .put("keyboardSelected", selected.startsWith("${app.packageName}/") && selected.contains("RemoteKeyboard"))
+                    .put("filesSupported", android.os.Build.VERSION.SDK_INT >= 29)
                     .put("keyboard", RemoteKeyboard.active?.hasField() == true).put("freeMb", info.availMem / 1048576)
                     .put("totalMb", info.totalMem / 1048576).put("android", android.os.Build.VERSION.RELEASE)
                     .put("version", app.packageManager.getPackageInfo(app.packageName, 0).versionName)
@@ -158,13 +163,26 @@ object ConnectServer {
             "key" -> {
                 val key = q.optString("key")
                 if (key == "home" && ConnectAccess.active == null && host != null) { host.goHome(); return result(true) }
-                return result(ConnectAccess.active?.key(key) == true, "Navigation requires Sahl Connect in TV Accessibility settings; some apps do not expose focusable controls.")
+                if (ConnectAccess.active == null) return result(false, "Enable Sahl Connect navigation on TV using Permissions & setup").put("setup", "navigation")
+                return result(ConnectAccess.active?.key(key) == true, "This TV screen does not expose a usable focus control")
+            }
+            "setup" -> {
+                if (host == null || host.pinSet || host.lockSettings) return result(false, "Open setup using the TV remote; TV PIN protection must be respected")
+                val action = when (q.optString("section")) {
+                    "navigation" -> android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS
+                    "keyboard" -> android.provider.Settings.ACTION_INPUT_METHOD_SETTINGS
+                    else -> return result(false, "Unknown setup screen")
+                }
+                return try {
+                    app.startActivity(android.content.Intent(action).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
+                    result(true, "Continue on the TV, then check permissions again")
+                } catch (_: android.content.ActivityNotFoundException) { result(false, "Open TV Settings → Device Preferences → Accessibility or Keyboard using your TV remote") }
             }
             "text" -> {
                 val text = q.optString("text")
                 if (text.length !in 1..4000) return result(false, "Text must be 1–4000 characters")
                 val kb = RemoteKeyboard.active
-                return result(kb?.hasField() == true && kb.type(text), "Select Sahl Keyboard and open a text field on the TV first")
+                return result(kb?.hasField() == true && kb.type(text), "Select Sahl Keyboard and open a text field on the TV first").put("setup", "keyboard")
             }
             "edit" -> {
                 val key = q.optString("key"); val kb = RemoteKeyboard.active

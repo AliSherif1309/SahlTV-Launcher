@@ -27,6 +27,11 @@ class ConnectActivity : Activity() {
     private lateinit var column: LinearLayout
     private lateinit var status: TextView
     private var apps: LinearLayout? = null
+    private var tvPermissions: JSONObject? = null
+    private var setupPromptShown = false
+    private val permissionSummaries = mutableSetOf<TextView>()
+    internal var setupDialog: AlertDialog? = null
+        private set
     private val worker = ThreadPoolExecutor(1, 1, 0, TimeUnit.SECONDS, ArrayBlockingQueue<Runnable>(12))
     private var generation = 0
     override fun onCreate(state: Bundle?) {
@@ -37,17 +42,24 @@ class ConnectActivity : Activity() {
         screen()
     }
     override fun onDestroy() { generation++; worker.shutdownNow(); super.onDestroy() }
+    override fun onResume() { super.onResume(); if (::status.isInitialized) updatePermissionSummaries() }
     private fun text(value: String, size: Float = 16f) = label(value, size).apply { setPadding(0, dp(8), 0, dp(8)) }
     private fun button(title: String, parent: LinearLayout = column, action: () -> Unit) {
         parent.addView(pill(title, action), LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8); bottomMargin = dp(4) })
     }
     private fun screen() {
+        permissionSummaries.clear()
+        tvPermissions = null
         val scroll = ScrollView(this).apply { background = backdrop(); isFillViewport = true }
         column = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(22), dp(26), dp(22), dp(32)) }
         scroll.addView(column); setContentView(scroll)
         column.addView(text("Sahl Connect", 30f).apply { setTextColor(C.GOLD) })
         status = text(if (identity == null) "Your phone, connected to your Sahl TV." else "TV ${identity!!.getString("host")} · tap Refresh to connect")
         column.addView(status)
+        column.addView(text("Permissions & setup", 21f).apply { setTextColor(C.GOLD) })
+        column.addView(text("").apply { tag = "permissions-summary"; permissionSummaries.add(this) })
+        button("Permissions & setup") { showPermissions() }
+        updatePermissionSummaries()
         if (identity == null) {
             column.addView(text("On the TV: Settings → Sahl Connect → Turn on → Pair a phone. Keep that QR open and join the same Wi-Fi. Pairing expires after 3 minutes. No account or internet service is needed."))
             button("Scan TV QR") { scanTvQr() }
@@ -62,6 +74,7 @@ class ConnectActivity : Activity() {
             return
         }
         button("Refresh apps & diagnostics") { refresh() }
+        column.addView(text("Arrows, OK and Back need TV remote navigation access. Set it up using Permissions & setup above."))
         val pad = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER }
         column.addView(pad)
         for (row in listOf(listOf("↑" to "up"), listOf("←" to "left", "OK" to "ok", "→" to "right"), listOf("↓" to "down"), listOf("Home" to "home", "Back" to "back"))) {
@@ -83,6 +96,7 @@ class ConnectActivity : Activity() {
         val input = EditText(this).apply { hint = "Text for the active TV field"; setTextColor(C.TEXT); setHintTextColor(C.MUTED); isSaveEnabled = false; maxLines = 4 }
         column.addView(input)
         button("Send text") {
+            if (!keyboardSelected()) { showPermissions(); return@button }
             val value = input.text.toString()
             if (value.length !in 1..4000) { status.text = "Enter 1–4000 characters"; return@button }
             request(JSONObject().put("op", "text").put("text", value)) { if (it.optBoolean("ok")) input.text.clear() }
@@ -91,6 +105,7 @@ class ConnectActivity : Activity() {
         button("TV Enter / Search") { send("edit", "key", "enter") }
         column.addView(text("Select Sahl Keyboard in TV input settings and open a TV text field before typing. Select your usual keyboard again when finished."))
         button("Send a file to TV") {
+            if (tvPermissions?.optBoolean("filesEnabled") != true) { showPermissions(); return@button }
             startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT).apply { type = "*/*"; addCategory(Intent.CATEGORY_OPENABLE) }, 73)
         }
         column.addView(text("File receiving must be enabled on the TV. PDF, TXT, PNG/JPEG, MP3 and MP4 only, up to 8 MB; saved in TV Download/Sahl Connect (Android 10+). Files are never opened or installed automatically."))
@@ -98,9 +113,70 @@ class ConnectActivity : Activity() {
         apps = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }.also { column.addView(it) }
         button("Forget this TV") {
             AlertDialog.Builder(this).setTitle("Forget TV?").setMessage("This removes the key from this phone. Revoke this phone on the TV too if you no longer want it to have access.")
-                .setPositiveButton("Forget") { _, _ -> generation++; vault.clear(); identity = null; screen() }.setNegativeButton("Cancel", null).show()
+                .setPositiveButton("Forget") { _, _ -> generation++; vault.clear(); identity = null; setupPromptShown = false; screen() }.setNegativeButton("Cancel", null).show()
         }
         refresh()
+    }
+    private fun keyboardSelected(): Boolean = tvPermissions?.let {
+        if (it.has("keyboardSelected")) it.optBoolean("keyboardSelected") else it.optBoolean("keyboard")
+    } ?: false
+    internal fun applyTvPermissions(state: JSONObject) {
+        tvPermissions = JSONObject(state.toString())
+        updatePermissionSummaries()
+    }
+    private fun updatePermissionSummaries() {
+        val camera = if (checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) "Allowed" else "Not allowed — optional for QR scanning"
+        val navigation = when {
+            identity == null -> "Pair a TV first"
+            tvPermissions == null -> "Not checked — refresh TV status"
+            tvPermissions!!.optBoolean("navigation") -> "Ready"
+            else -> "Needs setup on TV — required for arrows, OK and Back"
+        }
+        val keyboard = when {
+            identity == null -> "Pair a TV first"
+            tvPermissions == null -> "Not checked"
+            keyboardSelected() -> if (tvPermissions!!.optBoolean("keyboard")) "Ready to type" else "Selected — open a TV text field"
+            tvPermissions!!.optBoolean("keyboardEnabled") -> "Enabled — select Sahl Keyboard on TV"
+            else -> "Enable and select Sahl Keyboard on TV — optional for typing"
+        }
+        val files = when {
+            identity == null -> "Pair a TV first"
+            tvPermissions == null -> "Not checked"
+            tvPermissions!!.has("filesSupported") && !tvPermissions!!.optBoolean("filesSupported") -> "Requires Android 10 or later on TV"
+            tvPermissions!!.optBoolean("filesEnabled") -> "Allowed"
+            else -> "Off — allow file receiving on TV only if wanted"
+        }
+        val summary = "TV remote navigation: $navigation\n\nPhone keyboard: $keyboard\n\nTV file receiving: $files\n\nPhone camera: $camera"
+        permissionSummaries.forEach { it.text = if (it.tag == "permissions-summary") summary.replace("\n\n", "\n") else summary }
+    }
+    private fun showPermissions() {
+        if (setupDialog?.isShowing == true) return
+        setupPromptShown = true
+        val box = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(18), 0, dp(18), dp(12)) }
+        val summary = text("").also { permissionSummaries.add(it); box.addView(it) }
+        box.addView(text("TV remote navigation\nArrows, OK and Back require the optional Sahl Connect navigation service on the TV. Open TV Accessibility, choose Sahl Connect navigation under Services / Downloaded services, then turn it on and accept the TV notice. This lets a paired phone move focus and press controls. Screen text is not sent to your phone."))
+        if (identity != null) button("Open TV Accessibility", box) { openTvSetup("navigation") }
+        box.addView(text("Phone keyboard\nFor typing only: enable and select Sahl Keyboard in TV Keyboard settings, then open a TV text field. Select your usual keyboard again when finished."))
+        if (identity != null) button("Open TV Keyboard settings", box) { openTvSetup("keyboard") }
+        box.addView(text("File receiving\nOptional and off by default. On TV: Sahl Connect → Options → Allow file receiving. This is separate consent; pairing alone does not enable uploads."))
+        box.addView(text("Phone camera\nUsed only to scan the TV pairing QR. Allow Camera when scanning, or enter the full code manually."))
+        button("Phone app permissions", box) {
+            startActivity(Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName")))
+        }
+        if (identity != null) button("Check TV permissions again", box) { refresh() }
+        else box.addView(text("Pair your TV first to check its permission status and open its setup screens from here."))
+        setupDialog = AlertDialog.Builder(this).setTitle("Permissions & setup")
+            .setView(ScrollView(this).apply { addView(box) }).setPositiveButton("Done", null).create().also { dialog ->
+                dialog.setOnDismissListener { permissionSummaries.remove(summary); setupDialog = null }
+                dialog.show()
+            }
+        updatePermissionSummaries()
+        if (identity != null) refresh()
+    }
+    private fun openTvSetup(section: String) {
+        request(JSONObject().put("op", "setup").put("section", section)) { response ->
+            if (response.optBoolean("ok")) toast("Continue on the TV, then tap Check TV permissions again")
+        }
     }
     private fun scanTvQr() {
         if (!packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)) {
@@ -123,6 +199,7 @@ class ConnectActivity : Activity() {
             if (grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED) scanTvQr()
             else status.text = "Camera access was declined. Allow Camera in phone app settings to scan, or enter the full TV pairing code."
         }
+        updatePermissionSummaries()
     }
     private fun background(action: () -> Unit) {
         val epoch = generation
@@ -147,7 +224,7 @@ class ConnectActivity : Activity() {
                 val token = response.getString("token")
                 if (!token.matches(Regex("[a-f0-9]{64}"))) { status.text = "Invalid TV response"; return@runOnUiThread }
                 val saved = JSONObject().put("host", parsed.host).put("pin", parsed.pin).put("token", token)
-                try { vault.write(saved.toString()); identity = saved; screen() }
+                try { vault.write(saved.toString()); identity = saved; screen(); showPermissions() }
                 catch (_: Exception) { status.text = "Could not save credentials. Revoke this phone on the TV and try again." }
             }
         }
@@ -165,12 +242,19 @@ class ConnectActivity : Activity() {
                 if (epoch != generation || isDestroyed) return@runOnUiThread
                 status.text = if (response.optBoolean("ok")) "Connected to TV" else response.optString("message", "Command unavailable")
                 after(response)
+                if (!response.optBoolean("ok") && response.optString("setup") in listOf("navigation", "keyboard")) showPermissions()
             }
         }
     }
-    private fun send(op: String, field: String, value: String): Unit = request(JSONObject().put("op", op).put(field, value))
+    private fun send(op: String, field: String, value: String) {
+        if (op == "key" && value != "home" && tvPermissions?.optBoolean("navigation") != true) { showPermissions(); return }
+        if (op == "edit" && !keyboardSelected()) { showPermissions(); return }
+        request(JSONObject().put("op", op).put(field, value))
+    }
     private fun refresh(): Unit = request(JSONObject().put("op", "state")) { response ->
         if (!response.optBoolean("ok")) return@request
+        applyTvPermissions(response)
+        if (!response.optBoolean("navigation") && !setupPromptShown) showPermissions()
         status.text = "Sahl TV ${response.optString("version")} · Android ${response.optString("android")}\n" +
             "Free RAM: ${response.optLong("freeMb")} / ${response.optLong("totalMb")} MB\n" +
             "Navigation: ${if (response.optBoolean("navigation")) "enabled" else "enable on TV"} · Keyboard field: ${if (response.optBoolean("keyboard")) "ready" else "not active"}\n" +

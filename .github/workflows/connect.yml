@@ -131,7 +131,7 @@ jobs:
             adb install preview/SahlConnect-preview.apk
             adb install tests/connect-debug-androidTest.apk
             adb shell am instrument -w -r com.aly.sahlconnect.test/androidx.test.runner.AndroidJUnitRunner | tee phone-instrumentation.txt
-            grep -q 'OK (1 test)' phone-instrumentation.txt
+            grep -q 'OK (2 tests)' phone-instrumentation.txt
       - uses: actions/upload-artifact@v4
         if: always()
         with:

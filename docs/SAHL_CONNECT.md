@@ -22,6 +22,8 @@ Download both APKs and SHA256SUMS from a successful **Sahl Connect preview** Act
 
 ## Implemented scope
 
+**Permissions & setup:** the phone app shows navigation, keyboard, file-receiving and camera setup before pairing and alongside the remote controls. Pairing opens the guided setup. Missing navigation access opens that guide when an arrow/OK/Back is tapped; the phone can open the TV Accessibility screen, but the user must explicitly enable the service on the TV. The guide provides keyboard setup and a Check TV permissions again button. Keyboard status distinguishes enabling/selecting the keyboard from having an active text field. File receiving stays separately opt-in. TV settings links require a paired credential and do not bypass TV PIN protection.
+
 - Separate phone application using the existing shared Sahl colours and UI helpers, with standard system fonts.
 - Reusable `connect-protocol` module and shared TLS/credential storage for future Sahl family integration.
 - Dedicated TLS 1.2 endpoint on TCP 8766; no cleartext fallback. QR/full-code pairing pins the TV's certificate before sending secrets. The short browser-remote code is intentionally not accepted by this protocol.

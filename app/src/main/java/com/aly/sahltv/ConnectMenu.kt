@@ -17,11 +17,11 @@ internal fun MainActivity.connectMenu() {
     val p = getSharedPreferences("connect", 0)
     val enabled = p.getBoolean("enabled", false)
     val actions = mutableListOf(if (enabled) "Turn Sahl Connect off" else "Turn Sahl Connect on")
-    if (enabled) actions.addAll(listOf("Pair a phone (QR / full code)", "Paired phones / revoke access", "TV navigation setup", "Phone keyboard setup", if (p.getBoolean("files", false)) "Stop receiving files" else "Allow file receiving (8 MB maximum)"))
+    if (enabled) actions.addAll(listOf("Pair a phone (QR / full code)", "Paired phones / revoke access", "Permissions: TV navigation (${if (ConnectAccess.active != null) "ready" else "setup needed"})", "Permissions: Phone keyboard", if (p.getBoolean("files", false)) "Stop receiving files" else "Allow file receiving (8 MB maximum)"))
     dialog().setTitle("Sahl Connect · preview").setMessage(
         "${if (ConnectServer.running) "Encrypted connection ready" else if (enabled) ConnectServer.lastError ?: "Starting… reopen this menu in a moment" else "Off"}\n\n" +
         "Same Wi-Fi only. Each phone pairs using the code shown on this TV. You can revoke it here. File receiving needs separate consent.\n\n" +
-        "Navigation needs the optional Accessibility service. Typing needs Sahl Keyboard selected in TV input settings. Some apps may not support remote focus. No screen text is sent to your phone.")
+        "Permissions & setup: arrows, OK and Back need Sahl Connect navigation enabled in TV Accessibility. Choose Options → Permissions: TV navigation to set it up. Typing needs Sahl Keyboard selected in TV input settings. File receiving needs separate consent. The phone app shows these steps in Permissions & setup. No screen text is sent to your phone.")
         .setPositiveButton("Options") { _, _ ->
             dialog().setTitle("Sahl Connect").setItems(actions.toTypedArray()) { _, which -> guarded {
                 when (which) {
