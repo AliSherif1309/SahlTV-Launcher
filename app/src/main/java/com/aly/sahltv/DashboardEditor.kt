@@ -18,7 +18,7 @@ internal fun MainActivity.dashboardEditor(): android.app.AlertDialog {
         "news" to t("What's new", "ما الجديد"),
         "greeting" to t("Seasonal greeting", "تهنئة المناسبات")
     )
-    val order = dashboardOrder().toMutableList()
+    val order = dashboardOrder().toMutableList()\n    var flexible = prefs.getBoolean("dashboardFlexible", false)\n    val widths = dashboardKeys.associateWith { prefs.getString("dashboardWidth_$it", "full") ?: "full" }.toMutableMap()
     val enabled = dashboardKeys.associateWith { prefs.getBoolean("dashboardShow_$it", true) }.toMutableMap()
     val sizes = dashboardKeys.associateWith { prefs.getString("dashboardSize_$it", "normal") ?: "normal" }.toMutableMap()
     val root = LinearLayout(this).apply {
@@ -31,10 +31,45 @@ internal fun MainActivity.dashboardEditor(): android.app.AlertDialog {
         root.removeAllViews()
         var restoreFocus: View? = null
         root.addView(TextView(this).apply {
-            text = t("Select a card to show/hide it. Use S/M/L to adjust card height and arrows to reorder. Changes save only on Apply.",
+            text = t("Select a card to show/hide it. S/M/L changes height; arrows reorder. Optional flexible mode unlocks cross-group moves and full/half widths. Apply to save.",
                 "اختر بطاقة لإظهارها أو إخفائها، واختر S/M/L لضبط ارتفاعها والأسهم لترتيبها. تُحفظ التغييرات عند تطبيق فقط.")
             setTextColor(TEXT); textSize = 15f; setPadding(dp(8), dp(8), dp(8), dp(14))
         })
+        root.addView(TextView(this).apply {
+            text = if (flexible) t("☑ Flexible cards · full/half widths", "☑ بطاقات مرنة · عرض كامل أو نصف")
+                else t("☐ Original dashboard layout (unchanged)", "☐ التخطيط الأصلي للبطاقات (بلا تغيير)")
+            setTextColor(TEXT)
+            textSize = 16f
+            setPadding(dp(12), dp(10), dp(12), dp(10))
+            isFocusable = true
+            isClickable = true
+            background = cardBg(false, false)
+            setOnFocusChangeListener { v, focused -> v.background = cardBg(false, focused) }
+            setOnClickListener { flexible = !flexible; redraw() }
+        })
+        if (flexible) {
+            root.addView(TextView(this).apply {
+                text = t("Preview · card order and widths", "معاينة · ترتيب البطاقات وعرضها")
+                setTextColor(GOLD); textSize = 14f
+                setPadding(dp(8), dp(8), dp(8), dp(6))
+            })
+            val previewRows = flexibleDashboardRows(order, widths)
+            for (keys in previewRows) {
+                val previewRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+                for (key in keys) {
+                    previewRow.addView(TextView(this).apply {
+                        text = (if (enabled[key] == true) "" else "◌ ") + (names[key] ?: key)
+                        textSize = 12f
+                        setTextColor(TEXT)
+                        gravity = Gravity.CENTER
+                        setPadding(dp(8), dp(8), dp(8), dp(8))
+                        background = cardBg(false, false)
+                        alpha = if (enabled[key] == true) 1f else 0.45f
+                    }, LinearLayout.LayoutParams(0, dp(43), 1f).apply { marginEnd = dp(6); bottomMargin = dp(5) })
+                }
+                root.addView(previewRow)
+            }
+        }
         order.forEachIndexed { index, key ->
             val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
             var controlIndex = 0
@@ -62,6 +97,11 @@ internal fun MainActivity.dashboardEditor(): android.app.AlertDialog {
             row.addView(control("↓") {
                 if (index < order.lastIndex) { order.removeAt(index); order.add(index + 1, key) }
             })
+            if (key != "prayer") {
+                row.addView(control(if (widths[key] == "half") t("½ width", "نصف") else t("Full", "كامل")) {
+                    widths[key] = if (widths[key] == "half") "full" else "half"
+                })
+            }
             root.addView(row, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(6) })
         }
         restoreFocus?.requestFocus()
@@ -72,7 +112,7 @@ internal fun MainActivity.dashboardEditor(): android.app.AlertDialog {
         .setPositiveButton(t("Apply", "تطبيق")) { _, _ ->
             val edit = prefs.edit().putString("dashboardOrder", order.joinToString("|"))
             enabled.forEach { (key, on) -> edit.putBoolean("dashboardShow_$key", on) }
-            sizes.forEach { (key, size) -> edit.putString("dashboardSize_$key", size) }
+            sizes.forEach { (key, size) -> edit.putString("dashboardSize_$key", size) }\n            widths.forEach { (key, width) -> edit.putString("dashboardWidth_$key", width) }\n            edit.putBoolean("dashboardFlexible", flexible)
             edit.apply()
             // Rebuild to restore contextual visibility before applying the custom selection.
             recreate()
