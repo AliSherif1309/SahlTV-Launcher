@@ -72,7 +72,7 @@ internal fun MainActivity.render(keepFocus: Boolean, force: Boolean = false) {
         if (sortMostUsed) l.sortedWith(compareByDescending<App> { launches(it.pkg) }.thenBy { it.label.lowercase() })
         else l.sortedBy { it.label.lowercase() }
     }
-    val style = listOf(ar, arDigits, resources.configuration.screenWidthDp, resources.displayMetrics.density, homeTileSize, homeCombined, homeShowFavorites, homeShowRecent)
+    val style = listOf(ar, arDigits, resources.configuration.screenWidthDp, resources.displayMetrics.density, homeTileSize, homeCombined, homeShowFavorites, homeShowRecent, homeRecentFirst)
     val locks = locked.toSet()
     val desired = mutableListOf<View>(panel)
     fun section(key: String, signature: List<Any?>, build: LinearLayout.() -> Unit) {
@@ -112,6 +112,16 @@ internal fun MainActivity.render(keepFocus: Boolean, force: Boolean = false) {
         if ("rec" in visibleSections) {
             addView(rowTitle(t("Recent", "المستخدمة مؤخرًا")))
             addView(hRow("rec", recApps, big = false))
+        }
+    }
+    // Reorder only the app rows; the upper dashboard is left untouched.
+    if (homeRecentFirst && !homeCombined) {
+        val favoritesViews = homeSections["fav"]?.views ?: emptyList()
+        val recentViews = homeSections["rec"]?.views ?: emptyList()
+        val first = desired.indexOfFirst { it in favoritesViews || it in recentViews }
+        if (first >= 0) {
+            desired.removeAll(favoritesViews.toSet() + recentViews.toSet())
+            desired.addAll(first, recentViews + favoritesViews)
         }
     }
     // Previews are optional and follow the user's application rows, never separating Favorites and Recent.

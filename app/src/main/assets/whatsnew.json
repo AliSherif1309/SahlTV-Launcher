@@ -1,6 +1,7 @@
 {
   "version": "1.23",
   "en": [
+    "Home Layout 2.0: preview real app names, choose Favorites or Recent first, and save three named custom profiles",
     "New visual home layout preview with staged Apply and Cancel",
     "Customize upper dashboard card visibility, order and height",
     "Save and apply Default, Minimal and Family layout profiles",
@@ -8,6 +9,7 @@
     "Fixed layout profile card-size restoration and TV remote focus"
   ],
   "ar": [
+    "تخطيط الشاشة الرئيسية ٢: معاينة أسماء التطبيقات الحقيقية، وتحديد المفضلة أو الأخيرة أولًا، وحفظ ثلاثة تخطيطات مخصصة بأسماء",
     "معاينة مرئية جديدة لتخطيط الشاشة الرئيسية مع تطبیق أو إلغاء التغييرات",
     "تخصيص إظهار البطاقات العلوية وترتيبها وارتفاعها",
     "حفظ وتطبيق ملفات التخطيط الافتراضي والبسيط والعائلي",
