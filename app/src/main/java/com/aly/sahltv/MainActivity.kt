@@ -161,6 +161,7 @@ class MainActivity : Activity(), RemoteServer.Host {
     internal val calm by lazy { prefs.getBoolean("calm", true) }
     /** 0 = off, 1 = tell me (gold dot on Updates), 2 = download by itself and install when I'm on the home screen. */
     internal val autoUpd get() = prefs.getInt("autoUpd", 1)
+    internal val homeTimer by lazy { HomeTimer(this) }
     internal var resumed = false
 
     // ---- backgrounds: photos come with the app (see tools/fetch_backgrounds.py) and their credits
@@ -251,6 +252,7 @@ class MainActivity : Activity(), RemoteServer.Host {
         super.onResume()
         Diagnostics.startFrames(window)
         resumed = true
+        homeTimer.resume()
         if (dirty && !loading) loadApps() else if (apps.isNotEmpty()) render(keepFocus = true)
         // speed: the first frame shows the screen with its time and date; prayer times, Islamic cards,
         // previews, media, alarms and update checks fill in right after it is on screen
@@ -274,6 +276,7 @@ class MainActivity : Activity(), RemoteServer.Host {
     override fun onPause() {
         super.onPause()
         resumed = false
+        homeTimer.pause()
         Diagnostics.stopFrames(window)
         handler.removeCallbacks(clockTick)
         handler.removeCallbacks(secondTick)
