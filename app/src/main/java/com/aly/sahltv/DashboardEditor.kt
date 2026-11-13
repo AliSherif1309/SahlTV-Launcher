@@ -18,7 +18,9 @@ internal fun MainActivity.dashboardEditor(): android.app.AlertDialog {
         "news" to t("What's new", "ما الجديد"),
         "greeting" to t("Seasonal greeting", "تهنئة المناسبات")
     )
-    val order = dashboardOrder().toMutableList()\n    var flexible = prefs.getBoolean("dashboardFlexible", false)\n    val widths = dashboardKeys.associateWith { prefs.getString("dashboardWidth_$it", "full") ?: "full" }.toMutableMap()
+    val order = dashboardOrder().toMutableList()
+    var flexible = prefs.getBoolean("dashboardFlexible", false)
+    val widths = dashboardKeys.associateWith { prefs.getString("dashboardWidth_$it", "full") ?: "full" }.toMutableMap()
     val enabled = dashboardKeys.associateWith { prefs.getBoolean("dashboardShow_$it", true) }.toMutableMap()
     val sizes = dashboardKeys.associateWith { prefs.getString("dashboardSize_$it", "normal") ?: "normal" }.toMutableMap()
     val root = LinearLayout(this).apply {
@@ -112,7 +114,9 @@ internal fun MainActivity.dashboardEditor(): android.app.AlertDialog {
         .setPositiveButton(t("Apply", "تطبيق")) { _, _ ->
             val edit = prefs.edit().putString("dashboardOrder", order.joinToString("|"))
             enabled.forEach { (key, on) -> edit.putBoolean("dashboardShow_$key", on) }
-            sizes.forEach { (key, size) -> edit.putString("dashboardSize_$key", size) }\n            widths.forEach { (key, width) -> edit.putString("dashboardWidth_$key", width) }\n            edit.putBoolean("dashboardFlexible", flexible)
+            sizes.forEach { (key, size) -> edit.putString("dashboardSize_$key", size) }
+            widths.forEach { (key, width) -> edit.putString("dashboardWidth_$key", width) }
+            edit.putBoolean("dashboardFlexible", flexible)
             edit.apply()
             // Rebuild to restore contextual visibility before applying the custom selection.
             recreate()
