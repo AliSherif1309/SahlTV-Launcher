@@ -20,6 +20,7 @@ internal fun MainActivity.dashboardEditor() {
     )
     val order = dashboardOrder().toMutableList()
     val enabled = dashboardKeys.associateWith { prefs.getBoolean("dashboardShow_$it", true) }.toMutableMap()
+    val sizes = dashboardKeys.associateWith { prefs.getString("dashboardSize_$it", "normal") ?: "normal" }.toMutableMap()
     val root = LinearLayout(this).apply {
         orientation = LinearLayout.VERTICAL
         setPadding(dp(12), dp(12), dp(12), dp(12))
@@ -27,8 +28,8 @@ internal fun MainActivity.dashboardEditor() {
     fun redraw() {
         root.removeAllViews()
         root.addView(TextView(this).apply {
-            text = t("Select a card to show/hide it. Use arrows to change its order. Changes are saved only when you Apply.",
-                "اختر بطاقة لإظهارها أو إخفائها، واستخدم الأسهم لتغيير ترتيبها. تُحفظ التغييرات عند الضغط على تطبيق فقط.")
+            text = t("Select a card to show/hide it. Use S/M/L to adjust card height and arrows to reorder. Changes save only on Apply.",
+                "اختر بطاقة لإظهارها أو إخفائها، واختر S/M/L لضبط ارتفاعها والأسهم لترتيبها. تُحفظ التغييرات عند تطبيق فقط.")
             setTextColor(TEXT); textSize = 15f; setPadding(dp(8), dp(8), dp(8), dp(14))
         })
         order.forEachIndexed { index, key ->
@@ -46,6 +47,9 @@ internal fun MainActivity.dashboardEditor() {
             row.addView(control((if (enabled[key] == true) "☑ " else "☐ ") + names[key]) {
                 enabled[key] = enabled[key] != true
             }, LinearLayout.LayoutParams(0, dp(54), 1f))
+            row.addView(control(when (sizes[key]) { "compact" -> "S"; "large" -> "L"; else -> "M" }) {
+                sizes[key] = when (sizes[key]) { "compact" -> "normal"; "normal" -> "large"; else -> "compact" }
+            })
             row.addView(control("↑") {
                 if (index > 0) { order.removeAt(index); order.add(index - 1, key) }
             })
@@ -61,6 +65,7 @@ internal fun MainActivity.dashboardEditor() {
         .setPositiveButton(t("Apply", "تطبيق")) { _, _ ->
             val edit = prefs.edit().putString("dashboardOrder", order.joinToString("|"))
             enabled.forEach { (key, on) -> edit.putBoolean("dashboardShow_$key", on) }
+            sizes.forEach { (key, size) -> edit.putString("dashboardSize_$key", size) }
             edit.apply()
             // Rebuild to restore contextual visibility before applying the custom selection.
             recreate()
