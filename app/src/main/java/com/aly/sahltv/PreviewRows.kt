@@ -56,9 +56,6 @@ import com.aly.sahltv.MainActivity.*
 
 // Rows that other apps publish to the Android TV home screen.  (part of the Sahl TV home screen, split out of MainActivity)
 
-internal fun MainActivity.previewSig() = if (!previewsOn) "off" else
-    previewRows.joinToString("|") { r -> r.key + ":" + r.items.size + ":" + (r.items.firstOrNull()?.title ?: "") } + "~" + prefs.getString("pvOff", "")
-
 /** Reload the published rows at most every 3 minutes (or now, when forced). */
 internal fun MainActivity.refreshPreviews(force: Boolean) {
     if (!previewsOn || !Previews.hasPermission(this)) return
@@ -74,17 +71,17 @@ internal fun MainActivity.refreshPreviews(force: Boolean) {
 internal fun MainActivity.rowTitleFor(r: Previews.Row): String = if (r.key == "watchnext") t("Continue watching", "متابعة المشاهدة")
     else (apps[r.pkg]?.label ?: r.pkg) + (if (r.name.isNotBlank()) "  ·  ${r.name}" else "")
 
-internal fun MainActivity.renderPreviews() {
+internal fun MainActivity.renderPreviews(target: LinearLayout = content) {
     if (!previewsOn) return
     val off = previewOff.toSet()
     for (r in previewRows) {
         if (r.key in off || (r.pkg.isNotEmpty() && r.pkg in hidden)) continue
         if (r.items.isEmpty()) continue
-        content.addView(rowTitle(rowTitleFor(r)))
+        target.addView(rowTitle(rowTitleFor(r)))
         // room around the tiles + no clipping, so the grown (focused) tile and its gold ring are never cut
     val line = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(dp(12), dp(12), dp(12), dp(12)); clipChildren = false; clipToPadding = false }
         r.items.forEachIndexed { i, it -> line.addView(previewTile(r, i, it)) }
-        content.addView(HorizontalScrollView(this).apply {
+        target.addView(HorizontalScrollView(this).apply {
             isHorizontalScrollBarEnabled = false; clipToPadding = false; clipChildren = false; addView(line)
             if (ar) post { scrollTo(line.width, 0) }
         })

@@ -127,7 +127,7 @@ class MainActivity : Activity(), RemoteServer.Host {
     internal var mediaAllowed = false
     internal lateinit var settingsBtn: IconBtn
     internal lateinit var updBtn: IconBtn
-    internal var lastSig = ""
+    internal val homeSections = mutableMapOf<String, HomeSection>()
     internal var lastAutoClean = 0L
     internal val ease = DecelerateInterpolator(1.6f)
 

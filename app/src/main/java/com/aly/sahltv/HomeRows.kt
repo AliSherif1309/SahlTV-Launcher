@@ -56,13 +56,15 @@ import com.aly.sahltv.MainActivity.*
 
 // Home screen rows: Favorites, Recent, All apps, tiles and focus.  (part of the Sahl TV home screen, split out of MainActivity)
 
+internal class HomeSection(val signature: List<Any?>, val views: List<View>)
+
 internal fun MainActivity.render(keepFocus: Boolean, force: Boolean = false) {
-    // nothing changed since last time? keep the existing tiles: Home stays instant and focus stays put
-    val sig = listOf(apps.keys.joinToString(), prefs.getString("fav", ""), prefs.getString("recent", ""),
-        prefs.getString("hidden", ""), prefs.getString("locked", ""), sortMostUsed.toString(),
-        resources.configuration.screenWidthDp.toString(), previewSig()).joinToString("#")
-    if (!force && sig == lastSig && content.childCount > 0) return
-    lastSig = sig
+    val focused = content.findFocus()
+    val focusedTag = focused?.tag as? String
+    // Menus can deliberately choose a different row (e.g. after adding a favourite).
+    val wantedTag = if (focusedTag?.startsWith("pv:") == true) focusedTag
+        else focusPkg?.let { "$focusRow/$it" }
+    val wantedPkg = focusPkg
     val hid = hidden.toSet()
     val fav = favorites.filter { apps.containsKey(it) }
     val rec = recent.filter { apps.containsKey(it) && it !in hid }.take(6)
@@ -70,30 +72,62 @@ internal fun MainActivity.render(keepFocus: Boolean, force: Boolean = false) {
         if (sortMostUsed) l.sortedWith(compareByDescending<App> { launches(it.pkg) }.thenBy { it.label.lowercase() })
         else l.sortedBy { it.label.lowercase() }
     }
-    content.removeAllViews()
-    (panel.parent as? android.view.ViewGroup)?.removeView(panel)
-    content.addView(panel)
-
-    if (fav.isNotEmpty()) {
-        content.addView(rowTitle(t("Favorites", "المفضلة")))
-        content.addView(hRow("fav", fav.mapNotNull { apps[it] }, big = true))
-    }   // no favorites yet: no empty section, so the Recent apps show right after the cards (tip: hold OK on an app)
-    renderPreviews()
-    if (rec.size >= 2) {
-        content.addView(rowTitle(t("Recent", "المستخدمة مؤخرًا")))
-        content.addView(hRow("rec", rec.mapNotNull { apps[it] }, big = false))
+    val style = listOf(ar, arDigits, resources.configuration.screenWidthDp, resources.displayMetrics.density)
+    val locks = locked.toSet()
+    val desired = mutableListOf<View>(panel)
+    fun section(key: String, signature: List<Any?>, build: LinearLayout.() -> Unit) {
+        val old = homeSections[key]
+        val state = if (!force && old != null && old.signature == signature) old else {
+            // Build off-screen, then replace only this section's direct children.
+            val holder = LinearLayout(this)
+            holder.build()
+            val views = (0 until holder.childCount).map { holder.getChildAt(it) }
+            holder.removeAllViews()
+            old?.views?.forEach { if (it.parent === content) content.removeView(it) }
+            HomeSection(signature, views).also { homeSections[key] = it }
+        }
+        desired.addAll(state.views)
     }
-    content.addView(rowTitle(digits(t("All apps  ·  ${all.size}", "كل التطبيقات  ·  ${all.size}"))))
-    // as many 142 dp columns as fit inside the TV safe area (48 dp each side)
-    val cols = maxOf(4, (resources.configuration.screenWidthDp - 96) / 142)
-    val grid = GridLayout(this).apply { columnCount = cols; useDefaultMargins = false; clipChildren = false; clipToPadding = false }
-    for (a in all) grid.addView(tile(a, "all", big = false))
-    content.addView(grid)
-
-    if (keepFocus && focusPkg != null) {
-        val tag = "$focusRow/$focusPkg"
-        val v = content.findViewWithTag<View>(tag) ?: content.findViewWithTag<View>("all/$focusPkg")
-        if (v != null) { v.requestFocus(); return }
+    val favApps = fav.mapNotNull { apps[it] }
+    val recApps = rec.mapNotNull { apps[it] }
+    section("fav", style + listOf(favApps, favApps.map { it.pkg in locks })) {
+        if (favApps.isNotEmpty()) {
+            addView(rowTitle(t("Favorites", "المفضلة")))
+            addView(hRow("fav", favApps, big = true))
+        }
+    }
+    // Include every preview field, not just the first title and item count.
+    val previews = previewRows.map { r -> listOf(r.key, r.pkg, r.name, apps[r.pkg]?.label,
+        r.items.map { listOf(it.title, it.poster, it.intentUri) }) }
+    section("previews", style + listOf(previewsOn, previewOff.toSet(), hid, previews)) {
+        renderPreviews(this)
+    }
+    section("rec", style + listOf(recApps, recApps.map { it.pkg in locks }, recApps.map { it.pkg in fav })) {
+        if (recApps.size >= 2) {
+            addView(rowTitle(t("Recent", "المستخدمة مؤخرًا")))
+            addView(hRow("rec", recApps, big = false))
+        }
+    }
+    section("all", style + listOf(all, all.map { it.pkg in locks })) {
+        addView(rowTitle(digits(t("All apps  ·  ${all.size}", "كل التطبيقات  ·  ${all.size}"))))
+        val cols = maxOf(4, (resources.configuration.screenWidthDp - 96) / 142)
+        val grid = GridLayout(this@render).apply { columnCount = cols; useDefaultMargins = false; clipChildren = false; clipToPadding = false }
+        for (a in all) grid.addView(tile(a, "all", big = false))
+        addView(grid)
+    }
+    // Insert new sections around retained views; never detach an unchanged row.
+    for ((i, view) in desired.withIndex()) {
+        if (content.indexOfChild(view) == i) continue
+        (view.parent as? android.view.ViewGroup)?.removeView(view)
+        content.addView(view, i)
+    }
+    if (keepFocus) {
+        val target = wantedTag?.let { content.findViewWithTag<View>(it) }
+            ?: wantedPkg?.let { content.findViewWithTag<View>("all/$it") }
+        // Preserve live focus on preview tiles and panel controls as well as app tiles.
+        if (focused != null && focused.hasFocus() &&
+            (focusedTag == null || target === focused)) return
+        if (target != null && target.requestFocus()) return
     }
     focusFirstTile()
 }
