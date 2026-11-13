@@ -234,6 +234,7 @@ class MainActivity : Activity(), RemoteServer.Host {
         else registerReceiver(pkgReceiver, filter)
         loadApps()
         RemoteServer.host = this
+        if (getSharedPreferences("connect", MODE_PRIVATE).getBoolean("enabled", false)) ConnectServer.start(this)
         if (prefs.getBoolean("reopenSettings", false)) { prefs.edit().putBoolean("reopenSettings", false).apply(); handler.post { showSettings() } }
         if (remoteOn) RemoteServer.start(this)
         if (intent?.action == com.aly.sahl.common.Family.UPDATES) handler.postDelayed({ Updater.check(this, ar) }, 400)
@@ -245,6 +246,8 @@ class MainActivity : Activity(), RemoteServer.Host {
         try { msm?.removeOnActiveSessionsChangedListener(sessionsListener) } catch (_: Exception) {}
         controller?.unregisterCallback(mediaCallback)
         worker.shutdown()
+        ConnectServer.closePairing()
+        if (RemoteServer.host === this) RemoteServer.host = null
     }
 
     override fun onResume() {

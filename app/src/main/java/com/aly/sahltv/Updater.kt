@@ -251,11 +251,11 @@ object Updater {
             val pi = ctx.packageManager.packageInstaller
             val params = PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL)
             params.setAppPackageName(pkg)
-            if (Build.VERSION.SDK_INT >= 31) params.setRequireUserAction(2 /* USER_ACTION_NOT_REQUIRED: Android 12+ may then update without asking */)
+            if (Build.VERSION.SDK_INT >= 31) params.setRequireUserAction(PackageInstaller.SessionParams.USER_ACTION_NOT_REQUIRED)
             val id = pi.createSession(params)
             pi.openSession(id).use { s ->
                 s.openWrite("app", 0, f.length()).use { out -> f.inputStream().use { it.copyTo(out) }; s.fsync(out) }
-                val flags = PendingIntent.FLAG_UPDATE_CURRENT or (if (Build.VERSION.SDK_INT >= 31) 0x02000000 /* FLAG_MUTABLE */ else 0)
+                val flags = PendingIntent.FLAG_UPDATE_CURRENT or (if (Build.VERSION.SDK_INT >= 31) PendingIntent.FLAG_MUTABLE else 0)
                 val cb = PendingIntent.getBroadcast(ctx, id, Intent(ctx, InstallReceiver::class.java), flags)
                 s.commit(cb.intentSender)
             }

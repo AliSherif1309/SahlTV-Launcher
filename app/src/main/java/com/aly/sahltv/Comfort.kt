@@ -113,6 +113,7 @@ internal fun MainActivity.settingsSections(): List<Pair<String, List<SRow>>> {
         t("Family & safety", "العائلة والأمان") to listOf(
             SRow(GoldIcon.LOCK, t("PIN & locks", "الرمز السري والأقفال"), t("Lock apps or TV settings with a 4-digit PIN", "قفل التطبيقات أو إعدادات التلفاز برمز من 4 أرقام"), if (pinSet) t("${locked.size} locked", "${locked.size} مقفلة") else t("No PIN", "بدون رمز"), 10)),
         t("Phone & TV", "الهاتف والتلفاز") to listOf(
+            SRow(GoldIcon.PHONE, "Sahl Connect (preview)", t("Secure Android phone companion", "تطبيق الهاتف الآمن"), "", 35),
             SRow(GoldIcon.PHONE, t("Phone remote", "الريموت من الهاتف"), t("Control the TV and type from your phone's browser", "تحكّم بالتلفاز واكتب من متصفح هاتفك"), onOff(remoteOn), 15),
             SRow(GoldIcon.BROOM, t("Auto clean", "التنظيف التلقائي"), t("Only when memory is low; keeps your recent apps open (off: apps open faster)", "فقط عند انخفاض الذاكرة؛ يُبقي تطبيقاتك الأخيرة (متوقف: التطبيقات تفتح أسرع)"), onOff(autoClean), 9),
             SRow(GoldIcon.STAR, t("Sahl apps", "تطبيقات سهل"), t("Sahl TV, Quran, PDF and Files: open them, or install a missing one", "سهل TV والقرآن وPDF والملفات: افتحها أو ثبّت الناقص منها"), "4", 30),

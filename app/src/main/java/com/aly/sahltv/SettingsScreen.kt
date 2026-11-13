@@ -58,6 +58,7 @@ import com.aly.sahltv.MainActivity.*
 
 /** Background update check, by the Auto update setting. */
 internal fun MainActivity.autoUpdateTick() {
+    if (packageName.endsWith(".connectpreview")) return // isolated previews do not join the stable updater
     val now = System.currentTimeMillis()
     val mode = autoUpd
     if (mode == 2 && Updater.hasDownloaded(this) && settingsView == null && now - prefs.getLong("autoAsk", 0L) > 6 * 3_600_000L) {

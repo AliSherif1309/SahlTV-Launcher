@@ -1,0 +1,156 @@
+name: Sahl Connect preview
+on:
+  push:
+    branches: [codex/sahl-connect-v1]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: connect-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+      - name: Protocol security tests and isolated APKs (system fonts only)
+        run: gradle :connect-protocol:test :connect:assembleDebug :connect:assembleDebugAndroidTest :app:assembleConnectPreview :app:assembleConnectPreviewAndroidTest :connect:lintDebug :app:lintConnectPreview --no-daemon
+      - name: Lint details
+        if: failure()
+        run: cat app/build/intermediates/lint_intermediate_text_report/connectPreview/lintReportConnectPreview/lint-results-connectPreview.txt connect/build/intermediates/lint_intermediate_text_report/debug/lintReportDebug/lint-results-debug.txt || true
+      - name: Stage preview artifacts and provenance
+        run: |
+          mkdir -p preview
+          cp connect/build/outputs/apk/debug/connect-debug.apk preview/SahlConnect-preview.apk
+          cp app/build/outputs/apk/connectPreview/app-connectPreview.apk preview/SahlTV-connect-preview.apk
+          python3 tools/check_connect_apk.py preview/SahlConnect-preview.apk
+          for apk in preview/*.apk; do
+            if unzip -Z1 "$apk" | grep -Ei '\.(ttf|otf|woff2?)$|^assets/f/'; then
+              echo "Font asset found in preview APK; refusing to publish" >&2
+              exit 1
+            fi
+          done
+          cp docs/SAHL_CONNECT.md preview/INSTALL.md
+          git rev-parse HEAD > preview/COMMIT.txt
+          cd preview
+          sha256sum *.apk > SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Sahl-Connect-preview-${{ github.sha }}
+          path: preview/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Connect-instrumentation
+          path: app/build/outputs/apk/androidTest/connectPreview/*.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Connect-phone-instrumentation
+          path: connect/build/outputs/apk/androidTest/debug/*.apk
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Connect-test-reports
+          path: |
+            connect-protocol/build/reports/tests/
+            connect/build/reports/lint-results-debug.html
+            app/build/reports/lint-results-connectPreview.html
+  device-tests:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: Sahl-Connect-preview-${{ github.sha }}
+          path: preview
+      - uses: actions/download-artifact@v4
+        with:
+          name: Connect-instrumentation
+          path: tests
+      - name: Enable emulator hardware acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 29
+          target: android-tv
+          arch: x86
+          profile: tv_1080p
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot
+          script: |
+            adb shell wm size 1280x720
+            adb shell wm density 213
+            adb shell settings put system font_scale 1.3
+            adb install preview/SahlTV-connect-preview.apk
+            adb install tests/app-connectPreview-androidTest.apk
+            adb shell am instrument -w -r com.aly.sahltv.connectpreview.test/androidx.test.runner.AndroidJUnitRunner | tee instrumentation.txt
+            grep -q 'OK (3 tests)' instrumentation.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Connect-emulator-results
+          path: instrumentation.txt
+  phone-tests:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: Sahl-Connect-preview-${{ github.sha }}
+          path: preview
+      - uses: actions/download-artifact@v4
+        with:
+          name: Connect-phone-instrumentation
+          path: tests
+      - name: Enable emulator hardware acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 29
+          target: default
+          arch: x86_64
+          profile: pixel_2
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot -camera-back emulated -camera-front none
+          script: |
+            adb install preview/SahlConnect-preview.apk
+            adb install tests/connect-debug-androidTest.apk
+            adb shell am instrument -w -r com.aly.sahlconnect.test/androidx.test.runner.AndroidJUnitRunner | tee phone-instrumentation.txt
+            grep -q 'OK (2 tests)' phone-instrumentation.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Connect-phone-emulator-results
+          path: phone-instrumentation.txt
+  prerelease:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/codex/sahl-connect-v1'
+    needs: [build, device-tests, phone-tests]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: Sahl-Connect-preview-${{ github.sha }}
+          path: preview
+      - name: Publish separate preview (never update stable latest)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "connect-preview-${GITHUB_RUN_NUMBER}" preview/* --target "$GITHUB_SHA" --prerelease --latest=false --title "Sahl Connect 0.1 preview ${GITHUB_RUN_NUMBER}" --notes-file docs/SAHL_CONNECT.md
