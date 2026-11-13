@@ -32,9 +32,15 @@ internal fun MainActivity.homeChanged() {
 
 internal fun MainActivity.homeSizeMenu() {
     val sizes = arrayOf("compact", "normal", "large")
-    val names = arrayOf(t("Compact · 130 × 73", "مدمج · ١٣٠ × ٧٣"),
-        t("Normal · 160 × 90", "عادي · ١٦٠ × ٩٠"),
-        t("Large · 200 × 112", "كبير · ٢٠٠ × ١١٢"))
+    val names = sizes.map { size ->
+        val d = homeTileDimensions(size)
+        val label = when (size) {
+            "normal" -> t("Normal", "عادي")
+            "large" -> t("Large", "كبير")
+            else -> t("Compact", "مدمج")
+        }
+        digits("$label · ${d.widthDp} × ${d.heightDp}")
+    }.toTypedArray()
     dialog().setTitle(t("App tile size", "حجم مربعات التطبيقات"))
         .setSingleChoiceItems(names, sizes.indexOf(homeTileSize).coerceAtLeast(0)) { d, which ->
             d.dismiss()
