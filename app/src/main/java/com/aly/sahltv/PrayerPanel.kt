@@ -332,7 +332,11 @@ internal fun MainActivity.updateIslamic() {
     }
     val nightNow = PrefsProvider.isNight(this)
     if (nightNow != Fonts.night) { Fonts.night = nightNow; if (!isFinishing) handler.post { recreate() } }
-    panel.visibility = if (prayRow.visibility == View.GONE && ramCard.visibility == View.GONE && fastCard.visibility == View.GONE) View.GONE else View.VISIBLE
+    panel.visibility = if (prefs.getBoolean("dashboardFlexible", false)) {
+        if (listOf(prayRow, ramCard, fastCard, adhkarCard, ayahCard, newsCard, greetCard).all { it.visibility == View.GONE })
+            View.GONE else View.VISIBLE
+    } else if (prayRow.visibility == View.GONE && ramCard.visibility == View.GONE && fastCard.visibility == View.GONE)
+        View.GONE else View.VISIBLE
     tickCountdowns()
 }
 
