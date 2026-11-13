@@ -9,6 +9,12 @@ internal val MainActivity.homeTileSize: String
 internal val MainActivity.homeCombined: Boolean
     get() = prefs.getBoolean("homeCombined", false)
 
+internal val MainActivity.homeRecentLimit: Int
+    get() = homeRecentLimit(prefs.getString("homeRecentLimit", "6") ?: "6")
+
+internal val MainActivity.homeTileGapDp: Int
+    get() = homeTileGap(prefs.getString("homeTileGap", "normal") ?: "normal")
+
 internal val MainActivity.homeRecentFirst: Boolean
     get() = prefs.getBoolean("homeRecentFirst", false)
 
@@ -70,6 +76,7 @@ internal fun MainActivity.homeResetMenu() {
         .setPositiveButton(t("Reset", "إعادة الضبط")) { _, _ ->
             prefs.edit().remove("homeTileSize").remove("homeCombined")
                 .remove("homeShowFavorites").remove("homeShowRecent").remove("homeRecentFirst")
+                .remove("homeRecentLimit").remove("homeTileGap")
                 .remove("dashboardOrder").remove("dashboardFlexible").apply()
             prefs.edit().apply {
                 for (key in dashboardKeys) { remove("dashboardShow_$key"); remove("dashboardSize_$key"); remove("dashboardWidth_$key") }
