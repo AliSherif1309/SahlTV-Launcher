@@ -5,6 +5,36 @@ import android.os.SystemClock
 import android.view.Gravity
 
 class FloatingTimerTest : InstrumentationTestCase() {
+    fun testRemoteCanStartAndCloseTimerMenu() {
+        val context = instrumentation.targetContext
+        context.getSharedPreferences("floating_timer", 0).edit().clear().commit()
+        context.getSharedPreferences("sahl", 0).edit().putString("lang", "en").putInt("autoUpd", 0).commit()
+        val activity = instrumentation.startActivitySync(android.content.Intent(context, MainActivity::class.java)
+            .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)) as MainActivity
+        try {
+            instrumentation.waitForIdleSync()
+            instrumentation.runOnMainSync {
+                val menu = activity.timerMenu()
+                menu.listView.requestFocus()
+                menu.listView.setSelection(0)
+            }
+            instrumentation.waitForIdleSync()
+            instrumentation.sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_DPAD_CENTER)
+            instrumentation.waitForIdleSync()
+            assertTrue(TimerStore(context).state.running)
+            assertTrue(TimerStore(context).visible)
+            instrumentation.sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_BACK)
+            instrumentation.waitForIdleSync()
+            instrumentation.runOnMainSync {
+                assertFalse(activity.isFinishing)
+                assertNotNull(activity.rootFrame)
+            }
+        } finally {
+            instrumentation.runOnMainSync { activity.finish() }
+            context.getSharedPreferences("floating_timer", 0).edit().clear().commit()
+        }
+    }
+
     fun testCountdownPauseResumeAndReset() {
         val timer = TimerState()
         timer.start(1_000)

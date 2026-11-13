@@ -73,7 +73,7 @@ internal fun syncTimerOverlay(context: Context) {
         }
     } else context.stopService(intent)
 }
-internal fun MainActivity.timerMenu() {
+internal fun MainActivity.timerMenu(): android.app.AlertDialog {
     val store = TimerStore(this)
     val state = store.state
     state.finish(SystemClock.elapsedRealtime()); store.save()
@@ -83,7 +83,7 @@ internal fun MainActivity.timerMenu() {
         t("Show timer: ", "إظهار المؤقت: ") + onOff(store.visible),
         t("Position", "الموضع"), t("Above other apps: ", "فوق التطبيقات الأخرى: ") + onOff(store.overlay),
         t("Overlay permission & limitations", "إذن الظهور والقيود"))
-    dialog().setTitle(t("Floating timer", "المؤقت العائم") + " · " + digits(timerText(state.remaining(SystemClock.elapsedRealtime()))))
+    return dialog().setTitle(t("Floating timer", "المؤقت العائم") + " · " + digits(timerText(state.remaining(SystemClock.elapsedRealtime()))))
         .setItems(actions) { _, which ->
             fun changed() { store.save(); syncTimerOverlay(this); timerMenu() }
             when (which) {
