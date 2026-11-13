@@ -124,7 +124,9 @@ jobs:
           if gh release view latest >/dev/null 2>&1; then
             gh release upload latest SahlTV.apk SahlQuran.apk SahlPDF.apk SahlFiles.apk SHA256SUMS --clobber
             gh release upload latest version.json --clobber
-            gh release edit latest --title "Sahl TV (latest = build $RUN)" --notes-file NOTES.md
+            gh release edit latest --latest=false --title "Sahl TV (latest = build $RUN)" --notes-file NOTES.md
           else
-            gh release create latest SahlTV.apk SahlQuran.apk SahlPDF.apk SahlFiles.apk SHA256SUMS version.json --title "Sahl TV (latest = build $RUN)" --notes-file NOTES.md
+            gh release create latest --latest=false SahlTV.apk SahlQuran.apk SahlPDF.apk SahlFiles.apk SHA256SUMS version.json --title "Sahl TV (latest = build $RUN)" --notes-file NOTES.md
           fi
+          # The numbered build owns GitHub\'s Latest badge; the fixed tag only serves TV downloads.
+          gh release edit "$TAG" --latest
