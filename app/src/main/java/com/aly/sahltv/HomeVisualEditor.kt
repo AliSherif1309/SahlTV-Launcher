@@ -85,9 +85,14 @@ internal fun MainActivity.homeVisualEditor() {
             isFocusable = true
             isClickable = true
             setOnClickListener { action(); drawPreview() }
-            background = GradientDrawable().apply {
-                setColor(Color.rgb(36, 54, 49))
+            fun focusBackground(focused: Boolean) = GradientDrawable().apply {
+                setColor(if (focused) Color.rgb(215, 180, 102) else Color.rgb(36, 54, 49))
                 cornerRadius = dp(6).toFloat()
+            }
+            background = focusBackground(false)
+            setOnFocusChangeListener { view, focused ->
+                view.background = focusBackground(focused)
+                (view as TextView).setTextColor(if (focused) Color.BLACK else Color.WHITE)
             }
         }, LinearLayout.LayoutParams(-1, dp(42)).apply { topMargin = dp(7) })
     }
