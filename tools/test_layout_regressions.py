@@ -24,6 +24,9 @@ assert 'recentFirst = !recentFirst' in visual and 'favoriteNames' in visual and 
 assert 'layoutProfileName_$name' in profile and 'EditText(this)' in profile, "custom profiles must allow names"
 assert 'applyFlexibleDashboardCards()' in (root / "app/src/main/java/com/aly/sahltv/DashboardLayout.kt").read_text(), "flexible panel must be opt-in"
 assert 'flexibleDashboardRows(order, widths)' in flex and 'panel.removeAllViews()' in flex, "preview and live layout must share layout planner"
+assert 'field.startsWith("dashboardWidth_")' in profile.split("else if (field == \\"homeTileSize\\"")[1], "dashboard card width must restore as string"
+assert '"homeRecentLimit"' in profile and '"homeTileGap"' in profile, "row options must survive profile restore"
+assert 'homeRecentLimit' in rows and 'homeTileGapDp' in rows, "render must honor row settings"
 assert '"dashboardWidth_$it"' in profile and '"dashboardFlexible"' in profile, "profiles must preserve flexible layout settings"
 assert 'remove("dashboardFlexible")' in home and 'remove("dashboardWidth_$key")' in home, "layout reset must clear flexible choices"
 assert len(notes["en"]) == len(notes["ar"]) and len(notes["en"]) >= 4
