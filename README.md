@@ -176,11 +176,11 @@ Font © thmanyah Publishing and Distribution, used under thmanyah's Font License
   - smoothness (frames on time, slow, frozen, worst);
   - memory (Sahl TV's own use, free memory, low-RAM flag);
   - for each memory clean: MB freed, and how much is **still free after 1 and 5 minutes**, with a verdict on whether cleaning really helps on this TV.
-- **After every build** (`.github/workflows/perf.yml`): two Android TV emulators (2 GB and 1 GB RAM) measure:
+- **Before publishing** (`.github/workflows/validate.yml`): two Android TV emulators (2 GB and 1 GB RAM) measure:
   - cold and warm start (5 runs each);
   - memory use;
   - 60 remote key presses (frames, jank, p50/p90/p99, crashes);
-  - a system-wide m kill-all baseline: memory freed, kept after 1 minute, and app restart cost (not the selective broom cleaner).
+  - a system-wide am kill-all baseline: memory freed, kept after 1 minute, and app restart cost (not the selective broom cleaner).
 
   Reports are attached when publishing the numbered release. Missing measurements, launcher crashes/death, zero rendered frames, median cold start above 10 seconds, apps-ready time above 15 seconds, or PSS above 256 MB block publication. These are broad emulator budgets, not physical TV guarantees. Jank is reported without a threshold.
 
