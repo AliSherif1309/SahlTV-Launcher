@@ -1,0 +1,26 @@
+name: Pull request compile
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [feature/layout-preview-settings]
+permissions:
+  contents: read
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+      - name: Prepare required generated assets
+        run: |
+          python3 tools/make_adhkar.py
+          python3 tools/pack_fonts.py
+      - name: Compile launcher
+        run: gradle :app:compileDebugKotlin --no-daemon --stacktrace
