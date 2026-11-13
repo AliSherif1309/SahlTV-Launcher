@@ -43,7 +43,7 @@ internal fun MainActivity.layoutProfilesMenu() {
                 val edit = prefs.edit()
                 for (field in layoutFields) {
                     if (!data.has(field)) edit.remove(field)
-                    else if (field == "homeTileSize" || field == "dashboardOrder")
+                    else if (field == "homeTileSize" || field == "dashboardOrder" || field.startsWith("dashboardSize_"))
                         edit.putString(field, data.optString(field))
                     else edit.putBoolean(field, data.optBoolean(field, true))
                 }
