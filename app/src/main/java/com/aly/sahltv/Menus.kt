@@ -98,59 +98,59 @@ internal fun MainActivity.launcherMenu() = showSettings()
 /** One place for every setting: used by the Settings screen rows. */
 internal fun MainActivity.menuAction(which: Int) {
     if (which in listOf(0, 5, 7)) prefs.edit().putBoolean("reopenSettings", true).apply()
-        when (which) {
-            0 -> { prefs.edit().putString("lang", if (ar) "en" else "ar").apply(); recreate() }
-            1 -> previewsMenu()
-            2 -> { prefs.edit().putBoolean("sortUsed", !sortMostUsed).apply(); render(false) }
-            3 -> { prefs.edit().putBoolean("clock24", !clock24).apply(); updateClock() }
-            4 -> cityMenu()
-            5 -> { prefs.edit().putBoolean("islamic", !islamic).apply(); recreate() }
-            6 -> islamicMenu()
-            7 -> { prefs.edit().putBoolean("calm", !calm).apply(); recreate() }
-            8 -> alertMenu()
-            9 -> { prefs.edit().putBoolean("autoClean", !autoClean).apply(); toast(t("Auto clean: ", "التنظيف التلقائي: ") + onOff(autoClean)) }
-            10 -> pinMenu()
-            11 -> guarded { hiddenMenu() }
-            12 -> {
-                val next = when (saverMin) { 0 -> 3; 3 -> 5; 5 -> 10; else -> 0 }
-                prefs.edit().putInt("saverMin", next).apply()
-                toast(t("Clock screensaver: ", "شاشة توقف الساعة: ") + if (next == 0) t("Off", "متوقفة") else t("after $next min", "بعد $next دقائق"))
-            }
-            13 -> nowMenu()
-            14 -> backupMenu()
-            15 -> remoteMenu()
-            35 -> guarded { connectMenu() }
-            16 -> { setUpd(false); Updater.check(this, ar) }
-            18 -> if (islamic) backgroundMenu() else toast(t("Choose the Islamic theme first", "اختر المظهر الإسلامي أولًا"))
-            19 -> dimMenu()
-            20 -> autoUpdMenu()
-            21 -> prayerAdjustMenu()
-            22 -> { prefs.edit().putBoolean("wxOn", !wxOn).putLong("wxTry", 0L).apply(); updateClock() }
-            23 -> { prefs.edit().putBoolean("ayahOn", !ayahOn).apply(); ayahToday = null; updateClock() }
-            24 -> textSizeMenu()
-            25 -> { prefs.edit().putBoolean("nightStyle", !nightStyle).commit(); Fonts.night = PrefsProvider.isNight(this); recreate() }
-            26 -> { prefs.edit().putBoolean("arDigits", !arDigits).apply(); updateClock(); tickCountdowns(); prefs.edit().putLong("wxTry", 0L).apply(); refreshWeather(); render(true) }
-            27 -> greetingMenu()
-            30 -> com.aly.sahl.common.Family.show(this)
-            32 -> { prefs.edit().putBoolean("adhkarOn", !adhkarOn).apply(); updateAdhkar(); toast(t("Adhkar: ", "الأذكار: ") + onOff(adhkarOn)) }
-            33 -> { val on = !prefs.getBoolean("prayerPause", false)
-                    prefs.edit().putBoolean("prayerPause", on).apply()
-                    // it uses the prayer-time banner: turn that on too
-                    if (on && Alerts.mode(this) == Alerts.OFF) prefs.edit().putInt("alertMode", Alerts.AT_TIME).apply()
-                    Alerts.schedule(this); toast(t("Prayer pause: ", "إيقاف للصلاة: ") + onOff(on)) }
-            34 -> seasonMenu()
-            31 -> { prefs.edit().putBoolean("fridayOn", !fridayOn).apply(); Alerts.schedule(this); greetShown = null; updateGreeting()
-                    toast(t("Friday mode: ", "وضع الجمعة: ") + onOff(fridayOn)) }
-            29 -> dialog().setTitle(t("Diagnostics", "التشخيص")).setMessage(Diagnostics.report(this, ar))
-                .setPositiveButton(t("Free memory now", "حرّر الذاكرة الآن")) { _, _ -> freeMemory() }
-                .setNegativeButton(t("Close", "إغلاق"), null).show()
-            28 -> { prefs.edit().putBoolean("suhoorOn", !prefs.getBoolean("suhoorOn", true)).apply(); Alerts.schedule(this)
-                    toast(t("Suhoor reminder: ", "تذكير السحور: ") + onOff(prefs.getBoolean("suhoorOn", true))) }
-            17 -> dialog().setTitle("Sahl TV  ·  سهل")
-                .setMessage(t("A fast, ad-free home screen for Android TV.\n\nNo tracking, no background services. Internet is used only for preview pictures, the weather, and checking for updates. Nothing about you is sent anywhere.\n\nPrayer times are calculated on the TV (Qatar method: Fajr 18°, Asr Shafi'i, Isha 90 min after Maghrib). Please compare with the official Awqaf timetable.\n\nTip: hold OK on an app (or press Menu) for options.\n\nFree & open source (MIT).\n" + photoCredits() + "Weather: Open-Meteo.com (CC BY 4.0). Ayah of the day: Tanzil Quran text (CC BY 3.0), Amiri Quran font (SIL OFL).\nContact: alysherif1309@gmail.com",
-                              "واجهة رئيسية سريعة وبلا إعلانات لأجهزة Android TV.\n\nبلا تتبّع وبلا خدمات تعمل في الخلفية. يُستخدم الإنترنت فقط لصور المعاينات والطقس والبحث عن تحديثات. لا يُرسل أي شيء عنك.\n\nتُحسب مواقيت الصلاة على التلفاز (طريقة قطر: الفجر 18°، العصر شافعي، العشاء بعد المغرب بـ 90 دقيقة). يُرجى مقارنتها بتقويم الأوقاف الرسمي.\n\nنصيحة: اضغط مطولًا على OK فوق تطبيق (أو زر القائمة) لعرض الخيارات.\n\nمجاني ومفتوح المصدر (MIT).\n" + photoCredits() + "الطقس: Open-Meteo.com (CC BY 4.0). آية اليوم: نص القرآن من مشروع تنزيل (CC BY 3.0) وخط Amiri Quran (SIL OFL).\nللتواصل: alysherif1309@gmail.com"))
-                .setPositiveButton(t("OK", "حسنًا"), null).show()
+    when (which) {
+        0 -> { prefs.edit().putString("lang", if (ar) "en" else "ar").apply(); recreate() }
+        1 -> previewsMenu()
+        2 -> { prefs.edit().putBoolean("sortUsed", !sortMostUsed).apply(); render(false) }
+        3 -> { prefs.edit().putBoolean("clock24", !clock24).apply(); updateClock() }
+        4 -> cityMenu()
+        5 -> { prefs.edit().putBoolean("islamic", !islamic).apply(); recreate() }
+        6 -> islamicMenu()
+        7 -> { prefs.edit().putBoolean("calm", !calm).apply(); recreate() }
+        8 -> alertMenu()
+        9 -> { prefs.edit().putBoolean("autoClean", !autoClean).apply(); toast(t("Auto clean: ", "التنظيف التلقائي: ") + onOff(autoClean)) }
+        10 -> pinMenu()
+        11 -> guarded { hiddenMenu() }
+        12 -> {
+            val next = when (saverMin) { 0 -> 3; 3 -> 5; 5 -> 10; else -> 0 }
+            prefs.edit().putInt("saverMin", next).apply()
+            toast(t("Clock screensaver: ", "شاشة توقف الساعة: ") + if (next == 0) t("Off", "متوقفة") else t("after $next min", "بعد $next دقائق"))
         }
+        13 -> nowMenu()
+        14 -> backupMenu()
+        15 -> remoteMenu()
+        35 -> guarded { connectMenu() }
+        16 -> { setUpd(false); Updater.check(this, ar) }
+        18 -> if (islamic) backgroundMenu() else toast(t("Choose the Islamic theme first", "اختر المظهر الإسلامي أولًا"))
+        19 -> dimMenu()
+        20 -> autoUpdMenu()
+        21 -> prayerAdjustMenu()
+        22 -> { prefs.edit().putBoolean("wxOn", !wxOn).putLong("wxTry", 0L).apply(); updateClock() }
+        23 -> { prefs.edit().putBoolean("ayahOn", !ayahOn).apply(); ayahToday = null; updateClock() }
+        24 -> textSizeMenu()
+        25 -> { prefs.edit().putBoolean("nightStyle", !nightStyle).commit(); Fonts.night = PrefsProvider.isNight(this); recreate() }
+        26 -> { prefs.edit().putBoolean("arDigits", !arDigits).apply(); updateClock(); tickCountdowns(); prefs.edit().putLong("wxTry", 0L).apply(); refreshWeather(); render(true) }
+        27 -> greetingMenu()
+        30 -> com.aly.sahl.common.Family.show(this)
+        32 -> { prefs.edit().putBoolean("adhkarOn", !adhkarOn).apply(); updateAdhkar(); toast(t("Adhkar: ", "الأذكار: ") + onOff(adhkarOn)) }
+        33 -> { val on = !prefs.getBoolean("prayerPause", false)
+                prefs.edit().putBoolean("prayerPause", on).apply()
+                // it uses the prayer-time banner: turn that on too
+                if (on && Alerts.mode(this) == Alerts.OFF) prefs.edit().putInt("alertMode", Alerts.AT_TIME).apply()
+                Alerts.schedule(this); toast(t("Prayer pause: ", "إيقاف للصلاة: ") + onOff(on)) }
+        34 -> seasonMenu()
+        31 -> { prefs.edit().putBoolean("fridayOn", !fridayOn).apply(); Alerts.schedule(this); greetShown = null; updateGreeting()
+                toast(t("Friday mode: ", "وضع الجمعة: ") + onOff(fridayOn)) }
+        29 -> dialog().setTitle(t("Diagnostics", "التشخيص")).setMessage(Diagnostics.report(this, ar))
+            .setPositiveButton(t("Free memory now", "حرّر الذاكرة الآن")) { _, _ -> freeMemory() }
+            .setNegativeButton(t("Close", "إغلاق"), null).show()
+        28 -> { prefs.edit().putBoolean("suhoorOn", !prefs.getBoolean("suhoorOn", true)).apply(); Alerts.schedule(this)
+                toast(t("Suhoor reminder: ", "تذكير السحور: ") + onOff(prefs.getBoolean("suhoorOn", true))) }
+        17 -> dialog().setTitle("Sahl TV  ·  سهل")
+            .setMessage(t("A fast, ad-free home screen for Android TV.\n\nNo tracking, no background services. Internet is used only for preview pictures, the weather, and checking for updates. Nothing about you is sent anywhere.\n\nPrayer times are calculated on the TV (Qatar method: Fajr 18°, Asr Shafi'i, Isha 90 min after Maghrib). Please compare with the official Awqaf timetable.\n\nTip: hold OK on an app (or press Menu) for options.\n\nFree & open source (MIT).\n" + photoCredits() + "Weather: Open-Meteo.com (CC BY 4.0). Ayah of the day: Tanzil Quran text (CC BY 3.0), Amiri Quran font (SIL OFL).\nContact: alysherif1309@gmail.com",
+                          "واجهة رئيسية سريعة وبلا إعلانات لأجهزة Android TV.\n\nبلا تتبّع وبلا خدمات تعمل في الخلفية. يُستخدم الإنترنت فقط لصور المعاينات والطقس والبحث عن تحديثات. لا يُرسل أي شيء عنك.\n\nتُحسب مواقيت الصلاة على التلفاز (طريقة قطر: الفجر 18°، العصر شافعي، العشاء بعد المغرب بـ 90 دقيقة). يُرجى مقارنتها بتقويم الأوقاف الرسمي.\n\nنصيحة: اضغط مطولًا على OK فوق تطبيق (أو زر القائمة) لعرض الخيارات.\n\nمجاني ومفتوح المصدر (MIT).\n" + photoCredits() + "الطقس: Open-Meteo.com (CC BY 4.0). آية اليوم: نص القرآن من مشروع تنزيل (CC BY 3.0) وخط Amiri Quran (SIL OFL).\nللتواصل: alysherif1309@gmail.com"))
+            .setPositiveButton(t("OK", "حسنًا"), null).show()
+    }
 }
 
 internal fun MainActivity.alertName() = when (Alerts.mode(this)) {

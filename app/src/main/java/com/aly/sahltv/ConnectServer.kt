@@ -41,7 +41,7 @@ object ConnectServer {
         if (starting || running) return
         app = ctx.applicationContext; vault = ConnectVault(app, "tv-identities")
         try { identities = JSONArray(vault.read() ?: "[]") }
-        catch (_: Exception) { lastError = "Paired-device storage unavailable. Turn off and pair again."; return }
+        catch (_: Exception) { identities = JSONArray(); lastError = "Paired-device storage unavailable. Revoke all phones here, then turn off and on to pair again."; return }
         starting = true; lastError = null; val epoch = ++generation
         Thread {
             var ss: SSLServerSocket? = null
@@ -190,7 +190,9 @@ object ConnectServer {
             }
             "volume" -> {
                 val dir = when (q.optString("key")) { "up" -> AudioManager.ADJUST_RAISE; "down" -> AudioManager.ADJUST_LOWER; "mute" -> AudioManager.ADJUST_TOGGLE_MUTE; else -> return result(false, "Unknown volume action") }
-                (app.getSystemService(Context.AUDIO_SERVICE) as AudioManager).adjustStreamVolume(AudioManager.STREAM_MUSIC, dir, AudioManager.FLAG_SHOW_UI); return result(true)
+                val am = app.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+                if (am.isVolumeFixed) return result(false, "This TV uses fixed audio output; use the TV or receiver remote for volume")
+                am.adjustStreamVolume(AudioManager.STREAM_MUSIC, dir, AudioManager.FLAG_SHOW_UI); return result(true)
             }
         }
         return result(false, "Unsupported command")

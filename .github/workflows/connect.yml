@@ -25,6 +25,9 @@ jobs:
           gradle-version: '8.7'
       - name: Protocol security tests and isolated APKs (system fonts only)
         run: gradle :connect-protocol:test :connect:assembleDebug :app:assembleConnectPreview :app:assembleConnectPreviewAndroidTest :connect:lintDebug :app:lintConnectPreview --no-daemon
+      - name: Lint details
+        if: failure()
+        run: cat app/build/intermediates/lint_intermediate_text_report/connectPreview/lintReportConnectPreview/lint-results-connectPreview.txt connect/build/intermediates/lint_intermediate_text_report/debug/lintReportDebug/lint-results-debug.txt || true
       - name: Stage preview artifacts and provenance
         run: |
           mkdir -p preview

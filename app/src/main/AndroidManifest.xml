@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Close background apps ("Free memory" / auto clean) -->
     <uses-permission android:name="android.permission.KILL_BACKGROUND_PROCESSES" />
@@ -13,7 +13,9 @@
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-    <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" />
+    <!-- Existing browser remote supports an optional user-issued ADB development grant.
+         Sahl Connect uses manual keyboard selection and does not need this grant. -->
+    <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" tools:ignore="ProtectedPermissions" />
     <!-- Backup & restore to the Download folder (Android 10 and older; newer versions need no permission) -->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
@@ -40,6 +42,8 @@
         android:name="com.aly.sahl.common.SahlApp"
         android:supportsRtl="true"
         android:allowBackup="true"
+        android:fullBackupContent="@xml/connect_backup"
+        android:dataExtractionRules="@xml/connect_extraction"
         android:banner="@drawable/banner"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
