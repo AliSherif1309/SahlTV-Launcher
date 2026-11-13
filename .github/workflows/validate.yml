@@ -1,0 +1,55 @@
+name: Candidate validation
+on:
+  workflow_call:
+    inputs:
+      artifact:
+        required: true
+        type: string
+      source_sha:
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  tv:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        ram: [2048, 1024]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_sha }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.artifact }}
+          path: candidate
+      - name: Enable emulator acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 29
+          target: android-tv
+          arch: x86
+          profile: tv_1080p
+          ram-size: ${{ matrix.ram }}M
+          disk-size: 4G
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot
+          disable-animations: false
+          script: |
+            bash tools/perf.sh candidate ${{ matrix.ram }}-candidate
+            bash tools/instrumentation.sh candidate ${{ matrix.ram }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: validation-${{ matrix.ram }}
+          path: |
+            perf-*.md
+            logcat-*.txt
+            instrumentation-*.txt
+          if-no-files-found: error

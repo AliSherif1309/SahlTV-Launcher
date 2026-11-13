@@ -52,7 +52,7 @@ adb shell settings put global animator_duration_scale 0.5
 To undo, set the three values back to `1`.
 
 ## Build
-Kotlin and Android framework APIs, with five Gradle modules (`app`, `quran`, `pdf`, `files`, `common`). Every push to `main` builds release APKs with GitHub Actions and publishes a numbered release plus the `latest` update pointer. The release build runs before the downstream emulator performance workflow, so performance checks are not currently a publication gate. Pull requests run a separate debug APK compilation and packaging check.
+Kotlin and Android framework APIs, with five Gradle modules (`app`, `quran`, `pdf`, `files`, `common`). Every push to `main` builds release APKs with GitHub Actions and publishes a numbered release plus the `latest` update pointer. Publication waits for source regression checks and candidate validation on Android TV API 29 emulators with 2 GB and 1 GB RAM. Both test the exact candidate APK artifact, not the mutable latest release. Pull requests build all four debug apps and run the same validation.
 Release signing uses the repository secrets `SIGNING_KEYSTORE_BASE64`, `SIGNING_STORE_PASSWORD`, `SIGNING_KEY_PASSWORD` and `SIGNING_KEY_ALIAS`.
 
 ## License
@@ -179,10 +179,12 @@ Font © thmanyah Publishing and Distribution, used under thmanyah's Font License
 - **After every build** (`.github/workflows/perf.yml`): two Android TV emulators (2 GB and 1 GB RAM) measure:
   - cold and warm start (5 runs each);
   - memory use;
-  - 80 remote key presses (frames, jank, p50/p90/p99, crashes);
-  - the cleaning effect: memory freed, kept after 1 minute, and how much slower apps open afterwards.
+  - 60 remote key presses (frames, jank, p50/p90/p99, crashes);
+  - a system-wide m kill-all baseline: memory freed, kept after 1 minute, and app restart cost (not the selective broom cleaner).
 
-  The report is attached to the build's numbered release, and a crash fails the test.
+  Reports are attached when publishing the numbered release. Missing measurements, launcher crashes/death, zero rendered frames, median cold start above 10 seconds, apps-ready time above 15 seconds, or PSS above 256 MB block publication. These are broad emulator budgets, not physical TV guarantees. Jank is reported without a threshold.
+
+  Framework instrumentation tests use real D-pad events to check editor focus after redraw, navigation, staged Cancel and Apply behavior. Security regressions exercise LAN peer/Host rejection, token comparison, hashes and update tampering/package rejection. UI/security instrumentation uses a debug target; performance runs against the candidate release APKs on main. No physical TV testing is implied. Historical comparisons remain available manually through perf.yml. Recovery refs without the required validation sources fail closed.
 
 ## 🧩 Code structure (v1.20)
 - `:common`: the Sahl family, shared by all four apps:

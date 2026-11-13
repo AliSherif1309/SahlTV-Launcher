@@ -8,7 +8,7 @@ import android.view.View
 import com.aly.sahltv.MainActivity.*
 
 /** Staged dashboard settings; all edits are committed together on Apply. */
-internal fun MainActivity.dashboardEditor() {
+internal fun MainActivity.dashboardEditor(): android.app.AlertDialog {
     val names = mapOf(
         "prayer" to t("Prayer times", "مواقيت الصلاة"),
         "ramadan" to t("Ramadan / occasions", "رمضان والمناسبات"),
@@ -67,7 +67,7 @@ internal fun MainActivity.dashboardEditor() {
         restoreFocus?.requestFocus()
     }
     redraw()
-    dialog().setTitle(t("Upper dashboard cards", "بطاقات اللوحة العلوية"))
+    return dialog().setTitle(t("Upper dashboard cards", "بطاقات اللوحة العلوية"))
         .setView(ScrollView(this).apply { addView(root) })
         .setPositiveButton(t("Apply", "تطبيق")) { _, _ ->
             val edit = prefs.edit().putString("dashboardOrder", order.joinToString("|"))
@@ -80,3 +80,4 @@ internal fun MainActivity.dashboardEditor() {
         .setNegativeButton(t("Cancel", "إلغاء"), null)
         .show()
 }
+

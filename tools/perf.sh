@@ -1,5 +1,5 @@
 #!/bin/bash
-# Performance test on an Android TV emulator (run by .github/workflows/perf.yml after each build).
+# Performance gate on an Android TV emulator (validate.yml); perf.yml compares historical builds.
 # Measures instead of assuming:
 #   1. start-up time of Sahl TV (cold, and return to Home), 5 runs each
 #   2. memory used by Sahl TV
@@ -169,5 +169,10 @@ if [ "$CRASH" != "0" ]; then
 fi
 } > "$OUT"
 cat "$OUT"
-# a crash fails the test
+# Conservative emulator budgets, not physical-TV benchmarks. Missing metrics fail above.
+# Keep timing/memory ceilings broad to tolerate shared CI hosts; reject severe regressions.
+if [ "$COLD_MED" -gt 10000 ] || [ "$READY_MED" -gt 15000 ] || [ "$PSS" -gt 256 ] || [ "$FRAMES" -eq 0 ]; then
+  echo '> FAIL: emulator budget exceeded (cold <=10000 ms, ready <=15000 ms, PSS <=256 MB, frames >0).' | tee -a "$OUT"
+  exit 1
+fi
 [ "$ALIVE" = "yes" ] && [ "$CRASH" = "0" ]

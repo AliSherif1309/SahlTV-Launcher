@@ -18,8 +18,10 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.7'
-      - name: Layout regression checks
-        run: python3 tools/test_layout_regressions.py
+      - name: Source regression checks
+        run: |
+          python3 tools/test_layout_regressions.py
+          python3 tools/test_perf.py
       - name: Fetch Quran text needed by generators
         run: |
           mkdir -p quran/src/main/assets
@@ -30,10 +32,24 @@ jobs:
           python3 tools/make_adhkar.py
           python3 tools/make_ayat.py
           python3 tools/pack_fonts.py
-      - name: Compile and package launcher debug APK
-        run: gradle :app:assembleDebug --no-daemon --stacktrace
+      - name: Build all debug apps and instrumentation tests
+        run: |
+          gradle assembleDebug :app:assembleDebugAndroidTest --no-daemon --stacktrace
+          cp app/build/outputs/apk/debug/app-debug.apk SahlTV.apk
+          cp quran/build/outputs/apk/debug/quran-debug.apk SahlQuran.apk
+          cp pdf/build/outputs/apk/debug/pdf-debug.apk SahlPDF.apk
+          cp files/build/outputs/apk/debug/files-debug.apk SahlFiles.apk
       - name: Upload test APK
         uses: actions/upload-artifact@v4
         with:
           name: SahlTV-debug-validation
-          path: app/build/outputs/apk/debug/*.apk
+          path: |
+            Sahl*.apk
+            app/build/outputs/apk/debug/*.apk
+            app/build/outputs/apk/androidTest/debug/*.apk
+  validate:
+    needs: compile
+    uses: ./.github/workflows/validate.yml
+    with:
+      artifact: SahlTV-debug-validation
+      source_sha: ${{ github.sha }}

@@ -9,14 +9,22 @@ on:
         required: false
         default: ""
 permissions:
-  contents: write
+  contents: read
 jobs:
   build:
+    outputs:
+      source_sha: ${{ steps.source.outputs.sha }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref || github.sha }}
+      - id: source
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - name: Source regression checks
+        run: |
+          python3 tools/test_layout_regressions.py
+          python3 tools/test_perf.py
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -70,7 +78,7 @@ jobs:
             echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.jks"
             export SIGNING_KEYSTORE_PATH="$RUNNER_TEMP/release.jks"
           fi
-          gradle assembleRelease --no-daemon
+          gradle assembleRelease :app:assembleDebug :app:assembleDebugAndroidTest --no-daemon
           cp app/build/outputs/apk/release/app-release.apk SahlTV.apk
           cp quran/build/outputs/apk/release/quran-release.apk SahlQuran.apk
           cp pdf/build/outputs/apk/release/pdf-release.apk SahlPDF.apk
@@ -78,12 +86,40 @@ jobs:
           rm -f "$RUNNER_TEMP/release.jks"
       - uses: actions/upload-artifact@v4
         with:
-          name: SahlTV.apk
+          name: release-candidate
           path: |
             SahlTV.apk
             SahlQuran.apk
             SahlPDF.apk
             SahlFiles.apk
+            app/build/outputs/apk/debug/*.apk
+            app/build/outputs/apk/androidTest/debug/*.apk
+  validate:
+    needs: build
+    uses: ./.github/workflows/validate.yml
+    with:
+      artifact: release-candidate
+      source_sha: ${{ needs.build.outputs.source_sha }}
+  publish:
+    needs: [build, validate]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.build.outputs.source_sha }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-candidate
+          path: candidate
+      - name: Stage validated release APKs
+        run: cp candidate/Sahl*.apk .
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: validation-*
+          path: reports
+          merge-multiple: true
       - name: Publish a numbered release (never changed again), then point "latest" to it
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -117,7 +153,7 @@ jobs:
           PY
           cat version.json; echo
           # 1) the numbered release: its own tag on this exact commit, never edited afterwards
-          gh release create "$TAG" SahlTV.apk SahlQuran.apk SahlPDF.apk SahlFiles.apk SHA256SUMS version.json \
+          gh release create "$TAG" SahlTV.apk SahlQuran.apk SahlPDF.apk SahlFiles.apk SHA256SUMS version.json reports/*.md \
             --target "$SHA" --title "Sahl TV $(python3 -c "import json;print(json.load(open('version.json'))['sahltv'])") · build $RUN" --notes-file NOTES.md --latest=false
           # 2) "latest" is only a pointer: files replaced in place (never deleted), version.json last,
           #    so a TV never sees a new version before all its files are there

@@ -10,7 +10,7 @@ import android.widget.ScrollView
 import com.aly.sahltv.MainActivity.*
 
 /** A staged, remote-friendly visual preview. Nothing is persisted until Apply. */
-internal fun MainActivity.homeVisualEditor() {
+internal fun MainActivity.homeVisualEditor(): android.app.AlertDialog {
     val sizes = arrayOf("compact", "normal", "large")
     var size = homeTileSize
     var combined = homeCombined
@@ -103,7 +103,7 @@ internal fun MainActivity.homeVisualEditor() {
     option(t("Show / hide Favorites", "إظهار / إخفاء المفضلة")) { showFav = !showFav }
     option(t("Show / hide Recent apps", "إظهار / إخفاء التطبيقات الأخيرة")) { showRecent = !showRecent }
     val scrollView = ScrollView(this).apply { addView(root) }
-    dialog().setTitle(t("Visual layout editor", "محرر التخطيط المرئي"))
+    return dialog().setTitle(t("Visual layout editor", "محرر التخطيط المرئي"))
         .setView(scrollView)
         .setPositiveButton(t("Apply", "تطبيق")) { _, _ ->
             prefs.edit().putString("homeTileSize", size)
