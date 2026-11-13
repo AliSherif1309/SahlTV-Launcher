@@ -16,6 +16,7 @@ internal fun MainActivity.homeVisualEditor(): android.app.AlertDialog {
     var combined = homeCombined
     var showFav = homeShowFavorites
     var showRecent = homeShowRecent
+    var recentFirst = homeRecentFirst
     val root = LinearLayout(this).apply {
         orientation = LinearLayout.VERTICAL
         setPadding(dp(16), dp(12), dp(16), dp(12))
@@ -53,14 +54,18 @@ internal fun MainActivity.homeVisualEditor(): android.app.AlertDialog {
         }
         preview.addView(top)
         val tileCount = when (size) { "large" -> 3; "normal" -> 4; else -> 5 }
-        fun appRow(title: String) {
+        val favoriteNames = favorites.mapNotNull { apps[it] }.filter { it.pkg !in hidden }.map { it.label }
+        val recentNames = recent.mapNotNull { apps[it] }.filter { it.pkg !in hidden }.map { it.label }
+        fun appRow(title: String, names: List<String>) {
             preview.addView(label(title))
             val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-            repeat(tileCount) {
+            names.take(tileCount).forEach { appName ->
                 val tile = TextView(this).apply {
-                    text = "▣"
+                    text = appName
+                    maxLines = 1
+                    ellipsize = android.text.TextUtils.TruncateAt.END
                     gravity = Gravity.CENTER
-                    textSize = 19f
+                    textSize = 10f
                     setTextColor(Color.WHITE)
                     background = GradientDrawable().apply {
                         setColor(Color.rgb(45, 76, 69))
@@ -72,10 +77,15 @@ internal fun MainActivity.homeVisualEditor(): android.app.AlertDialog {
             preview.addView(row)
         }
         if (combined) {
-            if (showFav || showRecent) appRow(t("Apps · Favorites first", "التطبيقات · المفضلة أولًا"))
+            if (showFav || showRecent) {
+                val names = (if (showFav) favoriteNames else emptyList()) +
+                    (if (showRecent) recentNames.filter { it !in favoriteNames } else emptyList())
+                if (names.isNotEmpty()) appRow(t("Apps · Favorites first", "التطبيقات · المفضلة أولًا"), names)
+            }
         } else {
-            if (showFav) appRow(t("Favorites", "المفضلة"))
-            if (showRecent) appRow(t("Recent apps", "المستخدمة مؤخرًا"))
+            fun favoriteRow() { if (showFav && favoriteNames.isNotEmpty()) appRow(t("Favorites", "المفضلة"), favoriteNames) }
+            fun recentRow() { if (showRecent && recentNames.isNotEmpty()) appRow(t("Recent apps", "المستخدمة مؤخرًا"), recentNames) }
+            if (recentFirst) { recentRow(); favoriteRow() } else { favoriteRow(); recentRow() }
         }
         preview.addView(label(t("App tile size: ", "حجم التطبيقات: ") + size))
     }
@@ -102,6 +112,7 @@ internal fun MainActivity.homeVisualEditor(): android.app.AlertDialog {
     option(t("Toggle combined / separate rows", "تبديل الصفوف المجمّعة / المنفصلة")) { combined = !combined }
     option(t("Show / hide Favorites", "إظهار / إخفاء المفضلة")) { showFav = !showFav }
     option(t("Show / hide Recent apps", "إظهار / إخفاء التطبيقات الأخيرة")) { showRecent = !showRecent }
+    option(t("Show Recent row first", "إظهار التطبيقات الأخيرة أولًا")) { recentFirst = !recentFirst }
     val scrollView = ScrollView(this).apply { addView(root) }
     return dialog().setTitle(t("Visual layout editor", "محرر التخطيط المرئي"))
         .setView(scrollView)
@@ -109,7 +120,8 @@ internal fun MainActivity.homeVisualEditor(): android.app.AlertDialog {
             prefs.edit().putString("homeTileSize", size)
                 .putBoolean("homeCombined", combined)
                 .putBoolean("homeShowFavorites", showFav)
-                .putBoolean("homeShowRecent", showRecent).apply()
+                .putBoolean("homeShowRecent", showRecent)
+                .putBoolean("homeRecentFirst", recentFirst).apply()
             homeChanged()
         }
         .setNegativeButton(t("Cancel", "إلغاء"), null)
