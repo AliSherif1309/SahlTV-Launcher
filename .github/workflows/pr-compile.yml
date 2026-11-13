@@ -18,9 +18,15 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.7'
+      - name: Fetch Quran text needed by generators
+        run: |
+          mkdir -p quran/src/main/assets
+          curl -fsSL --retry 3 "https://tanzil.net/pub/download/index.php?marks=true&sajdah=true&rub=true&alef=true&quranType=uthmani&outType=txt-2&agree=true" -o quran/src/main/assets/quran-uthmani.txt
+          test "$(grep -cE '^[0-9]+\\|[0-9]+\\|' quran/src/main/assets/quran-uthmani.txt || true)" -eq 6236
       - name: Prepare required generated assets
         run: |
           python3 tools/make_adhkar.py
+          python3 tools/make_ayat.py
           python3 tools/pack_fonts.py
       - name: Compile launcher
         run: gradle :app:compileDebugKotlin --no-daemon --stacktrace
