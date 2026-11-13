@@ -48,6 +48,8 @@ internal fun MainActivity.applyDashboardCardPreferences() {
             if (v.parent === parent) key to v else null
         }
         if (entries.size < 2) continue
+        val current = (0 until parent.childCount).map { parent.getChildAt(it) }.filter { v -> entries.any { it.second === v } }
+        if (current == entries.map { it.second }) continue
         val original = entries.map { it.second }
         val params = original.associateWith { it.layoutParams }
         val insertAt = original.map { parent.indexOfChild(it) }.filter { it >= 0 }.minOrNull() ?: 0
