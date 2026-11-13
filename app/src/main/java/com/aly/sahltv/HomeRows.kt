@@ -90,25 +90,26 @@ internal fun MainActivity.render(keepFocus: Boolean, force: Boolean = false) {
     }
     val favApps = if (homeShowFavorites) fav.mapNotNull { apps[it] } else emptyList()
     val recApps = if (homeShowRecent) rec.mapNotNull { apps[it] } else emptyList()
+    val visibleSections = visibleHomeSections(favApps.size, recApps.size, homeShowFavorites, homeShowRecent, homeCombined)
     val merged = if (homeCombined) {
         val seen = HashSet<String>()
         (favApps.map { it to "fav" } + recApps.map { it to "rec" })
             .filter { (app, _) -> seen.add(app.pkg) }
     } else emptyList()
     section("fav", style + listOf(favApps, recApps, favApps.map { it.pkg in locks }, merged)) {
-        if (homeCombined) {
+        if ("combined" in visibleSections) {
             if (merged.isNotEmpty()) {
                 addView(rowTitle(if (favApps.isNotEmpty()) t("Favorites & Recent", "المفضلة والمستخدمة مؤخرًا")
                     else t("Recent", "المستخدمة مؤخرًا")))
                 addView(hMixedRow(merged))
             }
-        } else if (favApps.isNotEmpty()) {
+        } else if ("fav" in visibleSections) {
             addView(rowTitle(t("Favorites", "المفضلة")))
             addView(hRow("fav", favApps, big = false))
         }
     }
     section("rec", style + listOf(recApps, recApps.map { it.pkg in locks }, recApps.map { it.pkg in fav })) {
-        if (!homeCombined && recApps.isNotEmpty()) {
+        if ("rec" in visibleSections) {
             addView(rowTitle(t("Recent", "المستخدمة مؤخرًا")))
             addView(hRow("rec", recApps, big = false))
         }
@@ -121,7 +122,7 @@ internal fun MainActivity.render(keepFocus: Boolean, force: Boolean = false) {
     }
     section("all", style + listOf(all, all.map { it.pkg in locks })) {
         addView(rowTitle(digits(t("All apps  ·  ${all.size}", "كل التطبيقات  ·  ${all.size}"))))
-        val tileWidth = when (homeTileSize) { "normal" -> 172; "large" -> 212; else -> 142 }
+        val tileWidth = homeTileDimensions(homeTileSize).widthDp + 12 // including horizontal tile margins
         val cols = maxOf(1, (resources.configuration.screenWidthDp - 96) / tileWidth)
         val grid = GridLayout(this@render).apply { columnCount = cols; useDefaultMargins = false; clipChildren = false; clipToPadding = false }
         for (a in all) grid.addView(tile(a, "all", big = false))
@@ -191,11 +192,7 @@ internal fun MainActivity.hMixedRow(entries: List<Pair<App, String>>): View {
 }
 
 internal fun MainActivity.tile(a: App, row: String, big: Boolean): View {
-    val (tileWidthDp, tileHeightDp) = when (homeTileSize) {
-        "large" -> 200 to 112
-        "normal" -> 160 to 90
-        else -> 130 to 73
-    }
+    val (tileWidthDp, tileHeightDp) = homeTileDimensions(homeTileSize)
     val w = dp(tileWidthDp)
     val h = dp(tileHeightDp)
     val radius = dp(10).toFloat()
