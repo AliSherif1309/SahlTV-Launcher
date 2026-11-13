@@ -18,6 +18,7 @@ android {
         // Every cloud build gets a higher number, so a new APK installs over the old one.
         versionCode = 100 + (System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 0)
         versionName = "1.23"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     signingConfigs {
@@ -32,6 +33,12 @@ android {
     }
 
     buildTypes {
+        create("connectPreview") {
+            initWith(getByName("debug"))
+            applicationIdSuffix = ".connectpreview"
+            versionNameSuffix = "-connect-preview"
+            matchingFallbacks += listOf("debug")
+        }
         release {
             isMinifyEnabled = false
             signingConfig = if (keystorePath != null) signingConfigs.getByName("release")
@@ -50,4 +57,7 @@ android {
 
 dependencies {
     implementation(project(":common"))   // the shared Sahl family look and helpers
+    implementation("com.google.zxing:core:3.5.3") // pairing QR only; no fonts or network service
+    androidTestImplementation("androidx.test:runner:1.5.2")
+    androidTestImplementation("androidx.test.ext:junit:1.1.5")
 }

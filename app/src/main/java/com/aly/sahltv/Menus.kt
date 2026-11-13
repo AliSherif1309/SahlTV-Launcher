@@ -119,6 +119,7 @@ internal fun MainActivity.menuAction(which: Int) {
             13 -> nowMenu()
             14 -> backupMenu()
             15 -> remoteMenu()
+            35 -> guarded { connectMenu() }
             16 -> { setUpd(false); Updater.check(this, ar) }
             18 -> if (islamic) backgroundMenu() else toast(t("Choose the Islamic theme first", "اختر المظهر الإسلامي أولًا"))
             19 -> dimMenu()

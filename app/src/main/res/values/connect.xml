@@ -1,0 +1,3 @@
+<resources>
+    <string name="connect_access_description">Optional Sahl Connect remote navigation. Allows a paired phone to move focus, press OK, Home and Back. Screen text is never sent to the phone. Turn it off at any time in Accessibility settings.</string>
+</resources>

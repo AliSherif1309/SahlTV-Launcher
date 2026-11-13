@@ -75,6 +75,14 @@
             android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout|uiMode|smallestScreenSize" />
         <!-- Sahl Keyboard: receives text typed on the phone remote -->
         <service
+            android:name=".ConnectAccess"
+            android:exported="true"
+            android:label="Sahl Connect navigation"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter><action android:name="android.accessibilityservice.AccessibilityService" /></intent-filter>
+            <meta-data android:name="android.accessibilityservice" android:resource="@xml/connect_access" />
+        </service>
+        <service
             android:name=".RemoteKeyboard"
             android:exported="true"
             android:label="Sahl Keyboard (phone typing)"
@@ -101,7 +109,7 @@
         <!-- the text size setting, read by Sahl Quran / PDF / Files -->
         <provider
             android:name=".PrefsProvider"
-            android:authorities="com.aly.sahltv.prefs"
+            android:authorities="${applicationId}.prefs"
             android:exported="true" />
     </application>
 </manifest>
