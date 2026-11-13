@@ -191,13 +191,13 @@ internal fun MainActivity.hMixedRow(entries: List<Pair<App, String>>): View {
 }
 
 internal fun MainActivity.tile(a: App, row: String, big: Boolean): View {
-    val (width, height) = when (homeTileSize) {
+    val (tileWidthDp, tileHeightDp) = when (homeTileSize) {
         "large" -> 200 to 112
         "normal" -> 160 to 90
         else -> 130 to 73
     }
-    val w = dp(width)
-    val h = dp(height)
+    val w = dp(tileWidthDp)
+    val h = dp(tileHeightDp)
     val radius = dp(10).toFloat()
     var nameStrip: TextView? = null
     val frame = FrameLayout(this).apply {
