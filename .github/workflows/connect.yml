@@ -24,7 +24,7 @@ jobs:
         with:
           gradle-version: '8.7'
       - name: Protocol security tests and isolated APKs (system fonts only)
-        run: gradle :connect-protocol:test :connect:assembleDebug :app:assembleConnectPreview :app:assembleConnectPreviewAndroidTest :connect:lintDebug :app:lintConnectPreview --no-daemon
+        run: gradle :connect-protocol:test :connect:assembleDebug :connect:assembleDebugAndroidTest :app:assembleConnectPreview :app:assembleConnectPreviewAndroidTest :connect:lintDebug :app:lintConnectPreview --no-daemon
       - name: Lint details
         if: failure()
         run: cat app/build/intermediates/lint_intermediate_text_report/connectPreview/lintReportConnectPreview/lint-results-connectPreview.txt connect/build/intermediates/lint_intermediate_text_report/debug/lintReportDebug/lint-results-debug.txt || true
@@ -33,6 +33,7 @@ jobs:
           mkdir -p preview
           cp connect/build/outputs/apk/debug/connect-debug.apk preview/SahlConnect-preview.apk
           cp app/build/outputs/apk/connectPreview/app-connectPreview.apk preview/SahlTV-connect-preview.apk
+          python3 tools/check_connect_apk.py preview/SahlConnect-preview.apk
           for apk in preview/*.apk; do
             if unzip -Z1 "$apk" | grep -Ei '\.(ttf|otf|woff2?)$|^assets/f/'; then
               echo "Font asset found in preview APK; refusing to publish" >&2
@@ -51,6 +52,10 @@ jobs:
         with:
           name: Connect-instrumentation
           path: app/build/outputs/apk/androidTest/connectPreview/*.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Connect-phone-instrumentation
+          path: connect/build/outputs/apk/androidTest/debug/*.apk
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -85,18 +90,56 @@ jobs:
           profile: tv_1080p
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot
           script: |
+            adb shell wm size 1280x720
+            adb shell wm density 213
+            adb shell settings put system font_scale 1.3
             adb install preview/SahlTV-connect-preview.apk
             adb install tests/app-connectPreview-androidTest.apk
             adb shell am instrument -w -r com.aly.sahltv.connectpreview.test/androidx.test.runner.AndroidJUnitRunner | tee instrumentation.txt
-            grep -q 'OK (2 tests)' instrumentation.txt
+            grep -q 'OK (3 tests)' instrumentation.txt
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: Connect-emulator-results
           path: instrumentation.txt
+  phone-tests:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: Sahl-Connect-preview-${{ github.sha }}
+          path: preview
+      - uses: actions/download-artifact@v4
+        with:
+          name: Connect-phone-instrumentation
+          path: tests
+      - name: Enable emulator hardware acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 29
+          target: default
+          arch: x86_64
+          profile: pixel_2
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot -camera-back emulated -camera-front none
+          script: |
+            adb install preview/SahlConnect-preview.apk
+            adb install tests/connect-debug-androidTest.apk
+            adb shell am instrument -w -r com.aly.sahlconnect.test/androidx.test.runner.AndroidJUnitRunner | tee phone-instrumentation.txt
+            grep -q 'OK (1 test)' phone-instrumentation.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Connect-phone-emulator-results
+          path: phone-instrumentation.txt
   prerelease:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/codex/sahl-connect-v1'
-    needs: [build, device-tests]
+    needs: [build, device-tests, phone-tests]
     runs-on: ubuntu-latest
     permissions:
       contents: write

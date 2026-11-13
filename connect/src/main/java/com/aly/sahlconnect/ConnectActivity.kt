@@ -2,6 +2,8 @@ package com.aly.sahlconnect
 
 import android.app.Activity
 import android.app.AlertDialog
+import android.Manifest
+import android.content.pm.PackageManager
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -48,7 +50,7 @@ class ConnectActivity : Activity() {
         column.addView(status)
         if (identity == null) {
             column.addView(text("On the TV: Settings → Sahl Connect → Turn on → Pair a phone. Keep that QR open and join the same Wi-Fi. Pairing expires after 3 minutes. No account or internet service is needed."))
-            button("Scan TV QR") { IntentIntegrator(this).setDesiredBarcodeFormats(IntentIntegrator.QR_CODE).setPrompt("Scan the QR on your own TV").setBeepEnabled(false).setOrientationLocked(false).initiateScan() }
+            button("Scan TV QR") { scanTvQr() }
             val code = EditText(this).apply {
                 hint = "Or enter the full sahl-connect:// code"
                 inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
@@ -99,6 +101,28 @@ class ConnectActivity : Activity() {
                 .setPositiveButton("Forget") { _, _ -> generation++; vault.clear(); identity = null; screen() }.setNegativeButton("Cancel", null).show()
         }
         refresh()
+    }
+    private fun scanTvQr() {
+        if (!packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)) {
+            status.text = "No camera available. Enter the full TV pairing code instead."; return
+        }
+        if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(arrayOf(Manifest.permission.CAMERA), 74); return
+        }
+        try {
+            IntentIntegrator(this).setCaptureActivity(ConnectScannerActivity::class.java)
+                .setDesiredBarcodeFormats(IntentIntegrator.QR_CODE).setPrompt("Scan the QR on your own TV")
+                .setBeepEnabled(false).setOrientationLocked(false).initiateScan()
+        } catch (_: RuntimeException) {
+            status.text = "Could not open the camera. You can enter the full TV pairing code instead."
+        }
+    }
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == 74) {
+            if (grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED) scanTvQr()
+            else status.text = "Camera access was declined. Allow Camera in phone app settings to scan, or enter the full TV pairing code."
+        }
     }
     private fun background(action: () -> Unit) {
         val epoch = generation

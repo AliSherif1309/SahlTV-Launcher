@@ -55,21 +55,72 @@ internal fun MainActivity.connectMenu() {
         }.setNegativeButton("Close", null).show()
 }
 
-private fun MainActivity.connectPair() {
-    val code = try { ConnectServer.pairCode() } catch (_: Exception) { toast("Connection not ready. Check Wi-Fi and reopen the menu."); return }
+internal fun MainActivity.connectPair(): android.app.Dialog? {
+    val code = try { ConnectServer.pairCode() } catch (_: Exception) { toast("Connection not ready. Check Wi-Fi and reopen the menu."); return null }
     val bits = MultiFormatWriter().encode(code, BarcodeFormat.QR_CODE, 560, 560, mapOf(EncodeHintType.MARGIN to 4))
     val bmp = Bitmap.createBitmap(560, 560, Bitmap.Config.RGB_565)
     for (y in 0 until 560) for (x in 0 until 560) bmp.setPixel(x, y, if (bits[x, y]) Color.BLACK else Color.WHITE)
-    val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER; setPadding(dp(20), dp(12), dp(20), dp(12)) }
-    row.addView(ImageView(this).apply { setImageBitmap(bmp); contentDescription = "Private one-use pairing QR" }, LinearLayout.LayoutParams(dp(250), dp(250)))
-    val text = TextView(this).apply {
-        text = "On the same Wi-Fi, open Sahl Connect → Scan TV QR.\n\nValid for 3 minutes, one use only. Closing this dialog cancels pairing.\n\nManual alternative: enter this FULL code in the phone app (includes the TV identity):\n\n$code"
-        textSize = 14f; setTextColor(this@connectPair.TEXT); setPadding(dp(20), 0, 0, 0); textDirection = android.view.View.TEXT_DIRECTION_LTR
+    // A separate full-screen window, not the launcher's narrow standard AlertDialog.
+    // The QR is measured against the available row height and width, including font scaling.
+    val dialog = android.app.Dialog(this)
+    dialog.requestWindowFeature(android.view.Window.FEATURE_NO_TITLE)
+    dialog.window?.addFlags(WindowManager.LayoutParams.FLAG_SECURE or WindowManager.LayoutParams.FLAG_FULLSCREEN)
+    val root = LinearLayout(this).apply {
+        orientation = LinearLayout.VERTICAL
+        setPadding(dp(36), dp(24), dp(36), dp(24))
+        setBackgroundColor(android.graphics.Color.parseColor("#10261F"))
     }
-    row.addView(text, LinearLayout.LayoutParams(dp(420), -2))
-    val dialog = dialog().setTitle("Pair Sahl Connect").setView(row).setNegativeButton("Cancel", null).create()
+    root.addView(TextView(this).apply { text = "Pair Sahl Connect"; textSize = 26f; setTextColor(GOLD); setPadding(0, 0, 0, dp(12)) })
+    val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+    root.addView(row, LinearLayout.LayoutParams(-1, 0, 1f))
+    val qr = ImageView(this).apply {
+        tag = "connect-qr"; setImageBitmap(bmp); scaleType = ImageView.ScaleType.FIT_CENTER
+        contentDescription = "Private one-use pairing QR"
+    }
+    row.addView(qr, LinearLayout.LayoutParams(1, 1))
+    val instructions = TextView(this).apply {
+        tag = "connect-instructions"
+        text = "On the same Wi-Fi, open Sahl Connect on your phone and press Scan TV QR.\n\nScan the complete square shown here.\n\nValid for 3 minutes, one use only. Closing this screen cancels pairing.\n\nFor manual entry, choose Full pairing code below."
+        textSize = 18f; setTextColor(this@connectPair.TEXT); setPadding(dp(28), 0, 0, 0)
+    }
+    val scroll = android.widget.ScrollView(this).apply { addView(instructions); isFillViewport = true; isFocusable = true }
+    row.addView(scroll, LinearLayout.LayoutParams(0, -1, 1f))
+    row.addOnLayoutChangeListener { _, left, top, right, bottom, _, _, _, _ ->
+        val size = minOf(((right - left) * 0.44f).toInt(), bottom - top, dp(340)).coerceAtLeast(1)
+        if (qr.layoutParams.width != size || qr.layoutParams.height != size) {
+            qr.layoutParams = (qr.layoutParams as LinearLayout.LayoutParams).apply { width = size; height = size }
+        }
+    }
+    var manual: android.app.Dialog? = null
+    val buttons = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(0, dp(12), 0, 0) }
+    root.addView(buttons)
+    buttons.addView(android.widget.Button(this).apply {
+        text = "Full pairing code"
+        setOnClickListener {
+            manual = android.app.Dialog(this@connectPair).also { full ->
+                full.requestWindowFeature(android.view.Window.FEATURE_NO_TITLE)
+                full.window?.addFlags(WindowManager.LayoutParams.FLAG_SECURE or WindowManager.LayoutParams.FLAG_FULLSCREEN)
+                val box = LinearLayout(this@connectPair).apply {
+                    orientation = LinearLayout.VERTICAL; setPadding(dp(36), dp(24), dp(36), dp(24))
+                    setBackgroundColor(android.graphics.Color.parseColor("#10261F"))
+                }
+                val codeText = TextView(this@connectPair).apply {
+                    text = "Enter this FULL code in Sahl Connect on your phone:\n\n$code"
+                    textSize = 18f; setTextColor(this@connectPair.TEXT); textDirection = android.view.View.TEXT_DIRECTION_LTR
+                }
+                box.addView(android.widget.ScrollView(this@connectPair).apply { addView(codeText); isFocusable = true }, LinearLayout.LayoutParams(-1, 0, 1f))
+                box.addView(android.widget.Button(this@connectPair).apply { text = "Back to QR"; setOnClickListener { full.dismiss() } })
+                full.setContentView(box); full.show()
+                full.window?.setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT)
+            }
+        }
+    }, LinearLayout.LayoutParams(0, -2, 1f))
+    buttons.addView(android.widget.Button(this).apply { text = "Cancel pairing"; setOnClickListener { dialog.dismiss() } }, LinearLayout.LayoutParams(0, -2, 1f))
+    dialog.setContentView(root)
     val expire = Runnable { dialog.dismiss() }
-    dialog.setOnDismissListener { ConnectServer.closePairing(); handler.removeCallbacks(expire) }
-    dialog.show(); dialog.window?.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+    dialog.setOnDismissListener { manual?.dismiss(); ConnectServer.closePairing(); handler.removeCallbacks(expire) }
+    dialog.show()
+    dialog.window?.setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT)
     handler.postDelayed(expire, 180000)
+    return dialog
 }

@@ -84,4 +84,32 @@ class ConnectIntegrationTest {
             }
         } finally { instrumentation.runOnMainSync { activity.finish() } }
     }
+    @Test fun pairingQrFitsTheDisplayWithoutClipping() {
+        val activity = instrumentation.startActivitySync(Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) as MainActivity
+        var dialog: android.app.Dialog? = null
+        ConnectServer.start(context)
+        try {
+            val until = System.currentTimeMillis() + 15000
+            while (!ConnectServer.running && System.currentTimeMillis() < until) Thread.sleep(100)
+            assertTrue(ConnectServer.running)
+            instrumentation.runOnMainSync { dialog = activity.connectPair() }
+            instrumentation.waitForIdleSync()
+            instrumentation.runOnMainSync {
+                val window = dialog!!.window!!.decorView
+                val qr = window.findViewWithTag<View>("connect-qr")
+                val visible = android.graphics.Rect()
+                assertTrue(qr.getGlobalVisibleRect(visible))
+                assertEquals(qr.width, qr.height)
+                assertTrue("QR needs a useful size", qr.width >= 160)
+                assertEquals("QR width must be fully visible", qr.width, visible.width())
+                assertEquals("QR height must be fully visible", qr.height, visible.height())
+                val instructions = window.findViewWithTag<android.widget.TextView>("connect-instructions")
+                assertTrue(instructions.width > 0)
+                for (line in 0 until instructions.lineCount) assertEquals(0, instructions.layout.getEllipsisCount(line))
+            }
+        } finally {
+            instrumentation.runOnMainSync { dialog?.dismiss(); activity.finish() }
+            ConnectServer.stop()
+        }
+    }
 }

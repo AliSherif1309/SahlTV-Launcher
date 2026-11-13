@@ -7,6 +7,9 @@
     <application android:label="Sahl Connect Preview" android:icon="@drawable/connect_icon"
         android:allowBackup="false" android:supportsRtl="true" android:usesCleartextTraffic="false"
         android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
+        <activity android:name=".ConnectScannerActivity" android:exported="false"
+            android:screenOrientation="fullSensor"
+            android:theme="@style/zxing_CaptureTheme" />
         <activity android:name=".ConnectActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
