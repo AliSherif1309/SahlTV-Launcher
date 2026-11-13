@@ -35,6 +35,20 @@ class ConnectIntegrationTest {
             assertFalse(exchange(code, q).getBoolean("ok"))
             assertTrue(exchange(code, JSONObject().put("op", "state").put("token", token)).getBoolean("ok"))
             assertTrue(exchange(code, JSONObject().put("op", "state").put("token", Protocol.random())).getBoolean("unauthorized"))
+            assertFalse(exchange(code, JSONObject().put("op", "text").put("token", token).put("text", "No active editor")).getBoolean("ok"))
+            val upload = JSONObject().put("op", "upload").put("token", token).put("name", "test.txt").put("size", 3).put("sha256", Protocol.hash("abc".toByteArray()))
+            context.getSharedPreferences("connect", 0).edit().putBoolean("files", false).commit()
+            assertFalse(exchange(code, upload).getBoolean("ok"))
+            context.getSharedPreferences("connect", 0).edit().putBoolean("files", true).commit()
+            // One complete transfer through the TLS stream, with content hashing and publication.
+            ConnectTls.client(code.host, code.pin).use { socket ->
+                Protocol.write(socket.getOutputStream(), upload.put("v", 1).toString().toByteArray())
+                assertTrue(JSONObject(Protocol.read(socket.getInputStream()).toString(Charsets.UTF_8)).getBoolean("ok"))
+                socket.getOutputStream().write("abc".toByteArray()); socket.getOutputStream().flush()
+                val completed = JSONObject(Protocol.read(socket.getInputStream()).toString(Charsets.UTF_8))
+                assertTrue(completed.toString(), completed.getBoolean("ok"))
+            }
+            assertFalse(exchange(code, JSONObject(upload.toString()).put("name", "font.ttf")).getBoolean("ok"))
             ConnectServer.revoke(Protocol.hash(token.toByteArray()))
             assertTrue(exchange(code, JSONObject().put("op", "state").put("token", token)).getBoolean("unauthorized"))
             ConnectServer.stop()

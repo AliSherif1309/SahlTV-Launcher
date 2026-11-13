@@ -43,6 +43,7 @@ public final class Protocol {
     public static final class PairCode {
         public final String host, pin, secret;
         public PairCode(String code) {
+            if (code == null || code.length() > 256) throw new IllegalArgumentException("Invalid pairing code length");
             URI u = URI.create(code.trim());
             if (!"sahl-connect".equals(u.getScheme()) || u.getPort()!=PORT || !"/v1".equals(u.getPath()) ||
                 u.getUserInfo()!=null || u.getFragment()!=null || !privateV4(u.getHost())) throw new IllegalArgumentException("Invalid TV address");

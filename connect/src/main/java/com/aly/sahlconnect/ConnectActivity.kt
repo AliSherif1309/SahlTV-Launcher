@@ -144,8 +144,8 @@ class ConnectActivity : Activity() {
             }
         }
     }
-    private fun send(op: String, field: String, value: String) = request(JSONObject().put("op", op).put(field, value))
-    private fun refresh() = request(JSONObject().put("op", "state")) { response ->
+    private fun send(op: String, field: String, value: String): Unit = request(JSONObject().put("op", op).put(field, value))
+    private fun refresh(): Unit = request(JSONObject().put("op", "state")) { response ->
         if (!response.optBoolean("ok")) return@request
         status.text = "Sahl TV ${response.optString("version")} · Android ${response.optString("android")}\n" +
             "Free RAM: ${response.optLong("freeMb")} / ${response.optLong("totalMb")} MB\n" +

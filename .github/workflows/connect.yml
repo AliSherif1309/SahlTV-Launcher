@@ -30,6 +30,12 @@ jobs:
           mkdir -p preview
           cp connect/build/outputs/apk/debug/connect-debug.apk preview/SahlConnect-preview.apk
           cp app/build/outputs/apk/connectPreview/app-connectPreview.apk preview/SahlTV-connect-preview.apk
+          for apk in preview/*.apk; do
+            if unzip -Z1 "$apk" | grep -Ei '\.(ttf|otf|woff2?)$|^assets/f/'; then
+              echo "Font asset found in preview APK; refusing to publish" >&2
+              exit 1
+            fi
+          done
           cp docs/SAHL_CONNECT.md preview/INSTALL.md
           git rev-parse HEAD > preview/COMMIT.txt
           cd preview
