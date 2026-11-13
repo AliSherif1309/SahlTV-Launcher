@@ -28,11 +28,15 @@ internal fun MainActivity.layoutProfilesMenu() {
                 toast(t("Layout saved: $name", "تم حفظ التخطيط: $name"))
             } else {
                 val raw = prefs.getString(key, null)
-                if (raw == null) {
-                    toast(t("Save this profile first", "احفظ هذا الملف أولًا"))
-                    return@setItems
-                }
-                val data = try { JSONObject(raw) } catch (_: Exception) {
+                val data = try { if (raw != null) JSONObject(raw) else when (name) {
+                    "Minimal" -> JSONObject().put("homeTileSize", "compact").put("homeCombined", true)
+                        .put("homeShowFavorites", true).put("homeShowRecent", false)
+                        .put("dashboardShow_news", false).put("dashboardShow_greeting", false)
+                        .put("dashboardShow_ayah", false)
+                    "Family" -> JSONObject().put("homeTileSize", "large").put("homeCombined", false)
+                        .put("homeShowFavorites", true).put("homeShowRecent", true)
+                    else -> JSONObject()
+                } } catch (_: Exception) {
                     toast(t("Invalid saved profile", "ملف تخطيط غير صالح"))
                     return@setItems
                 }
