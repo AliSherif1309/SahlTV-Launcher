@@ -9,6 +9,9 @@ internal val MainActivity.homeTileSize: String
 internal val MainActivity.homeCombined: Boolean
     get() = prefs.getBoolean("homeCombined", false)
 
+internal val MainActivity.homeRecentFirst: Boolean
+    get() = prefs.getBoolean("homeRecentFirst", false)
+
 internal val MainActivity.homeShowFavorites: Boolean
     get() = prefs.getBoolean("homeShowFavorites", true)
 
@@ -56,11 +59,11 @@ internal fun MainActivity.homeArrangementMenu() {
 
 internal fun MainActivity.homeResetMenu() {
     dialog().setTitle(t("Reset Home layout?", "إعادة ترتيب الشاشة الرئيسية؟"))
-        .setMessage(t("Restores compact tiles, separate Favorites and Recent rows, and both rows visible. Your favorites and Islamic cards will not change.",
+        .setMessage(t("Restores compact tiles, separate Favorites and Recent rows, Favorites first, and both rows visible. Your favorites and Islamic cards will not change.",
             "يعيد المربعات المدمجة والصفوف المنفصلة وإظهار المفضلة والمستخدمة مؤخرًا. لن تتغير تطبيقاتك المفضلة أو البطاقات الإسلامية."))
         .setPositiveButton(t("Reset", "إعادة الضبط")) { _, _ ->
             prefs.edit().remove("homeTileSize").remove("homeCombined")
-                .remove("homeShowFavorites").remove("homeShowRecent")
+                .remove("homeShowFavorites").remove("homeShowRecent").remove("homeRecentFirst")
                 .remove("dashboardOrder").apply()
             prefs.edit().apply {
                 for (key in dashboardKeys) { remove("dashboardShow_$key"); remove("dashboardSize_$key") }
