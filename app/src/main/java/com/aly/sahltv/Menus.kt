@@ -143,6 +143,7 @@ internal fun MainActivity.menuAction(which: Int) {
             37 -> { prefs.edit().putBoolean("homeShowFavorites", !homeShowFavorites).apply(); homeChanged() }
             38 -> { prefs.edit().putBoolean("homeShowRecent", !homeShowRecent).apply(); homeChanged() }
             39 -> homeResetMenu()
+            40 -> homeVisualEditor()
             31 -> { prefs.edit().putBoolean("fridayOn", !fridayOn).apply(); Alerts.schedule(this); greetShown = null; updateGreeting()
                     toast(t("Friday mode: ", "وضع الجمعة: ") + onOff(fridayOn)) }
             29 -> dialog().setTitle(t("Diagnostics", "التشخيص")).setMessage(Diagnostics.report(this, ar))
