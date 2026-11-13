@@ -19,6 +19,17 @@ class HomeRowRulesTest : InstrumentationTestCase() {
         assertEquals(listOf("combined"), visibleHomeSections(2, 3, false, true, true))
     }
 
+    fun testRowControlsAreBoundedAndDefaultSafe() {
+        assertEquals(3, homeRecentLimit("3"))
+        assertEquals(6, homeRecentLimit("6"))
+        assertEquals(8, homeRecentLimit("8"))
+        assertEquals(6, homeRecentLimit("unknown"))
+        assertEquals(2, homeTileGap("tight"))
+        assertEquals(6, homeTileGap("normal"))
+        assertEquals(12, homeTileGap("spacious"))
+        assertEquals(6, homeTileGap("invalid"))
+    }
+
     fun testEveryAppRowUsesIdenticalTileProportions() {
         for ((size, width, height) in listOf(
             Triple("compact", 130, 73),
