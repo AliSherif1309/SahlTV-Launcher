@@ -118,28 +118,35 @@ SAHL_CRASH_LOG=$(printf '%s\n' "$CRASH_LOG" | tr -d '\r' | awk -v pkg="$PKG" '
 ')
 CRASH=$(printf '%s\n' "$SAHL_CRASH_LOG" | grep -c 'FATAL EXCEPTION:' || true)
 
-# 4) System-wide kill-all baseline, NOT the launcher's selective broom cleaner.
-# The launcher protects recent apps and active media; this command does not exercise that logic.
-# Open the three companion apps, return Home, then ask Android to kill background processes.
-APPS="com.aly.sahlquran/.QuranActivity com.aly.sahlpdf/.LibraryActivity com.aly.sahlfiles/.FilesActivity"
-phase 'companion apps and system kill-all baseline'
-adb logcat -d > "logcat-$RAM.txt" 2>&1 || { echo 'Cannot save pre-baseline logs' >&2; exit 1; }
-for a in $APPS; do A am start -W -n "$a" >/dev/null; sleep 3; A input keyevent KEYCODE_HOME; sleep 1; done
-WARM_APPS=(); for a in $APPS; do WARM_APPS+=("$(start_ms "$a")"); sleep 2; A input keyevent KEYCODE_HOME; sleep 1; done
-sleep 3
-M_BEFORE=$(avail_mb)
-phase 'system kill-all'
-A am kill-all                                   # system-wide baseline only
-sleep 2; M_AFTER=$(avail_mb)
-sleep 60; M_1MIN=$(avail_mb)
-AFTER_APPS=(); for a in $APPS; do AFTER_APPS+=("$(start_ms "$a")"); sleep 2; A input keyevent KEYCODE_HOME; sleep 1; done
-for value in "$M_BEFORE" "$M_AFTER" "$M_1MIN"; do
-  [[ "$value" =~ ^[0-9]+$ ]] || { echo 'Missing memory measurement' >&2; exit 1; }
-done
-FREED=$((M_AFTER - M_BEFORE)); KEPT="-"
-[ "$FREED" -gt 0 ] && KEPT=$(( (M_1MIN - M_BEFORE) * 100 / FREED ))
-WA=$(printf '%s\n' "${WARM_APPS[@]}" | grep -E '^[0-9]+$' | median); AA=$(printf '%s\n' "${AFTER_APPS[@]}" | grep -E '^[0-9]+$' | median)
-for value in "$COLD_MED" "$WARM_MED" "$READY_MED" "$PSS" "$FRAMES" "$WA" "$AA"; do
+# 4) Optional system-wide kill-all diagnostic (never part of mandatory release gates).
+# On emulated Android TV, am kill-all may terminate the emulator itself.
+KILL_ALL_REPORT="Not run (optional diagnostic)"
+if [ "${PERF_KILL_ALL_BASELINE:-0}" = "1" ]; then
+  # 4) System-wide kill-all baseline, NOT the launcher's selective broom cleaner.
+  # The launcher protects recent apps and active media; this command does not exercise that logic.
+  # Open the three companion apps, return Home, then ask Android to kill background processes.
+  APPS="com.aly.sahlquran/.QuranActivity com.aly.sahlpdf/.LibraryActivity com.aly.sahlfiles/.FilesActivity"
+  phase 'companion apps and system kill-all baseline'
+  adb logcat -d > "logcat-$RAM.txt" 2>&1 || { echo 'Cannot save pre-baseline logs' >&2; exit 1; }
+  for a in $APPS; do A am start -W -n "$a" >/dev/null; sleep 3; A input keyevent KEYCODE_HOME; sleep 1; done
+  WARM_APPS=(); for a in $APPS; do WARM_APPS+=("$(start_ms "$a")"); sleep 2; A input keyevent KEYCODE_HOME; sleep 1; done
+  sleep 3
+  M_BEFORE=$(avail_mb)
+  phase 'system kill-all'
+  A am kill-all                                   # system-wide baseline only
+  sleep 2; M_AFTER=$(avail_mb)
+  sleep 60; M_1MIN=$(avail_mb)
+  AFTER_APPS=(); for a in $APPS; do AFTER_APPS+=("$(start_ms "$a")"); sleep 2; A input keyevent KEYCODE_HOME; sleep 1; done
+  for value in "$M_BEFORE" "$M_AFTER" "$M_1MIN"; do
+    [[ "$value" =~ ^[0-9]+$ ]] || { echo 'Missing memory measurement' >&2; exit 1; }
+  done
+  FREED=$((M_AFTER - M_BEFORE)); KEPT="-"
+  [ "$FREED" -gt 0 ] && KEPT=$(( (M_1MIN - M_BEFORE) * 100 / FREED ))
+  WA=$(printf '%s\n' "${WARM_APPS[@]}" | grep -E '^[0-9]+$' | median); AA=$(printf '%s\n' "${AFTER_APPS[@]}" | grep -E '^[0-9]+$' | median)
+  KILL_ALL_REPORT="completed"
+fi
+
+for value in "$COLD_MED" "$WARM_MED" "$READY_MED" "$PSS" "$TOTAL_RAM" "$FRAMES"; do
   [[ "$value" =~ ^[0-9]+$ ]] || { echo 'Missing performance measurement' >&2; exit 1; }
 done
 
@@ -155,12 +162,16 @@ echo "| Return to Home (warm), median of 5 | **${WARM_MED} ms** (runs: ${WARM[*]
 echo "| Memory used by Sahl TV (PSS) | **${PSS:-?} MB** |"
 echo "| Remote navigation: 60 key presses | ${FRAMES:-?} frames · janky ${JANK:-?} · p50 ${P50:-?} · p90 ${P90:-?} · p99 ${P99:-?} |"
 echo "| Still running after navigation / crashes | ${ALIVE} / ${CRASH} |"
-echo "| Free memory: before → after system kill-all → 1 min later | ${M_BEFORE} → ${M_AFTER} → ${M_1MIN} MB |"
-echo "| Freed, and still free after 1 min | **${FREED} MB**, **${KEPT}%** kept |"
-echo "| Sahl apps open time: before system kill-all → after (median) | ${WA} ms → **${AA} ms** |"
+if [ "$KILL_ALL_REPORT" = "completed" ]; then
+  echo "| Free memory: before → after system kill-all → 1 min later | ${M_BEFORE} → ${M_AFTER} → ${M_1MIN} MB |"
+  echo "| Freed, and still free after 1 min | **${FREED} MB**, **${KEPT}%** kept |"
+  echo "| Sahl apps open time: before system kill-all → after (median) | ${WA} ms → **${AA} ms** |"
+else
+  echo "| Optional system-wide kill-all baseline | ${KILL_ALL_REPORT} |"
+fi
 echo
-echo "> Memory results use Android's system-wide am kill-all baseline, not Sahl TV's selective cleaner. They do not measure the broom button's benefit."
-if [ "$KEPT" != "-" ] && [ "$KEPT" -lt 25 ]; then echo "> System kill-all gives little lasting memory benefit here: less than 25% of the initial gain remains after a minute. See the app-open timings for restart cost."; fi
+echo "> System-wide kill-all is a separate optional diagnostic, not Sahl TV's selective cleaner. Startup, PSS, frames and crashes remain required release gates."
+if [ "$KILL_ALL_REPORT" = "completed" ] && [ "$KEPT" != "-" ] && [ "$KEPT" -lt 25 ]; then echo "> System kill-all gives little lasting memory benefit here: less than 25% of the initial gain remains after a minute. See the app-open timings for restart cost."; fi
 if [ "$ALIVE" != "yes" ] || [ "$CRASH" != "0" ]; then echo "> ⚠️ Sahl TV stopped or crashed during the test — see the logcat artifact."; fi
 if [ "$CRASH" != "0" ]; then
   echo; echo "<details><summary>Crash details</summary>"; echo; echo '```'
