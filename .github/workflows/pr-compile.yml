@@ -3,7 +3,7 @@ on:
   pull_request:
     branches: [main]
   push:
-    branches: [feature/layout-preview-settings]
+    branches: [feature/layout-preview-settings, fix/phase1-stability]
 permissions:
   contents: read
 jobs:
@@ -18,6 +18,8 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.7'
+      - name: Layout regression checks
+        run: python3 tools/test_layout_regressions.py
       - name: Fetch Quran text needed by generators
         run: |
           mkdir -p quran/src/main/assets
