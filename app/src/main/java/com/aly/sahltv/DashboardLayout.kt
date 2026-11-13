@@ -37,7 +37,7 @@ internal fun MainActivity.applyDashboardCardPreferences() {
             }
         }
     }
-    if (!prefs.contains("dashboardOrder")) return
+    if (prefs.getBoolean("dashboardFlexible", false)) {\n        applyFlexibleDashboardCards()\n        return\n    }\n    if (!prefs.contains("dashboardOrder")) return
     val order = dashboardOrder()
     // Reorder within existing parent containers only. Moving cards between
     // containers would break their layout parameters and contextual behavior.
