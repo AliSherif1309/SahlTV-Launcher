@@ -146,7 +146,7 @@ if [ "${PERF_KILL_ALL_BASELINE:-0}" = "1" ]; then
   KILL_ALL_REPORT="completed"
 fi
 
-for value in "$COLD_MED" "$WARM_MED" "$READY_MED" "$PSS" "$FRAMES"; do
+for value in "$COLD_MED" "$WARM_MED" "$READY_MED" "$PSS" "$TOTAL_RAM" "$FRAMES"; do
   [[ "$value" =~ ^[0-9]+$ ]] || { echo 'Missing performance measurement' >&2; exit 1; }
 done
 
