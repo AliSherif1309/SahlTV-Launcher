@@ -188,7 +188,7 @@ Font © thmanyah Publishing and Distribution, used under thmanyah's Font License
   - cold and warm start (5 runs each);
   - memory use;
   - 60 remote key presses (frames, jank, p50/p90/p99, crashes);
-  - a system-wide am kill-all baseline: memory freed, kept after 1 minute, and app restart cost (not the selective broom cleaner).
+  - startup, PSS memory, D-pad navigation, crash and rendered-frame checks remain mandatory. The destructive system-wide `am kill-all` baseline is optional (`PERF_KILL_ALL_BASELINE=1` for a separate diagnostic run) because on emulators it can terminate ADB/the emulator itself; skipping it is explicitly shown in the report and is not a measurement of the selective broom cleaner.
 
   Reports are attached when publishing the numbered release. Missing measurements, launcher crashes/death, zero rendered frames, median cold start above 10 seconds, apps-ready time above 15 seconds, or PSS above 256 MB block publication. These are broad emulator budgets, not physical TV guarantees. Jank is reported without a threshold.
 
