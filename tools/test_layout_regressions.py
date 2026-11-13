@@ -1,0 +1,19 @@
+"""Regression checks for layout profile types, remote focus and Arabic numerals.
+
+Source-level guards complement (but do not replace) Android device UI tests.
+"""
+from pathlib import Path
+import json
+
+root = Path(__file__).resolve().parents[1]
+profile = (root / "app/src/main/java/com/aly/sahltv/LayoutProfiles.kt").read_text()
+editor = (root / "app/src/main/java/com/aly/sahltv/DashboardEditor.kt").read_text()
+visual = (root / "app/src/main/java/com/aly/sahltv/HomeVisualEditor.kt").read_text()
+top = (root / "app/src/main/java/com/aly/sahltv/TopBar.kt").read_text()
+notes = json.loads((root / "app/src/main/assets/whatsnew.json").read_text())
+assert 'field.startsWith("dashboardSize_")' in profile.split("else if (field == \"homeTileSize\" || field == \"dashboardOrder\"")[1], "card sizes must restore as strings"
+assert "restoreFocus?.requestFocus()" in editor and "focusKey = key" in editor, "dashboard redraw must restore focus"
+assert "setOnFocusChangeListener" in visual, "visual editor must show remote focus"
+assert "prayerTv.text = digits(" in top, "next-prayer banner must honor Arabic digit setting"
+assert len(notes["en"]) == len(notes["ar"]) and len(notes["en"]) >= 4
+print("PASS layout source regression guards and bilingual release notes")
