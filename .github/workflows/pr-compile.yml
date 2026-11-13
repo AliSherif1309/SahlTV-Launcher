@@ -28,5 +28,10 @@ jobs:
           python3 tools/make_adhkar.py
           python3 tools/make_ayat.py
           python3 tools/pack_fonts.py
-      - name: Compile launcher
-        run: gradle :app:compileDebugKotlin --no-daemon --stacktrace
+      - name: Compile and package launcher debug APK
+        run: gradle :app:assembleDebug --no-daemon --stacktrace
+      - name: Upload test APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: SahlTV-debug-validation
+          path: app/build/outputs/apk/debug/*.apk
