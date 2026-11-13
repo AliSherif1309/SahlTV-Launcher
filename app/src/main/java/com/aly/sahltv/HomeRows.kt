@@ -66,13 +66,13 @@ internal fun MainActivity.render(keepFocus: Boolean, force: Boolean = false) {
         else focusPkg?.let { "$focusRow/$it" }
     val wantedPkg = focusPkg
     val hid = hidden.toSet()
-    val fav = favorites.filter { apps.containsKey(it) }
+    val fav = favorites.filter { apps.containsKey(it) && it !in hid }
     val rec = recent.filter { apps.containsKey(it) && it !in hid }.take(6)
     val all = apps.values.filter { it.pkg !in hid }.let { l ->
         if (sortMostUsed) l.sortedWith(compareByDescending<App> { launches(it.pkg) }.thenBy { it.label.lowercase() })
         else l.sortedBy { it.label.lowercase() }
     }
-    val style = listOf(ar, arDigits, resources.configuration.screenWidthDp, resources.displayMetrics.density)
+    val style = listOf(ar, arDigits, resources.configuration.screenWidthDp, resources.displayMetrics.density, homeTileSize, homeCombined, homeShowFavorites, homeShowRecent)
     val locks = locked.toSet()
     val desired = mutableListOf<View>(panel)
     fun section(key: String, signature: List<Any?>, build: LinearLayout.() -> Unit) {
@@ -88,29 +88,41 @@ internal fun MainActivity.render(keepFocus: Boolean, force: Boolean = false) {
         }
         desired.addAll(state.views)
     }
-    val favApps = fav.mapNotNull { apps[it] }
-    val recApps = rec.mapNotNull { apps[it] }
-    section("fav", style + listOf(favApps, favApps.map { it.pkg in locks })) {
-        if (favApps.isNotEmpty()) {
+    val favApps = if (homeShowFavorites) fav.mapNotNull { apps[it] } else emptyList()
+    val recApps = if (homeShowRecent) rec.mapNotNull { apps[it] } else emptyList()
+    val merged = if (homeCombined) {
+        val seen = HashSet<String>()
+        (favApps.map { it to "fav" } + recApps.map { it to "rec" })
+            .filter { (app, _) -> seen.add(app.pkg) }
+    } else emptyList()
+    section("fav", style + listOf(favApps, recApps, favApps.map { it.pkg in locks }, merged)) {
+        if (homeCombined) {
+            if (merged.isNotEmpty()) {
+                addView(rowTitle(if (favApps.isNotEmpty()) t("Favorites & Recent", "المفضلة والمستخدمة مؤخرًا")
+                    else t("Recent", "المستخدمة مؤخرًا")))
+                addView(hMixedRow(merged))
+            }
+        } else if (favApps.isNotEmpty()) {
             addView(rowTitle(t("Favorites", "المفضلة")))
-            addView(hRow("fav", favApps, big = true))
+            addView(hRow("fav", favApps, big = false))
         }
     }
-    // Include every preview field, not just the first title and item count.
+    section("rec", style + listOf(recApps, recApps.map { it.pkg in locks }, recApps.map { it.pkg in fav })) {
+        if (!homeCombined && recApps.isNotEmpty()) {
+            addView(rowTitle(t("Recent", "المستخدمة مؤخرًا")))
+            addView(hRow("rec", recApps, big = false))
+        }
+    }
+    // Previews are optional and follow the user's application rows, never separating Favorites and Recent.
     val previews = previewRows.map { r -> listOf(r.key, r.pkg, r.name, apps[r.pkg]?.label,
         r.items.map { listOf(it.title, it.poster, it.intentUri) }) }
     section("previews", style + listOf(previewsOn, previewOff.toSet(), hid, previews)) {
         renderPreviews(this)
     }
-    section("rec", style + listOf(recApps, recApps.map { it.pkg in locks }, recApps.map { it.pkg in fav })) {
-        if (recApps.size >= 2) {
-            addView(rowTitle(t("Recent", "المستخدمة مؤخرًا")))
-            addView(hRow("rec", recApps, big = false))
-        }
-    }
     section("all", style + listOf(all, all.map { it.pkg in locks })) {
         addView(rowTitle(digits(t("All apps  ·  ${all.size}", "كل التطبيقات  ·  ${all.size}"))))
-        val cols = maxOf(4, (resources.configuration.screenWidthDp - 96) / 142)
+        val tileWidth = when (homeTileSize) { "normal" -> 172; "large" -> 212; else -> 142 }
+        val cols = maxOf(1, (resources.configuration.screenWidthDp - 96) / tileWidth)
         val grid = GridLayout(this@render).apply { columnCount = cols; useDefaultMargins = false; clipChildren = false; clipToPadding = false }
         for (a in all) grid.addView(tile(a, "all", big = false))
         addView(grid)
@@ -134,7 +146,7 @@ internal fun MainActivity.render(keepFocus: Boolean, force: Boolean = false) {
 
 internal fun MainActivity.focusFirstTile() {
     handler.post {
-        val first = favorites.firstOrNull { apps.containsKey(it) }?.let { content.findViewWithTag<View>("fav/$it") }
+        val first = if (homeShowFavorites) favorites.firstOrNull { apps.containsKey(it) && it !in hidden }?.let { content.findViewWithTag<View>("fav/$it") } else null
         (first ?: firstTile(content))?.requestFocus()
     }
 }
@@ -162,9 +174,30 @@ internal fun MainActivity.hRow(row: String, list: List<App>, big: Boolean): View
     }
 }
 
+/** Combined display retains the original row identity for focus, shortcuts and menus. */
+internal fun MainActivity.hMixedRow(entries: List<Pair<App, String>>): View {
+    val line = LinearLayout(this).apply {
+        orientation = LinearLayout.HORIZONTAL
+        setPadding(dp(12), dp(12), dp(12), dp(12))
+        clipChildren = false; clipToPadding = false
+    }
+    for ((app, row) in entries) line.addView(tile(app, row, big = false))
+    return HorizontalScrollView(this).apply {
+        isHorizontalScrollBarEnabled = false
+        clipToPadding = false; clipChildren = false
+        addView(line)
+        if (ar) post { scrollTo(line.width, 0) }
+    }
+}
+
 internal fun MainActivity.tile(a: App, row: String, big: Boolean): View {
-    val w = if (big) dp(200) else dp(130)
-    val h = if (big) dp(112) else dp(73)
+    val (width, height) = when (homeTileSize) {
+        "large" -> 200 to 112
+        "normal" -> 160 to 90
+        else -> 130 to 73
+    }
+    val w = dp(width)
+    val h = dp(height)
     val radius = dp(10).toFloat()
     var nameStrip: TextView? = null
     val frame = FrameLayout(this).apply {
@@ -180,10 +213,10 @@ internal fun MainActivity.tile(a: App, row: String, big: Boolean): View {
             FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
     } else {
         val inner = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER }
-        val s = if (big) dp(48) else dp(34)
+        val s = dp(when (homeTileSize) { "large" -> 48; "normal" -> 40; else -> 34 })
         inner.addView(ImageView(this).apply { setImageDrawable(a.icon) }, LinearLayout.LayoutParams(s, s))
         inner.addView(TextView(this).apply {
-            text = a.label; textSize = if (big) 14f else 11.5f; setTextColor(TEXT); maxLines = 1
+            text = a.label; textSize = if (homeTileSize == "large") 14f else if (homeTileSize == "normal") 12.5f else 11.5f; setTextColor(TEXT); maxLines = 1
             gravity = Gravity.CENTER; setPadding(dp(6), dp(5), dp(6), 0)
         }, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT))
         frame.addView(inner, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
@@ -191,7 +224,7 @@ internal fun MainActivity.tile(a: App, row: String, big: Boolean): View {
     if (a.banner != null) {
         // app name slides in at the bottom of banner tiles when focused
         nameStrip = TextView(this).apply {
-            text = a.label; textSize = if (big) 13f else 11f; setTextColor(Color.WHITE); maxLines = 1
+            text = a.label; textSize = if (homeTileSize == "large") 13f else if (homeTileSize == "normal") 12f else 11f; setTextColor(Color.WHITE); maxLines = 1
             setPadding(dp(8), dp(14), dp(8), dp(5))
             background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Color.TRANSPARENT, Color.parseColor("#CC000000")))
             alpha = 0f
@@ -224,7 +257,7 @@ internal fun MainActivity.tile(a: App, row: String, big: Boolean): View {
             .setInterpolator(ease).setDuration(110).start()
         nameStrip?.animate()?.alpha(if (has) 1f else 0f)?.setDuration(110)?.start()
         star?.animate()?.alpha(if (has) 1f else 0f)?.setDuration(110)?.start()
-        if (has) { focusPkg = a.pkg; focusRow = row; if (row == "fav") scroll.smoothScrollTo(0, 0) }
+        if (has) { focusPkg = a.pkg; focusRow = row }
     }
     frame.setOnClickListener { launch(a) }
     frame.setOnLongClickListener { appMenu(a, row); true }
