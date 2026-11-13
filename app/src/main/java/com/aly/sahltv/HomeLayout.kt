@@ -39,7 +39,7 @@ internal fun MainActivity.homeSizeMenu() {
         .setSingleChoiceItems(names, sizes.indexOf(homeTileSize).coerceAtLeast(0)) { d, which ->
             d.dismiss()
             prefs.edit().putString("homeTileSize", sizes[which]).apply()
-            homeChanged()
+            recreate()
         }.setNegativeButton(t("Cancel", "إلغاء"), null).show()
 }
 
@@ -60,7 +60,11 @@ internal fun MainActivity.homeResetMenu() {
             "يعيد المربعات المدمجة والصفوف المنفصلة وإظهار المفضلة والمستخدمة مؤخرًا. لن تتغير تطبيقاتك المفضلة أو البطاقات الإسلامية."))
         .setPositiveButton(t("Reset", "إعادة الضبط")) { _, _ ->
             prefs.edit().remove("homeTileSize").remove("homeCombined")
-                .remove("homeShowFavorites").remove("homeShowRecent").apply()
+                .remove("homeShowFavorites").remove("homeShowRecent")
+                .remove("dashboardOrder").apply()
+            prefs.edit().apply {
+                for (key in dashboardKeys) { remove("dashboardShow_$key"); remove("dashboardSize_$key") }
+            }.apply()
             homeChanged()
         }.setNegativeButton(t("Cancel", "إلغاء"), null).show()
 }
