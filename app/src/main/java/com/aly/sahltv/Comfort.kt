@@ -88,6 +88,7 @@ internal fun MainActivity.settingsSections(): List<Pair<String, List<SRow>>> {
                 onOff(prefs.getBoolean("suhoorOn", true)) + if (prefs.getBoolean("suhoorOn", true) && !Alerts.canShow(this)) t(" · needs setup", " · يحتاج إعدادًا") else "", 28),
             SRow(GoldIcon.CRESCENT, t("Hijri date & fasting", "التاريخ الهجري والصيام"), t("Adjust the Hijri date, Sunnah fast reminders, Islamic dates", "ضبط التاريخ الهجري، تذكير صيام السنة، المناسبات"), hijriText(LocalDate.now()), 6)),
         t("Look & comfort", "المظهر والراحة") to listOf(
+            SRow(GoldIcon.HOURGLASS, t("Floating timer", "المؤقت العائم"), t("Countdown, position and optional display above apps", "عدّ تنازلي وموضع وظهور اختياري فوق التطبيقات"), "", 43),
             SRow(GoldIcon.GLOBE, t("Language", "اللغة"), t("Language of the home screen and menus", "لغة الشاشة الرئيسية والقوائم"), if (ar) "العربية" else "English", 0),
             SRow(GoldIcon.STAR, t("Theme", "المظهر"), t("Islamic: Kaaba photo with gold details. Classic: plain dark", "إسلامي: صورة الكعبة بلمسات ذهبية. كلاسيكي: داكن بسيط"), if (islamic) t("Islamic", "إسلامي") else t("Classic", "كلاسيكي"), 5),
             SRow(GoldIcon.IMAGE, t("Background", "الخلفية"), t("The Kaaba, the Prophet's Mosque, Al-Aqsa — or automatic day / night", "الكعبة أو المسجد النبوي أو الأقصى — أو تلقائي نهار / ليل"), if (islamic) bgName() else t("Classic theme", "المظهر الكلاسيكي"), 18),

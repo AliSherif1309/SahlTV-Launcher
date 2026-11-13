@@ -214,3 +214,45 @@ Font © thmanyah Publishing and Distribution, used under thmanyah's Font License
 
 ## ✦ One family
 "Sahl apps" (Sahl TV Settings, and the menus of Quran, PDF and Files) lists the four apps with their versions. It opens an installed one, and installs a missing one through Sahl TV, the family's single, checked update centre.
+
+
+### Floating timer (Android TV)
+
+Settings → Look & comfort → Floating timer. Use D-pad and OK to choose a duration
+(1–180 minutes), start, pause/resume, reset, show/hide, or choose one of four
+physical screen corners. Back closes menus. Reset restores the selected duration
+and leaves it paused. A completed countdown reads 00:00 on Home; reset to run again.
+The timer is hidden by default and adds no home card or layout preference.
+
+The default is a Home-only visual timer. Elapsed realtime keeps it accurate across
+clock changes, sleep and Activity/process recreation on the same boot. Reboot
+pauses at the last saved remaining time. No sound, exact alarm, screen wake, app
+termination, or TV shutdown is promised.
+
+**Above other apps** is optional and off by default. Open the permission help in
+the timer menu, grant Android's *Display over other apps* permission, return to
+Home, then enable the option. Granting permission alone never enables it. Some TV
+firmware has no permission screen or refuses overlays; Home-only mode still works.
+A non-exported foreground service owns a `TYPE_APPLICATION_OVERLAY` window with
+`FLAG_NOT_FOCUSABLE | FLAG_NOT_TOUCHABLE`, so videos and remote navigation continue
+normally. Control it through Home → Settings → Floating timer. Hide or disable the
+option to remove the overlay/service; completion also removes it. While paused
+and visible, the overlay stays until hidden. Position and visibility are saved
+separately from all existing dashboard, cards and layout profiles.
+
+The service starts only from visible launcher interactions/onResume, with a
+required low-priority notification. No boot/background receiver restarts it.
+Permission revocation or window/service errors remove the overlay; return Home
+for the fallback. Android/OEM resource limits and apps hiding overlays (including
+protected playback) can suppress it: this is not a guaranteed alarm. Android 14
+uses the declared `specialUse` foreground-service type and permission; Play Store
+distribution may require special-use review. Android 15+ background-start
+exemptions are not relied upon. See Android's
+[overlay permission](https://developer.android.com/reference/android/Manifest.permission#SYSTEM_ALERT_WINDOW)
+and [foreground-service types](https://developer.android.com/develop/background-work/services/fgs/service-types#special-use).
+
+Tests: `FloatingTimerTest` runs in the existing PR Android TV instrumentation
+matrix (1 GB and 2 GB), covering deadlines, pause/resume/reset, completion,
+bounds, persistence/reboot and non-focusable rendering. Physical TV validation is
+still needed for vendor permission screens, D-pad traversal, protected video,
+and permission revocation on each supported firmware.

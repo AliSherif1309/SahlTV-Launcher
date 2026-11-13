@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Sahl TV</string>
+    <string name="timer_name">Floating timer</string>
+    <string name="timer_notification">Open Sahl TV Settings → Floating timer to pause, reset or hide.</string>
+    <string name="timer_overlay_failed">Overlay unavailable on this TV. The timer still works in Sahl TV.</string>
+    <string name="timer_overlay_help">Optional: allow Display over other apps, then return and enable Above other apps. Some TVs omit or block this permission. The timer always works inside Sahl TV. The overlay cannot take remote focus: use Home → Settings → Floating timer to control it. Android or protected video apps may hide overlays or stop the service. This is a visual timer, with no alarm sound, wake-up or power-off guarantee. Hiding stops the overlay service; elapsed time continues. Reboot pauses the saved timer. A foreground-service notification is required; Android 14 special-use distribution may require store review.</string>
 </resources>
