@@ -25,6 +25,7 @@ internal fun MainActivity.applyDashboardCardPreferences() {
     for ((key, view) in views) {
         if (!prefs.getBoolean("dashboardShow_$key", true)) view.visibility = View.GONE
     }
+    if (!prefs.contains("dashboardOrder")) return
     val order = dashboardOrder()
     // Reorder within existing parent containers only. Moving cards between
     // containers would break their layout parameters and contextual behavior.
@@ -38,7 +39,7 @@ internal fun MainActivity.applyDashboardCardPreferences() {
         val original = entries.map { it.second }
         val params = original.associateWith { it.layoutParams }
         original.forEach { parent.removeView(it) }
-        val insertAt = if (parent === panel) 0 else 0
+        val insertAt = original.map { parent.indexOfChild(it) }.filter { it >= 0 }.minOrNull() ?: 0
         entries.forEachIndexed { index, (_, v) ->
             parent.addView(v, (insertAt + index).coerceAtMost(parent.childCount), params[v])
         }
