@@ -25,6 +25,18 @@ internal fun MainActivity.applyDashboardCardPreferences() {
     for ((key, view) in views) {
         if (!prefs.getBoolean("dashboardShow_$key", true)) view.visibility = View.GONE
     }
+    for ((key, view) in views) {
+        val size = prefs.getString("dashboardSize_$key", "normal")
+        val height = when (size) { "compact" -> 48; "large" -> 110; else -> 0 }
+        if (height > 0 && key != "prayer") view.minimumHeight = dp(height)
+        if (key == "prayer") {
+            val params = view.layoutParams
+            if (params != null) {
+                // Prayer row height is governed by its children; avoid clipping it.
+                view.minimumHeight = dp(if (size == "large") 110 else 84)
+            }
+        }
+    }
     if (!prefs.contains("dashboardOrder")) return
     val order = dashboardOrder()
     // Reorder within existing parent containers only. Moving cards between
