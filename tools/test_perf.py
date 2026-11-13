@@ -17,7 +17,8 @@ elif a[:1] == ['install'] and mode == 'install-failure':
 elif a[:3] == ['shell','am','start']:
     print('TotalTime: 123')
 elif a[:3] == ['shell','cat','/proc/meminfo']:
-    print('MemAvailable: 200000 kB\nMemTotal: 1000000 kB')
+    if mode == 'disconnect': sys.exit(1)
+    if mode != 'missing-memory': print('MemAvailable: 200000 kB\nMemTotal: 1000000 kB')
 elif a[:3] == ['shell','dumpsys','meminfo']:
     print('TOTAL PSS: 45000')
 elif a[:3] == ['shell','dumpsys','gfxinfo']:
@@ -47,6 +48,7 @@ for case, expected, count in [
     ('empty',0,0), ('google',0,0), ('sahl',1,1), ('subprocess',1,1),
     ('prefix',0,0), ('mixed',1,2), ('dead',1,0), ('install-failure',1,None),
     ('boot-failure',1,None), ('log-failure',1,None), ('timeout',124,None),
+    ('disconnect',1,None), ('missing-memory',1,None),
 ]:
     with tempfile.TemporaryDirectory() as d:
         root = pathlib.Path(d)

@@ -15,6 +15,7 @@ PHASE=setup
 # Bound every ADB call, including those in pipelines/command substitutions. Signal the
 # main shell on timeout so a stalled command cannot become an empty, passing metric.
 trap 'echo "ADB timed out during $PHASE" >&2; exit 124' USR1
+trap 'echo "ADB failed during $PHASE" >&2; exit 1' USR2
 adb() {
   local rc=0
   timeout --kill-after=5s 90s adb "$@" || rc=$?
@@ -27,14 +28,24 @@ finish() {
   if [ "$rc" -ne 0 ] && [ ! -s "$OUT" ]; then
     printf '## Performance test incomplete\n\nPhase: %s; exit code: %s\n' "$PHASE" "$rc" > "$OUT"
   fi
-  timeout --kill-after=2s 10s adb logcat -d > "logcat-$RAM.txt" 2>&1 || true
+  timeout --kill-after=2s 10s adb logcat -d >> "logcat-$RAM.txt" 2>&1 || true
   # Preserve system crashes as diagnostics, even though they do not fail Sahl.
   printf '\n--- Crash buffer captured after navigation ---\n%s\n' "${CRASH_LOG:-not captured}" >> "logcat-$RAM.txt"
   exit "$rc"
 }
 trap finish EXIT
 phase() { PHASE=$1; printf '[perf] %s\n' "$PHASE"; }
-A() { adb shell "$@" 2>/dev/null | tr -d '\r'; }
+A() {
+  local result rc=0
+  result=$(adb shell "$@" 2>&1) || rc=$?
+  # pidof returning 1 means the launcher died; ALIVE handles that explicitly.
+  if [ "$rc" -ne 0 ] && [ "$1" != pidof ]; then
+    printf 'ADB shell failed: %s\n%s\n' "$*" "$result" >> "logcat-$RAM.txt"
+    kill -USR2 "$PERF_PID"
+    return "$rc"
+  fi
+  printf '%s\n' "$result" | tr -d '\r'
+}
 median() { sort -n | awk '{a[NR]=$1} END {if (NR==0) print "-"; else print a[int((NR+1)/2)]}'; }
 start_ms() { A am start -W -n "$1" | awk -F': ' '/TotalTime/ {print $2}'; }
 avail_mb() { A cat /proc/meminfo | awk '/MemAvailable/ {print int($2/1024)}'; }
@@ -58,7 +69,7 @@ for i in 1 2 3 4 5; do
 done
 phase 'warm return to Home'
 for i in 1 2 3 4 5; do
-  A am start -n com.android.tv.settings/.MainSettings >/dev/null 2>&1 || A am start -a android.settings.SETTINGS >/dev/null; sleep 3
+  A am start -a android.settings.SETTINGS >/dev/null; sleep 3
   A input keyevent KEYCODE_HOME; sleep 1
   WARM+=("$(start_ms $ACT)"); sleep 2
 done
@@ -112,17 +123,25 @@ CRASH=$(printf '%s\n' "$SAHL_CRASH_LOG" | grep -c 'FATAL EXCEPTION:' || true)
 # Open the three companion apps, return Home, then ask Android to kill background processes.
 APPS="com.aly.sahlquran/.QuranActivity com.aly.sahlpdf/.LibraryActivity com.aly.sahlfiles/.FilesActivity"
 phase 'companion apps and system kill-all baseline'
+adb logcat -d > "logcat-$RAM.txt" 2>&1 || { echo 'Cannot save pre-baseline logs' >&2; exit 1; }
 for a in $APPS; do A am start -W -n "$a" >/dev/null; sleep 3; A input keyevent KEYCODE_HOME; sleep 1; done
 WARM_APPS=(); for a in $APPS; do WARM_APPS+=("$(start_ms "$a")"); sleep 2; A input keyevent KEYCODE_HOME; sleep 1; done
 sleep 3
 M_BEFORE=$(avail_mb)
+phase 'system kill-all'
 A am kill-all                                   # system-wide baseline only
 sleep 2; M_AFTER=$(avail_mb)
 sleep 60; M_1MIN=$(avail_mb)
 AFTER_APPS=(); for a in $APPS; do AFTER_APPS+=("$(start_ms "$a")"); sleep 2; A input keyevent KEYCODE_HOME; sleep 1; done
+for value in "$M_BEFORE" "$M_AFTER" "$M_1MIN"; do
+  [[ "$value" =~ ^[0-9]+$ ]] || { echo 'Missing memory measurement' >&2; exit 1; }
+done
 FREED=$((M_AFTER - M_BEFORE)); KEPT="-"
 [ "$FREED" -gt 0 ] && KEPT=$(( (M_1MIN - M_BEFORE) * 100 / FREED ))
 WA=$(printf '%s\n' "${WARM_APPS[@]}" | grep -E '^[0-9]+$' | median); AA=$(printf '%s\n' "${AFTER_APPS[@]}" | grep -E '^[0-9]+$' | median)
+for value in "$COLD_MED" "$WARM_MED" "$READY_MED" "$PSS" "$FRAMES" "$WA" "$AA"; do
+  [[ "$value" =~ ^[0-9]+$ ]] || { echo 'Missing performance measurement' >&2; exit 1; }
+done
 
 {
 B=${BUILD:-${RAM#*-}}; if [ "$B" = "$RAM" ] || [ "$B" = "0" ]; then B=latest; fi
