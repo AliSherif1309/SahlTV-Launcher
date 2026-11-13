@@ -4,7 +4,7 @@ import org.json.JSONObject
 import com.aly.sahltv.MainActivity.*
 
 private val layoutFields = listOf("homeTileSize", "homeCombined", "homeShowFavorites", "homeShowRecent", "dashboardOrder") +
-    dashboardKeys.map { "dashboardShow_$it" }
+    dashboardKeys.flatMap { listOf("dashboardShow_$it", "dashboardSize_$it") }
 
 /** Named local presets, never altering favorites, installed apps or unrelated preferences. */
 internal fun MainActivity.layoutProfilesMenu() {
@@ -20,7 +20,7 @@ internal fun MainActivity.layoutProfilesMenu() {
                 val data = JSONObject()
                 for (field in layoutFields) {
                     if (!prefs.contains(field)) continue
-                    if (field == "homeTileSize" || field == "dashboardOrder")
+                    if (field == "homeTileSize" || field == "dashboardOrder" || field.startsWith("dashboardSize_"))
                         data.put(field, prefs.getString(field, ""))
                     else data.put(field, prefs.getBoolean(field, true))
                 }
