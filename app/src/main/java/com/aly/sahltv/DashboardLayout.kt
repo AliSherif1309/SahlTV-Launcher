@@ -38,8 +38,8 @@ internal fun MainActivity.applyDashboardCardPreferences() {
         if (entries.size < 2) continue
         val original = entries.map { it.second }
         val params = original.associateWith { it.layoutParams }
-        original.forEach { parent.removeView(it) }
         val insertAt = original.map { parent.indexOfChild(it) }.filter { it >= 0 }.minOrNull() ?: 0
+        original.forEach { parent.removeView(it) }
         entries.forEachIndexed { index, (_, v) ->
             parent.addView(v, (insertAt + index).coerceAtMost(parent.childCount), params[v])
         }
