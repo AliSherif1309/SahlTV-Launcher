@@ -25,8 +25,11 @@ internal fun MainActivity.dashboardEditor() {
         orientation = LinearLayout.VERTICAL
         setPadding(dp(12), dp(12), dp(12), dp(12))
     }
+    var focusKey: String? = null
+    var focusControl = 0
     fun redraw() {
         root.removeAllViews()
+        var restoreFocus: View? = null
         root.addView(TextView(this).apply {
             text = t("Select a card to show/hide it. Use S/M/L to adjust card height and arrows to reorder. Changes save only on Apply.",
                 "اختر بطاقة لإظهارها أو إخفائها، واختر S/M/L لضبط ارتفاعها والأسهم لترتيبها. تُحفظ التغييرات عند تطبيق فقط.")
@@ -34,7 +37,10 @@ internal fun MainActivity.dashboardEditor() {
         })
         order.forEachIndexed { index, key ->
             val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+            var controlIndex = 0
             fun control(textValue: String, action: () -> Unit): TextView = TextView(this).apply {
+                val myIndex = controlIndex++
+                if (focusKey == key && focusControl == myIndex) restoreFocus = this
                 text = textValue
                 textSize = 17f
                 setTextColor(TEXT)
@@ -42,7 +48,7 @@ internal fun MainActivity.dashboardEditor() {
                 isFocusable = true; isClickable = true
                 background = cardBg(false, false)
                 setOnFocusChangeListener { v, focused -> v.background = cardBg(false, focused) }
-                setOnClickListener { action(); redraw() }
+                setOnClickListener { focusKey = key; focusControl = myIndex; action(); redraw() }
             }
             row.addView(control((if (enabled[key] == true) "☑ " else "☐ ") + names[key]) {
                 enabled[key] = enabled[key] != true
@@ -58,6 +64,7 @@ internal fun MainActivity.dashboardEditor() {
             })
             root.addView(row, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(6) })
         }
+        restoreFocus?.requestFocus()
     }
     redraw()
     dialog().setTitle(t("Upper dashboard cards", "بطاقات اللوحة العلوية"))
