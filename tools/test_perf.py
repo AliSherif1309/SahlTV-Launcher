@@ -15,14 +15,14 @@ if a[:2] == ['shell','getprop']:
 elif a[:1] == ['install'] and mode == 'install-failure':
     sys.exit(1)
 elif a[:3] == ['shell','am','start']:
-    print('TotalTime: 123')
+    print('TotalTime: ' + ('20000' if mode == 'slow' else '123'))
 elif a[:3] == ['shell','cat','/proc/meminfo']:
     if mode == 'disconnect': sys.exit(1)
     if mode != 'missing-memory': print('MemAvailable: 200000 kB\nMemTotal: 1000000 kB')
 elif a[:3] == ['shell','dumpsys','meminfo']:
-    print('TOTAL PSS: 45000')
+    print('TOTAL PSS: ' + ('400000' if mode == 'high-memory' else '45000'))
 elif a[:3] == ['shell','dumpsys','gfxinfo']:
-    print('Total frames rendered: 100\nJanky frames: 5 (5%)')
+    print('Total frames rendered: ' + ('0' if mode == 'no-frames' else '100') + '\nJanky frames: 5 (5%)')
 elif a[:2] == ['shell','pidof'] and mode != 'dead':
     print('777')
 elif a[:4] == ['logcat','-d','-b','crash']:
@@ -49,6 +49,7 @@ for case, expected, count in [
     ('prefix',0,0), ('mixed',1,2), ('dead',1,0), ('install-failure',1,None),
     ('boot-failure',1,None), ('log-failure',1,None), ('timeout',124,None),
     ('disconnect',1,None), ('missing-memory',1,None),
+    ('slow',1,0), ('high-memory',1,0), ('no-frames',1,0),
 ]:
     with tempfile.TemporaryDirectory() as d:
         root = pathlib.Path(d)

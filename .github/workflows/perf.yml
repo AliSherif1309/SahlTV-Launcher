@@ -1,10 +1,7 @@
 name: Performance tests
-# After each build: start-up time, memory, remote navigation and the memory-cleaning effect, measured on
+# Manual historical comparison: start-up time, memory, remote navigation and the memory-cleaning effect, measured on
 # Android TV emulators with normal and low RAM. The report is added to the build's numbered release.
 on:
-  workflow_run:
-    workflows: ["Build APK"]
-    types: [completed]
   workflow_dispatch:
     inputs:
       builds:
@@ -15,7 +12,6 @@ permissions:
   contents: write
 jobs:
   perf:
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
     strategy:
