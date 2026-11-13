@@ -23,7 +23,7 @@ A replacement home screen for Android TV / Mi TV. It opens instantly, shows only
 ## Customize the home layout
 Open **Sahl TV → Settings → Home layout** to access the visual layout preview, upper dashboard card controls, and layout profiles. The visual editor lets you change app tile size, combined or separate rows, Favorites/Recent visibility, and which row comes first before applying. Its preview displays your actual Favorites and Recent app names. If Favorites is empty or hidden, Recent becomes the first available app row.
 
-Favorites, Recent, combined and All Apps share identical tile proportions at Compact (130 × 73), Normal (160 × 90), or Large (200 × 112). **The upper dashboard cards are not resized by app tile settings.** The upper-card editor supports show/hide, height presets and ordering **within existing card groups**; arbitrary card widths and cross-group moves are not yet supported.
+Favorites, Recent, combined and All Apps share identical tile proportions at Compact (130 × 73), Normal (160 × 90), or Large (200 × 112). **The upper dashboard cards are not resized by app tile settings.** The upper-card editor supports show/hide, height presets and ordering. Its optional **Flexible cards** mode also allows cross-group reordering and full-width/half-width card arrangements, with a live layout-plan preview. The original dashboard stays the default; prayer times remain full width for legibility. Upper cards are not scaled down when you adjust app tiles.
 
 Profiles (Default, Minimal, Family) can save and restore layouts; three additional custom slots let you name and save your own arrangements. Use remote arrows and OK to navigate, then choose **Apply** to commit changes.
 
