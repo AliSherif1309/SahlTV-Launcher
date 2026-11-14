@@ -1,0 +1,53 @@
+name: README review
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited, ready_for_review]
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: readme-review-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test documentation checks
+        run: python3 -m unittest discover -s tools -p 'test_readme_review.py'
+      - name: Review README against this change
+        env:
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PUSH_BASE: ${{ github.event.before }}
+          README_REVIEW_DECISION: ${{ github.event.pull_request.body }}
+        run: |
+          args=(--check --summary readme-review.md)
+          base="${PR_BASE:-$PUSH_BASE}"
+          if [[ -n "$base" && ! "$base" =~ ^0+$ ]]; then
+            args+=(--base "$base")
+          fi
+          python3 tools/readme_review.py "${args[@]}"
+      - name: Publish review summary and suggested generated update
+        if: always()
+        run: |
+          if [[ -f readme-review.md ]]; then
+            cat readme-review.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+          python3 tools/readme_review.py --write
+          git diff -- README.md > readme-generated.patch
+      - name: Upload documentation review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: readme-review
+          path: |
+            readme-review.md
+            readme-generated.patch
