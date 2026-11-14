@@ -7,7 +7,6 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.graphics.PixelFormat
-import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Build
 import android.os.Handler
@@ -18,6 +17,7 @@ import android.view.View
 import android.view.WindowManager
 import android.widget.LinearLayout
 import android.widget.TextView
+import com.aly.sahl.common.Fonts
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -169,27 +169,47 @@ object Alerts {
     private var current: View? = null
     private val main = Handler(Looper.getMainLooper())
 
-    /** The banner: dark card, thin gold border, gentle fade in and out. It never takes the remote's focus. */
-    fun show(context: Context, title: String, sub: String, ms: Long) {
-        val ctx = context.applicationContext
-        if (!canShow(ctx)) return
-        val wm = ctx.getSystemService(Context.WINDOW_SERVICE) as WindowManager
-        current?.let { try { wm.removeView(it) } catch (_: Exception) {} }
+    /** Builds the same localized card for scheduled banners and the Settings preview. */
+    internal fun createCard(ctx: Context, title: String, sub: String): LinearLayout {
+        Fonts.init(ctx)
+        val ar = arabic(ctx)
+        val useArabicDigits = prefs(ctx).getBoolean("arDigits", ar)
+        fun localized(value: String) = value.map {
+            when {
+                useArabicDigits && it in '0'..'9' -> '٠' + (it - '0')
+                !useArabicDigits && it in '٠'..'٩' -> '0' + (it - '٠')
+                else -> it
+            }
+        }.joinToString("")
         val d = ctx.resources.displayMetrics.density
         fun dp(v: Int) = (v * d).toInt()
         val gold = Color.parseColor("#E3B85C")
         val card = LinearLayout(ctx).apply {
             orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
-            layoutDirection = if (arabic(ctx)) View.LAYOUT_DIRECTION_RTL else View.LAYOUT_DIRECTION_LTR
+            layoutDirection = if (ar) View.LAYOUT_DIRECTION_RTL else View.LAYOUT_DIRECTION_LTR
             setPadding(dp(18), dp(12), dp(24), dp(12))
             background = GradientDrawable().apply { setColor(Color.parseColor("#F00A1D19")); cornerRadius = dp(16).toFloat(); setStroke(dp(2), gold) }
             alpha = 0f
         }
         card.addView(GoldIcon(ctx, GoldIcon.MOSQUE, gold), LinearLayout.LayoutParams(dp(40), dp(40)).apply { marginEnd = dp(14) })
         val texts = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL }
-        texts.addView(TextView(ctx).apply { text = title; textSize = 20f; setTextColor(Color.parseColor("#F3EFE4")); setTypeface(typeface, Typeface.BOLD) })
-        texts.addView(TextView(ctx).apply { text = sub; textSize = 14f; setTextColor(gold) })
+        texts.addView(TextView(ctx).apply { text = localized(title); textSize = 20f; setTextColor(Color.parseColor("#F3EFE4")); typeface = Fonts.display(true); Fonts.heading(this) })
+        texts.addView(TextView(ctx).apply { text = localized(sub); textSize = 14f; setTextColor(gold); typeface = Fonts.get(); fontFeatureSettings = "tnum" })
         card.addView(texts)
+        // Overlay windows do not pass through Fonts.watch(Activity.window).
+        Fonts.applyTree(card)
+        return card
+    }
+
+    /** The banner: dark card, thin gold border, gentle fade in and out. It never takes the remote's focus. */
+    fun show(context: Context, title: String, sub: String, ms: Long) {
+        val ctx = context.applicationContext
+        if (!canShow(ctx)) return
+        val wm = ctx.getSystemService(Context.WINDOW_SERVICE) as WindowManager
+        current?.let { try { wm.removeView(it) } catch (_: Exception) {} }
+        val card = createCard(ctx, title, sub)
+        val d = ctx.resources.displayMetrics.density
+        fun dp(v: Int) = (v * d).toInt()
         val lp = WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.WRAP_CONTENT,
             if (Build.VERSION.SDK_INT >= 26) WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY else @Suppress("DEPRECATION") WindowManager.LayoutParams.TYPE_PHONE,
