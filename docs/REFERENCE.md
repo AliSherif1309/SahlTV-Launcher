@@ -64,7 +64,7 @@ To undo, set the three values back to `1`.
 Home Layout 2.2 adds optional **Recent count** (3, 6 or 8) and **tile spacing** (tight, normal or spacious) controls inside the staged Visual layout editor. Defaults remain six Recent apps and normal 6 dp tile margins; card dimensions and upper dashboard proportions stay unchanged. These settings are included in saved layout profiles and reset with Home layout.
 
 ## Build
-Kotlin and Android framework APIs, with five Gradle modules (`app`, `quran`, `pdf`, `files`, `common`). Every push to `main` builds release APKs with GitHub Actions and publishes a numbered release plus the `latest` update pointer. Publication waits for source regression checks and candidate validation on Android TV API 29 emulators with 2 GB and 1 GB RAM. Both test the exact candidate APK artifact, not the mutable latest release. Pull requests build all four debug apps and run the same validation.
+Kotlin and Android framework APIs, with five Gradle modules (`app`, `quran`, `pdf`, `files`, `common`). App and build-input changes on `main` build release APKs with GitHub Actions and publishes a numbered release plus the `latest` update pointer. Publication waits for source regression checks and candidate validation on Android TV API 29 emulators with 2 GB and 1 GB RAM. Both test the exact candidate APK artifact, not the mutable latest release. Pull requests build all four debug apps and run the same validation.
 Release signing uses the repository secrets `SIGNING_KEYSTORE_BASE64`, `SIGNING_STORE_PASSWORD`, `SIGNING_KEY_PASSWORD` and `SIGNING_KEY_ALIAS`.
 
 ## License
@@ -300,3 +300,9 @@ setting is unseen. New discovery revisions are registered in
 `SettingsDiscoveryTest` covers Arabic normalization, category completeness, global
 search, no-results behavior, Back navigation and badge acknowledgement. It runs
 in the existing 1 GB / 2 GB Android TV instrumentation matrix.
+
+## Release version policy
+
+Use `major.minor.patch` for each app’s `versionName`. Increase patch for fixes, minor for features (reset patch to zero), and major for breaking changes (reset minor and patch). Each PR changing an app must increase its version compared with the target branch. Shared code, fonts, dependencies and shipped asset generators require bumps for all four apps. Keep `app/src/main/assets/whatsnew.json` at the Sahl TV version and describe changes in English and Arabic. CI checks this before compilation and on production pushes. Run `python3 tools/check_versions.py --base origin/main` locally after committing changes.
+
+Android `versionCode` remains the existing increasing build number, preserving installed-app upgrade compatibility and the updater’s JSON format. Tags stay `build-N` so existing download, recovery and performance tools keep working; release titles show the semantic version and build number. Documentation-only pushes do not publish APKs. Manual recovery or reruns can publish the same source version with a newer build number; recovery retains the recovered source’s own version and notes.
