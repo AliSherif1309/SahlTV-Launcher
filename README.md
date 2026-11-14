@@ -46,7 +46,7 @@ A calm, ad-free Android TV launcher with Arabic & English, Islamic essentials, a
 
 *Conceptual layout guide. Dimensions are the app's tile presets in dp; the diagram is not to scale.*
 
-Open **Settings → Home layout**. Choose app tile size, row visibility/order, combined or separate rows, Recent count and spacing. Adjust upper dashboard cards separately, preview your arrangement, then **Apply**. Save a profile to return to it later.
+Open **Settings → Home screen & apps**. Choose app tile size, row visibility/order, combined or separate rows, Recent count and spacing. Adjust upper dashboard cards separately, preview your arrangement, then **Apply**. Save a profile to return to it later.
 
 Hold **OK** or press **Menu** on an app to manage favorites, move it, hide it, open app info or uninstall it. A four-digit PIN can protect apps and optionally the TV settings button.
 
@@ -96,7 +96,7 @@ Do not disable unrelated system packages. Keep ADB available until Home works.
 | --- | --- |
 | Prayer dashboard | Next prayer countdown, today's times and Sunrise; Qatar city selection, adjustments and optional silent prayer banners. |
 | Islamic cards | Hijri date adjustment, Ayah of the day, adhkar, Ramadan/Iftar/Suhoor and upcoming Sunnah fasts. |
-| Look & comfort | Islamic or Classic styling, mosque wallpapers, photo brightness, calm mode, text size and night style. |
+| Appearance & comfort | Islamic or Classic styling, mosque wallpapers, photo brightness, calm mode, text size and night style. |
 | Phone remote | One-time pairing window, per-phone keys, playback controls and optional keyboard input. |
 | Now playing | Playback and Open controls when media-session access is configured. |
 | Optional app previews | Enable selected recommendation rows from apps that publish them; disabled by default. |
@@ -109,13 +109,13 @@ Do not disable unrelated system packages. Keep ADB available until Home works.
 
 ### Pair your phone
 
-On the TV, open **Settings → Phone remote → Pair a phone**. On a phone connected to the same home Wi-Fi, open the address shown on the TV and enter its one-time six-digit code. Pairing lasts three minutes; five incorrect attempts close it. Manage or revoke devices under **Paired phones**.
+On the TV, open **Settings → Tools & connection → Phone remote → Pair a phone**. On a phone connected to the same home Wi-Fi, open the address shown on the TV and enter its one-time six-digit code. Pairing lasts three minutes; five incorrect attempts close it. Manage or revoke devices under **Paired phones**.
 
 The remote uses local HTTP and relies on trusted home Wi-Fi. Some actions need one-time ADB setup; see the [permissions guide](docs/REFERENCE.md#optional-permissions).
 
 ### Start a floating timer
 
-Open **Settings → Look & comfort → Floating timer**. Set a duration, start it, and choose a screen corner. Home-only mode works without overlay permission. For **Above other apps**, follow the permission help, return Home, and explicitly enable the option.
+Open **Settings → Tools & connection → Floating timer**. Set a duration, start it, and choose a screen corner. Home-only mode works without overlay permission. For **Above other apps**, follow the permission help, return Home, and explicitly enable the option.
 
 The timer is a visual countdown, with no alarm sound or automatic TV shutdown. Some firmware and protected video can suppress overlays. See [timer behavior and limitations](docs/REFERENCE.md#floating-timer-android-tv).
 
@@ -150,7 +150,7 @@ The project uses Kotlin, Android framework APIs, **JDK 17**, **Gradle 8.7** and 
 
 See the [build workflow](.github/workflows/pr-compile.yml) for the complete generated-asset preparation and build sequence. A local build without signing secrets uses a debug key; without `FONT_KEY`, apps fall back to the system font. Thmanyah files are not redistributed as raw fonts.
 
-Found a problem? [Open an issue](https://github.com/AliSherif1309/SahlTV-Launcher/issues) with your TV model, Android version, app version and steps to reproduce. Screenshots and **Settings → Diagnostics** results help. Feature ideas and pull requests are welcome.
+Found a problem? [Open an issue](https://github.com/AliSherif1309/SahlTV-Launcher/issues) with your TV model, Android version, app version and steps to reproduce. Screenshots and **Settings → System & updates → Diagnostics** results help. Feature ideas and pull requests are welcome.
 
 ### Keeping this page current
 
@@ -166,8 +166,23 @@ python3 -m unittest discover -s tools -p 'test_readme_review.py'
 
 For internal changes with no reader impact, put `README review: not needed — <specific reason>` in the PR description (or commit message for direct pushes). This records a human decision; the workflow does not claim to understand every feature or automatically invent feature descriptions. See [documentation maintenance](docs/DOCUMENTATION.md).
 
+### Finding settings
+
+Settings opens with categories for Home screen & apps, Appearance & comfort,
+Language & clock, Prayer & Islamic, Tools & connection, Family & safety, and
+System & updates. Search matches setting names, descriptions and current values
+across all categories. Arabic search ignores vowel marks, tatweel and alef variants.
+Back clears a search, returns from a category, then returns to the home screen.
+
+Recently added settings display a small localized **New / جديد** badge until opened.
+Opening a category alone does not dismiss its badges. Discovery state stays on the
+TV across app updates. When adding a setting, place its action in `settingsSections()`
+and register its discovery revision in `SettingsDiscovery.revision()`; raise the
+revision only when an existing setting gains a substantial new capability.
+
 ## Credits and license
 
 Code: [MIT](LICENSE). Quran text: [Tanzil](https://tanzil.net), unchanged Uthmani text, CC BY 3.0. Quran typography: Amiri Quran, SIL OFL. Thmanyah typography follows its separate font license; local builds use system fonts without the font secret. Wallpaper attribution is checked at build time and shown in About; see the [detailed credits and feature reference](docs/REFERENCE.md).
 
 Contact: alysherif1309@gmail.com
+

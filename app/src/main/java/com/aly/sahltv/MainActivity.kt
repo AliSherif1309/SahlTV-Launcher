@@ -346,7 +346,7 @@ class MainActivity : Activity(), RemoteServer.Host {
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         lastInput = System.currentTimeMillis()
         if (settingsView != null && saver == null && event.keyCode == KeyEvent.KEYCODE_BACK) {
-            if (event.action == KeyEvent.ACTION_UP) hideSettings()
+            if (event.action == KeyEvent.ACTION_UP) settingsBack()
             return true
         }
         if (saver != null) {                       // any key just wakes the screen
@@ -448,6 +448,9 @@ class MainActivity : Activity(), RemoteServer.Host {
     internal var settingsView: FrameLayout? = null
     internal var settingsList: LinearLayout? = null
     internal var settingsFocus = -1
+    internal var settingsCategory = -1
+    internal var settingsQuery = ""
+    internal var settingsResults: LinearLayout? = null
 
     internal class SRow(val icon: Int, val title: String, val desc: String, val value: String, val action: Int)
 
