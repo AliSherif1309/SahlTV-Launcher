@@ -45,6 +45,9 @@ import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
+import android.widget.EditText
+import android.text.Editable
+import android.text.TextWatcher
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -78,7 +81,7 @@ internal fun MainActivity.settingsSections(): List<Pair<String, List<SRow>>> {
     val city = if (cityIndex in cities.indices) (if (ar) cityAr(cityIndex) else cities[cityIndex].first) else t("Off", "متوقف")
     val alert = when (Alerts.mode(this)) { Alerts.OFF -> t("Off", "متوقف"); Alerts.WITH_REMINDER -> t("On + 10 min before", "مُفعّل + قبله بـ 10 د"); else -> t("On", "مُفعّل") } +
         if (Alerts.mode(this) != Alerts.OFF && !Alerts.canShow(this)) t(" · needs setup", " · يحتاج إعدادًا") else ""
-    return listOf(
+    val sections = listOf(
         t("Prayer & Islamic", "الصلاة والمناسبات") to listOf(
             SRow(GoldIcon.MOSQUE, t("Prayer times city", "مدينة مواقيت الصلاة"), t("Times are calculated on the TV with the Qatar method", "تُحسب المواقيت على التلفاز بطريقة قطر"), city, 4),
             SRow(GoldIcon.CLOCK, t("Adjust prayer times", "ضبط مواقيت الصلاة"), t("Matches the Qatar Calendar House; fine-tune any prayer by a few minutes", "مطابقة لدار التقويم القطري؛ عدّل أي صلاة بدقائق"),
@@ -138,6 +141,17 @@ internal fun MainActivity.settingsSections(): List<Pair<String, List<SRow>>> {
             SRow(GoldIcon.SAVE, t("Backup & restore", "النسخ الاحتياطي والاستعادة"), t("Save all settings to the Download folder, or bring them back", "حفظ كل الإعدادات في مجلد التنزيلات أو استعادتها"), "", 14)),
         t("About", "حول") to listOf(
             SRow(GoldIcon.INFO, t("About Sahl TV", "حول سهل TV"), t("Credits, privacy and contact", "الشكر والخصوصية والتواصل"), "", 17)))
+
+    val rows = sections.flatMap { it.second }.associateBy { it.action }
+    return listOf(
+        t("Home screen & apps", "الشاشة الرئيسية والتطبيقات") to listOf(41, 42, 40, 35, 36, 37, 38, 39, 1, 2, 11, 13),
+        t("Appearance & comfort", "المظهر والراحة") to listOf(5, 18, 34, 19, 7, 25, 24, 12),
+        t("Language & clock", "اللغة والساعة") to listOf(0, 26, 3),
+        t("Prayer & Islamic", "الصلاة والمناسبات") to listOf(4, 21, 8, 28, 6, 32, 33, 31, 27, 23),
+        t("Tools & connection", "الأدوات والاتصال") to listOf(43, 15, 22, 30),
+        t("Family & safety", "العائلة والأمان") to listOf(10),
+        t("System & updates", "النظام والتحديثات") to listOf(9, 29, 20, 14, 17)
+    ).map { (title, actions) -> title to actions.map { rows.getValue(it) } }
 }
 
 internal fun MainActivity.showSettings() {
@@ -154,6 +168,7 @@ internal fun MainActivity.showSettings() {
     val w = minOf(dp(780), resources.displayMetrics.widthPixels - dp(96))
     overlay.addView(sc, FrameLayout.LayoutParams(w, MATCH_PARENT, Gravity.CENTER_HORIZONTAL))
     rootFrame.addView(overlay, rootFrame.childCount - 1, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))   // below the night dimmer
+    settingsCategory = -1; settingsQuery = ""
     settingsView = overlay; settingsList = list
     (rootFrame.getChildAt(0) as android.view.ViewGroup).descendantFocusability = android.view.ViewGroup.FOCUS_BLOCK_DESCENDANTS   // keep focus inside Settings
     fillSettings()
@@ -162,7 +177,8 @@ internal fun MainActivity.showSettings() {
 
 internal fun MainActivity.hideSettings() {
     val v = settingsView ?: return
-    settingsView = null; settingsList = null
+    settingsView = null; settingsList = null; settingsResults = null
+    settingsCategory = -1; settingsQuery = ""
     (rootFrame.getChildAt(0) as android.view.ViewGroup).descendantFocusability = android.view.ViewGroup.FOCUS_AFTER_DESCENDANTS
     v.animate().alpha(0f).setDuration(160).withEndAction { rootFrame.removeView(v) }.start()
     settingsFocus = -1
@@ -178,25 +194,112 @@ internal fun MainActivity.fillSettings() {
     head.addView(GoldIcon(this, GoldIcon.STAR, GOLD), LinearLayout.LayoutParams(dp(30), dp(30)).apply { marginEnd = dp(12) })
     val ht = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
     ht.addView(TextView(this).apply { text = t("Settings", "الإعدادات"); textSize = 30f; setTextColor(TEXT); typeface = Fonts.display(true); Fonts.heading(this) })
-    ht.addView(TextView(this).apply { text = t("Sahl TV  ·  press Back to return home", "سهل TV  ·  اضغط رجوع للعودة"); textSize = 13f; setTextColor(MUTED) })
+    ht.addView(TextView(this).apply { text = t("Sahl TV  ·  press Back to return", "سهل TV  ·  اضغط رجوع للعودة"); textSize = 13f; setTextColor(MUTED) })
     head.addView(ht, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
     list.addView(head)
 
-    // update card
-    val ready = prefs.getBoolean("updReady", false)
-    list.addView(settingsRow(SRow(GoldIcon.UPDATE, if (ready) t("Update ready — install now", "يتوفّر تحديث — ثبّته الآن") else t("Check for updates", "البحث عن تحديثات"),
-        t("Version ", "الإصدار ") + version() + t("  ·  updates Sahl TV and Sahl Quran", "  ·  يحدّث سهل TV وسهل القرآن"),
-        if (ready) t("New", "جديد") else "", 16), strong = true))
+    val search = EditText(this).apply {
+        hint = t("Search all settings…", "ابحث في كل الإعدادات…")
+        textSize = 17f; setTextColor(TEXT); setHintTextColor(MUTED)
+        isSingleLine = true
+        setPadding(dp(16), dp(12), dp(16), dp(12))
+        background = cardBg(false, false)
+        setOnFocusChangeListener { v, has -> v.background = cardBg(false, has) }
+        contentDescription = hint
+        setText(settingsQuery)
+        addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                settingsQuery = s?.toString().orEmpty()
+                settingsFocus = -1
+                fillSettingsResults()
+            }
+            override fun afterTextChanged(s: Editable?) {}
+        })
+    }
+    list.addView(search, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT))
+    val results = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+    settingsResults = results
+    list.addView(results)
+    fillSettingsResults()
+    Fonts.applyTree(list)
+    val focusView = results.findViewWithTag<View>("setting:$settingsFocus")
+    handler.post { if (settingsView != null && settingsResults === results) (focusView ?: firstFocusable(results) ?: search).requestFocus() }
+}
 
-    var focusView: View? = null
-    for ((title, rows) in settingsSections()) {
-        list.addView(TextView(this).apply {
+/** Back first clears a global search, then returns to categories, then closes Settings. */
+internal fun MainActivity.settingsBack() {
+    when {
+        settingsQuery.isNotEmpty() -> { settingsQuery = ""; fillSettings() }
+        settingsCategory >= 0 -> { settingsCategory = -1; settingsFocus = -1; fillSettings() }
+        else -> hideSettings()
+    }
+}
+
+internal fun MainActivity.isNewSetting(action: Int): Boolean =
+    SettingsDiscovery.revision(action)?.let { prefs.getInt("settingsSeen:$action", 0) < it } ?: false
+
+internal fun MainActivity.fillSettingsResults() {
+    val results = settingsResults ?: return
+    results.removeAllViews()
+    val sections = settingsSections()
+    fun heading(title: String) {
+        results.addView(TextView(this).apply {
             text = title; textSize = 17f; setTextColor(GOLD); typeface = Fonts.display(false); Fonts.heading(this)
             setPadding(dp(6), dp(20), dp(6), dp(8))
         })
-        for (r in rows) { val v = settingsRow(r, false); list.addView(v); if (r.action == settingsFocus) focusView = v }
     }
-    handler.post { (focusView ?: firstFocusable(list))?.requestFocus() }
+    fun updateRow(): SRow {
+        val ready = prefs.getBoolean("updReady", false)
+        return SRow(GoldIcon.UPDATE, if (ready) t("Update ready — install now", "يتوفّر تحديث — ثبّته الآن") else t("Check for updates", "البحث عن تحديثات"),
+            t("Version ", "الإصدار ") + version(), "", 16)
+    }
+    if (settingsQuery.isNotBlank()) {
+        var matches = 0
+        for ((title, rows) in sections) {
+            val candidates = if (rows.any { it.action == 20 }) listOf(updateRow()) + rows else rows
+            val found = candidates.filter { SettingsDiscovery.matches(settingsQuery, title, it.title, it.desc, it.value) }
+            if (found.isEmpty()) continue
+            heading(title)
+            for (r in found) results.addView(settingsRow(r, false))
+            matches += found.size
+        }
+        if (matches == 0) heading(t("No settings found. Try another word.", "لا توجد إعدادات مطابقة. جرّب كلمة أخرى."))
+    } else if (settingsCategory in sections.indices) {
+        val back = card(false) { settingsCategory = -1; settingsFocus = -1; fillSettings() }
+        back.addView(TextView(this).apply {
+            text = t("All categories", "كل الفئات"); textSize = 17f; setTextColor(GOLD); setPadding(dp(16), dp(12), dp(16), dp(12))
+        })
+        results.addView(back)
+        val (title, rows) = sections[settingsCategory]
+        heading(title)
+        if (rows.any { it.action == 20 }) results.addView(settingsRow(updateRow(), true))
+        for (r in rows) results.addView(settingsRow(r, false))
+    } else {
+        results.addView(settingsRow(updateRow(), true))
+        for ((index, section) in sections.withIndex()) {
+            val (title, rows) = section
+            val category = card(false) { settingsCategory = index; settingsFocus = -1; fillSettings() }
+            category.orientation = LinearLayout.HORIZONTAL
+            category.gravity = Gravity.CENTER_VERTICAL
+            category.setPadding(dp(16), dp(14), dp(16), dp(14))
+            category.addView(TextView(this).apply {
+                text = title; textSize = 18f; setTextColor(TEXT)
+            }, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
+            if (rows.any { isNewSetting(it.action) }) category.addView(newSettingBadge())
+            category.addView(TextView(this).apply {
+                text = if (ar) "‹" else "›"; textSize = 22f; setTextColor(GOLD); setPadding(dp(12), 0, dp(12), 0)
+            })
+            results.addView(category, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply { topMargin = dp(8) })
+        }
+    }
+    Fonts.applyTree(results)
+}
+
+internal fun MainActivity.newSettingBadge() = TextView(this).apply {
+    text = t("New", "جديد"); textSize = 11f; setTextColor(GOLD)
+    setPadding(dp(8), dp(3), dp(8), dp(3))
+    background = GradientDrawable().apply { setColor(Color.argb(38, 227, 184, 92)); cornerRadius = dp(10).toFloat() }
 }
 
 internal fun MainActivity.firstFocusable(v: View): View? {
@@ -206,15 +309,22 @@ internal fun MainActivity.firstFocusable(v: View): View? {
 }
 
 internal fun MainActivity.settingsRow(r: SRow, strong: Boolean): View {
-    val row = card(strong) { settingsFocus = r.action; menuAction(r.action); handler.postDelayed({ if (settingsView != null && hasWindowFocus()) fillSettings() }, 60) }.apply {
+    val row = card(strong) {
+        SettingsDiscovery.revision(r.action)?.let { prefs.edit().putInt("settingsSeen:${r.action}", it).apply() }
+        settingsFocus = r.action; menuAction(r.action); handler.postDelayed({ if (settingsView != null && hasWindowFocus()) fillSettings() }, 60) }.apply {
         orientation = LinearLayout.HORIZONTAL; setPadding(dp(16), dp(12), dp(16), dp(12))
     }
+    row.tag = "setting:${r.action}"
     row.setOnFocusChangeListener { v, has -> v.background = cardBg(strong, has); if (has) settingsFocus = r.action }
     val bubble = FrameLayout(this).apply { background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(Color.argb(38, 227, 184, 92)) } }
     bubble.addView(GoldIcon(this, r.icon, GOLD), FrameLayout.LayoutParams(dp(22), dp(22), Gravity.CENTER))
     row.addView(bubble, LinearLayout.LayoutParams(dp(42), dp(42)).apply { marginEnd = dp(16) })
     val texts = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-    texts.addView(TextView(this).apply { text = r.title; textSize = 17f; setTextColor(TEXT); setTypeface(typeface, Typeface.BOLD); maxLines = 1 })
+    val titleLine = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+    titleLine.addView(TextView(this).apply { text = r.title; textSize = 17f; setTextColor(TEXT); setTypeface(typeface, Typeface.BOLD); maxLines = 2 },
+        LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
+    if (isNewSetting(r.action)) titleLine.addView(newSettingBadge(), LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply { marginStart = dp(8) })
+    texts.addView(titleLine)
     texts.addView(TextView(this).apply { text = r.desc; textSize = 13f; setTextColor(MUTED); maxLines = 2; setPadding(0, dp(2), 0, 0) })
     row.addView(texts, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
     if (r.value.isNotEmpty()) row.addView(TextView(this).apply {

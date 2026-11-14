@@ -25,7 +25,7 @@ A replacement home screen for Android TV / Mi TV. It opens instantly, shows only
 - **No tracking.** Optional features use Android services (media access and timer overlays). Apps load in the background and icons are kept in memory, so the Home button is instant.
 
 ## Customize the home layout
-Open **Sahl TV → Settings → Home layout** to access the visual layout preview, upper dashboard card controls, and layout profiles. The visual editor lets you change app tile size, combined or separate rows, Favorites/Recent visibility, and which row comes first before applying. Its preview displays your actual Favorites and Recent app names. If Favorites is empty or hidden, Recent becomes the first available app row.
+Open **Sahl TV → Settings → Home screen & apps** to access the visual layout preview, upper dashboard card controls, and layout profiles. The visual editor lets you change app tile size, combined or separate rows, Favorites/Recent visibility, and which row comes first before applying. Its preview displays your actual Favorites and Recent app names. If Favorites is empty or hidden, Recent becomes the first available app row.
 
 Favorites, Recent, combined and All Apps share identical tile proportions at Compact (130 × 73), Normal (160 × 90), or Large (200 × 112). **The upper dashboard cards are not resized by app tile settings.** The upper-card editor supports show/hide, height presets and ordering. Its optional **Flexible cards** mode also allows cross-group reordering and full-width/half-width card arrangements, with a live layout-plan preview. The original dashboard stays the default; prayer times remain full width for legibility. Upper cards are not scaled down when you adjust app tiles.
 
@@ -71,7 +71,7 @@ Release signing uses the repository secrets `SIGNING_KEYSTORE_BASE64`, `SIGNING_
 [MIT](../LICENSE). Contact: alysherif1309@gmail.com
 
 ## 📱 Phone remote (v1.4)
-Open Settings → Phone remote → Pair a phone to open a temporary pairing window. Open the shown address (http://TV-IP:8765) on a phone on the same Wi-Fi and enter the 6-digit code.
+Open Settings → Tools & connection → Phone remote → Pair a phone to open a temporary pairing window. Open the shown address (http://TV-IP:8765) on a phone on the same Wi-Fi and enter the 6-digit code.
 Launch apps, play/pause/next, volume, Home, and type text into any search box.
 For typing, run once:
 ```
@@ -163,12 +163,12 @@ All four apps use the Thmanyah family (ثمانية), following its own guide: *
 
 **Numbers**: 123 or ١٢٣ for the clock, prayer times and countdown.
 
-**Text size** (Sahl TV → Settings → Look & comfort): Normal, Large or Extra large, for all four apps. The other apps read it from Sahl TV.
+**Text size** (Sahl TV → Settings → Appearance & comfort): Normal, Large or Extra large, for all four apps. The other apps read it from Sahl TV.
 The font's licence allows using it inside apps but not sharing the font files. So this repository keeps only an encrypted copy (`fonts-locked/`). The cloud build unlocks it with the `FONT_KEY` secret and packs it scrambled into each app (`tools/pack_fonts.py`, `Fonts.kt`). Without the secret, the apps build with the TV's normal font.
 Font © thmanyah Publishing and Distribution, used under thmanyah's Font License.
 
 ## 🔐 Phone remote security (v1.20)
-- **Pairing only on request:** on the TV, Settings → Phone remote → **Pair a phone** opens pairing for 3 minutes with a new one-time code. 5 wrong codes close it. Outside that window no code is accepted at all.
+- **Pairing only on request:** on the TV, Settings → Tools & connection → Phone remote → **Pair a phone** opens pairing for 3 minutes with a new one-time code. 5 wrong codes close it. Outside that window no code is accepted at all.
 - **One key per phone:** each phone gets its own random 256-bit key. The TV stores only its SHA-256 fingerprint, with the phone's name and when it was last used. Phones unused for 90 days are forgotten. **Paired phones** lets you remove any phone, or all of them.
 - **Home network only:** connections from outside private addresses are refused. Requests must use the TV's IP address, not a domain name, which blocks websites from reaching the TV through the phone's browser (DNS rebinding). Pages are sent with anti-framing and no-referrer headers.
 - The TV shows a message whenever a phone is paired.
@@ -183,7 +183,7 @@ Font © thmanyah Publishing and Distribution, used under thmanyah's Font License
 - Optional extra protection: in the repository settings, turn on **immutable releases**, so release files cannot be changed once published.
 
 ## 📊 Measured performance (v1.20)
-- **On the TV:** Settings → **Diagnostics** shows:
+- **On the TV:** Settings → System & updates → **Diagnostics** shows:
   - cold start and return-to-Home times, measured until the first frame;
   - smoothness (frames on time, slow, frozen, worst);
   - memory (Sahl TV's own use, free memory, low-RAM flag);
@@ -214,7 +214,7 @@ Font © thmanyah Publishing and Distribution, used under thmanyah's Font License
 - **Hijri dates remembered:** the Islamic calendar is slow to set up, and the fasting search looks up to 40 days ahead, so dates already computed are kept.
 - **Fonts on demand:** the reading font (Serif Text) and Light load the first time they are needed.
 - **Smarter cleaning:** your 3 most recent apps, anything used in the last 30 minutes, the app playing in the background, and the Sahl apps are never closed. **Auto clean is off by default**, because the measurements showed closed apps open 5–7× slower. The broom explains this the first time.
-- **Measured:** the emulator test now also reports *apps on screen after a cold start*. Settings → Diagnostics shows it on your TV.
+- **Measured:** the emulator test now also reports *apps on screen after a cold start*. Settings → System & updates → Diagnostics shows it on your TV.
 
 ## ✦ One family
 "Sahl apps" (Sahl TV Settings, and the menus of Quran, PDF and Files) lists the four apps with their versions. It opens an installed one, and installs a missing one through Sahl TV, the family's single, checked update centre.
@@ -222,7 +222,7 @@ Font © thmanyah Publishing and Distribution, used under thmanyah's Font License
 
 ### Floating timer (Android TV)
 
-Settings → Look & comfort → Floating timer. Use D-pad and OK to choose a duration
+Settings → Tools & connection → Floating timer. Use D-pad and OK to choose a duration
 (1–180 minutes), start, pause/resume, reset, show/hide, or choose one of four
 physical screen corners. Back closes menus. Reset restores the selected duration
 and leaves it paused. A completed countdown reads 00:00 on Home; reset to run again.
@@ -239,7 +239,7 @@ Home, then enable the option. Granting permission alone never enables it. Some T
 firmware has no permission screen or refuses overlays; Home-only mode still works.
 A non-exported foreground service owns a `TYPE_APPLICATION_OVERLAY` window with
 `FLAG_NOT_FOCUSABLE | FLAG_NOT_TOUCHABLE`, so videos and remote navigation continue
-normally. Control it through Home → Settings → Floating timer. Hide or disable the
+normally. Control it through Home → Settings → Tools & connection → Floating timer. Hide or disable the
 option to remove the overlay/service; completion also removes it. While paused
 and visible, the overlay stays until hidden. Position and visibility are saved
 separately from all existing dashboard, cards and layout profiles.
@@ -279,6 +279,27 @@ Permission screens vary by firmware. None of these are needed to try the basic l
 ## Arabic prayer overlay update
 
 Prayer overlays now use the packaged Thmanyah family and saved 123 / ١٢٣ numeral preference, including the Arabic UI and live countdown.
+
+
+## Settings categories, search and discovery
+
+Settings opens with seven category cards. Search matches names, descriptions,
+current values and category labels across all categories, in the selected UI language.
+Arabic search ignores vowel marks, tatweel and alef variants. Multi-word searches
+require every word to match. A no-results message appears when nothing matches.
+
+Back clears the search first, returns from a category second, and closes Settings
+from the category index. Search results open the original settings controls.
+
+A small localized **New / جديد** badge identifies newly introduced settings.
+Opening that setting acknowledges its discovery revision in local preferences;
+merely opening its category does not. Category badges remain while any contained
+setting is unseen. New discovery revisions are registered in
+`SettingsDiscovery.revision()` and are independent of APK build numbers.
+
+`SettingsDiscoveryTest` covers Arabic normalization, category completeness, global
+search, no-results behavior, Back navigation and badge acknowledgement. It runs
+in the existing 1 GB / 2 GB Android TV instrumentation matrix.
 
 ## Release version policy
 
