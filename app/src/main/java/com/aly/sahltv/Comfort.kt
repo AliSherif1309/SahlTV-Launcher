@@ -133,9 +133,10 @@ internal fun MainActivity.settingsSections(): List<Pair<String, List<SRow>>> {
         t("Family & safety", "العائلة والأمان") to listOf(
             SRow(GoldIcon.LOCK, t("PIN & locks", "الرمز السري والأقفال"), t("Lock apps or TV settings with a 4-digit PIN", "قفل التطبيقات أو إعدادات التلفاز برمز من 4 أرقام"), if (pinSet) t("${locked.size} locked", "${locked.size} مقفلة") else t("No PIN", "بدون رمز"), 10)),
         t("Phone & TV", "الهاتف والتلفاز") to listOf(
+            SRow(GoldIcon.PHONE, "Sahl Connect", t("Secure Android phone companion", "تطبيق الهاتف الآمن"), onOff(getSharedPreferences("connect", 0).getBoolean("enabled", false)), 44),
             SRow(GoldIcon.PHONE, t("Phone remote", "الريموت من الهاتف"), t("Control the TV and type from your phone's browser", "تحكّم بالتلفاز واكتب من متصفح هاتفك"), onOff(remoteOn), 15),
             SRow(GoldIcon.BROOM, t("Auto clean", "التنظيف التلقائي"), t("Only when memory is low; keeps your recent apps open (off: apps open faster)", "فقط عند انخفاض الذاكرة؛ يُبقي تطبيقاتك الأخيرة (متوقف: التطبيقات تفتح أسرع)"), onOff(autoClean), 9),
-            SRow(GoldIcon.STAR, t("Sahl apps", "تطبيقات سهل"), t("Sahl TV, Quran, PDF and Files: open them, or install a missing one", "سهل TV والقرآن وPDF والملفات: افتحها أو ثبّت الناقص منها"), "4", 30),
+            SRow(GoldIcon.STAR, t("Sahl apps", "تطبيقات سهل"), t("TV apps and the Sahl Connect phone companion", "تطبيقات التلفاز وتطبيق سهل Connect للهاتف"), "6", 30),
             SRow(GoldIcon.SCREEN, t("Diagnostics", "التشخيص"), t("Measured on this TV: start-up time, smoothness, memory, and whether cleaning really helps", "مقاس على هذا التلفاز: سرعة الفتح، السلاسة، الذاكرة، وهل يفيد التنظيف فعلًا"), "", 29),
             SRow(GoldIcon.UPDATE, t("Auto update", "التحديث التلقائي"), t("Get new versions of Sahl TV and Sahl Quran without searching", "احصل على الإصدارات الجديدة دون البحث عنها"), autoUpdName(), 20),
             SRow(GoldIcon.SAVE, t("Backup & restore", "النسخ الاحتياطي والاستعادة"), t("Save all settings to the Download folder, or bring them back", "حفظ كل الإعدادات في مجلد التنزيلات أو استعادتها"), "", 14)),
@@ -148,7 +149,7 @@ internal fun MainActivity.settingsSections(): List<Pair<String, List<SRow>>> {
         t("Appearance & comfort", "المظهر والراحة") to listOf(5, 18, 34, 19, 7, 25, 24, 12),
         t("Language & clock", "اللغة والساعة") to listOf(0, 26, 3),
         t("Prayer & Islamic", "الصلاة والمناسبات") to listOf(4, 21, 8, 28, 6, 32, 33, 31, 27, 23),
-        t("Tools & connection", "الأدوات والاتصال") to listOf(43, 15, 22, 30),
+        t("Tools & connection", "الأدوات والاتصال") to listOf(43, 44, 15, 22, 30),
         t("Family & safety", "العائلة والأمان") to listOf(10),
         t("System & updates", "النظام والتحديثات") to listOf(9, 29, 20, 14, 17)
     ).map { (title, actions) -> title to actions.map { rows.getValue(it) } }

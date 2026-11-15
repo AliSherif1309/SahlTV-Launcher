@@ -30,7 +30,7 @@ class DocumentationReviewTest(unittest.TestCase):
             self.assertFalse(review.review_changes(paths, '')[2])
 
     def test_build_workflow_and_assets_need_review(self):
-        for path in ['app/src/main/assets/whatsnew.json', 'settings.gradle.kts', '.github/workflows/build.yml']:
+        for path in ['app/src/main/assets/whatsnew.json', 'settings.gradle.kts', '.github/workflows/build.yml', 'connect/src/main/ConnectActivity.kt', 'connect-protocol/src/main/Protocol.java']:
             self.assertTrue(review.review_changes([path], '')[2])
 
     def test_refresh_replaces_only_generated_region_and_is_idempotent(self):

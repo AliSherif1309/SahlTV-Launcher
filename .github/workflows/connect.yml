@@ -1,0 +1,49 @@
+name: Sahl Connect phone validation
+on:
+  workflow_call:
+    inputs:
+      artifact:
+        required: true
+        type: string
+      source_sha:
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  phone:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_sha }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.artifact }}
+          path: candidate
+      - name: Check packaged scanner dependencies and font exclusions
+        run: python3 tools/check_connect_apk.py candidate/SahlConnect.apk
+      - name: Enable emulator hardware acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 29
+          target: default
+          arch: x86_64
+          profile: pixel_2
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot -camera-back emulated -camera-front none
+          script: |
+            adb install candidate/connect/build/outputs/apk/debug/connect-debug.apk
+            adb install candidate/connect/build/outputs/apk/androidTest/debug/connect-debug-androidTest.apk
+            timeout --kill-after=5s 180s adb shell am instrument -w -r com.aly.sahlconnect.test/androidx.test.runner.AndroidJUnitRunner | tee phone-instrumentation.txt
+            grep -q 'OK (2 tests)' phone-instrumentation.txt
+            ! grep -Eq 'FAILURES!!!|INSTRUMENTATION_FAILED|INSTRUMENTATION_ABORTED|Process crashed' phone-instrumentation.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: validation-phone
+          path: phone-instrumentation.txt

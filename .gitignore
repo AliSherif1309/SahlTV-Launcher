@@ -13,3 +13,7 @@ signing/
 *.woff
 *.woff2
 **/src/main/assets/f/
+
+# Python review tools
+__pycache__/
+*.pyc

@@ -30,8 +30,8 @@ class RemoteKeyboard : InputMethodService() {
         }
         val ip = RemoteServer.ip() ?: "…"
         return TextView(this).apply {
-            text = if (ar) "📱  اكتب من هاتفك:  http://$ip:${RemoteServer.PORT}   ·   زر الرجوع للإغلاق"
-                   else "📱  Type on your phone:  http://$ip:${RemoteServer.PORT}   ·   Back to close"
+            text = if (ar) "📱  اكتب عبر Sahl Connect أو متصفح الهاتف: http://$ip:${RemoteServer.PORT}   ·   رجوع للإغلاق"
+                   else "📱  Type in Sahl Connect or phone browser: http://$ip:${RemoteServer.PORT}   ·   Back to close"
             textSize = 16f; setTextColor(Color.WHITE); gravity = Gravity.CENTER
             setBackgroundColor(Color.parseColor("#E60E1A24"))
             val p = (14 * resources.displayMetrics.density).toInt()

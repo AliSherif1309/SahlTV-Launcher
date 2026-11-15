@@ -54,3 +54,8 @@ jobs:
             instrumentation-*.txt
             timer-instrumentation-*.txt
           if-no-files-found: error
+  connect:
+    uses: ./.github/workflows/connect.yml
+    with:
+      artifact: ${{ inputs.artifact }}
+      source_sha: ${{ inputs.source_sha }}

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Sahl TV</string>
+    <string name="app_name" translatable="false">Sahl TV</string>
     <string name="timer_name">Floating timer</string>
     <string name="timer_notification">Open Sahl TV Settings → Floating timer to pause, reset or hide.</string>
     <string name="timer_overlay_failed">Overlay unavailable on this TV. The timer still works in Sahl TV.</string>

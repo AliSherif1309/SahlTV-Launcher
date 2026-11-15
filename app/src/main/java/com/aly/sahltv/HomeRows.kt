@@ -96,7 +96,7 @@ internal fun MainActivity.render(keepFocus: Boolean, force: Boolean = false) {
         (favApps.map { it to "fav" } + recApps.map { it to "rec" })
             .filter { (app, _) -> seen.add(app.pkg) }
     } else emptyList()
-    section("fav", style + listOf(favApps, recApps, favApps.map { it.pkg in locks }, merged)) {
+    section("fav", style + listOf(favApps, if (homeCombined) recApps else emptyList<App>(), favApps.map { it.pkg in locks }, merged)) {
         if ("combined" in visibleSections) {
             if (merged.isNotEmpty()) {
                 addView(rowTitle(if (favApps.isNotEmpty()) t("Favorites & Recent", "المفضلة والمستخدمة مؤخرًا")

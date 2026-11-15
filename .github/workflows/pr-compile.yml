@@ -43,12 +43,14 @@ jobs:
           python3 tools/pack_fonts.py
       - name: Build all debug apps and instrumentation tests
         run: |
-          gradle assembleDebug :app:assembleDebugAndroidTest :timer:assembleDebug :timer:assembleDebugAndroidTest --no-daemon --stacktrace
+          gradle assembleDebug :connect-protocol:test :app:assembleDebugAndroidTest :timer:assembleDebugAndroidTest :connect:assembleDebugAndroidTest :app:lintDebug :connect:lintDebug --no-daemon --stacktrace
           cp app/build/outputs/apk/debug/app-debug.apk SahlTV.apk
           cp quran/build/outputs/apk/debug/quran-debug.apk SahlQuran.apk
           cp pdf/build/outputs/apk/debug/pdf-debug.apk SahlPDF.apk
           cp files/build/outputs/apk/debug/files-debug.apk SahlFiles.apk
           cp timer/build/outputs/apk/debug/timer-debug.apk SahlTimer.apk
+          cp connect/build/outputs/apk/debug/connect-debug.apk SahlConnect.apk
+          python3 tools/check_connect_apk.py SahlConnect.apk
       - name: Upload test APK
         uses: actions/upload-artifact@v4
         with:
@@ -59,6 +61,8 @@ jobs:
             app/build/outputs/apk/androidTest/debug/*.apk
             timer/build/outputs/apk/debug/*.apk
             timer/build/outputs/apk/androidTest/debug/*.apk
+            connect/build/outputs/apk/debug/*.apk
+            connect/build/outputs/apk/androidTest/debug/*.apk
   validate:
     needs: compile
     uses: ./.github/workflows/validate.yml

@@ -127,22 +127,41 @@ To keep it visible while watching, select **Above apps**, grant the display-over
 
 Open **Sahl apps** to find the rest of the family. Sahl TV offers checked installation and updates for Sahl Timer. The standalone app has Arabic and English labels and does not require Sahl TV to run.
 
-## One Sahl family · five TV apps
+## Sahl Connect · a standalone Android phone app
 
-Install only the apps you want. **Sahl apps** lists installed versions and opens companion apps; Sahl TV handles checked installs and updates.
+**Sahl Connect** joins the Sahl family as a separate phone app paired with the **main Sahl TV launcher**. It replaces the need for the separate Sahl TV Connect Preview launcher. Both devices need Android 8.0+ and the same private IPv4 Wi-Fi network.
+
+1. Update the main **Sahl TV** launcher. Open **Settings → Tools & connection → Sahl Connect** (also available through **Sahl apps**).
+2. Choose **Get phone app** and scan the public download QR with your phone camera. Install `SahlConnect.apk` on the **phone**, then choose **Options → Turn Sahl Connect on → Pair a phone** on the TV. Reopen Options once the encrypted connection is ready.
+3. In Sahl Connect on the phone, choose **Scan TV QR** or enter the full pairing code. Keep the private pairing QR open on the TV. It expires after three minutes and works once.
+4. Follow **Permissions & setup** for optional navigation and typing. File receiving requires separate TV consent; supported files up to 8 MB go to `Download/Sahl Connect` on Android 10+ TVs.
+
+Separate Favorites keep their focus when Recent apps change.
+
+Connect is off by default. It supports navigation, typing into an active TV field, media/volume controls, app launching, favourite add/remove and basic diagnostics. Some TV apps do not expose usable focus controls. Connect uses encrypted, certificate-pinned connections; the existing browser remote remains a separate option.
+
+**Switching from the preview:** turn Connect off in the preview launcher, update the main Sahl TV, install the signed phone app, and pair again with the main launcher. If Android reports a phone-app signature conflict, uninstall the debug-signed phone preview first; this clears its pairing. Enable the main launcher's navigation service and keyboard if wanted. Once the main connection works, uninstall **Sahl TV Connect Preview** (`com.aly.sahltv.connectpreview`), keeping **Sahl TV** as your Home app. This change does not automatically uninstall anything from your devices.
+
+Phone updates are downloaded using **Download latest Sahl Connect** in the phone app; the TV installer does not install phone APKs. See [Connect setup, migration and limitations](docs/SAHL_CONNECT.md).
+
+## One Sahl family · five TV apps and Sahl Connect
+
+Install only the apps you want. **Sahl apps** lists installed TV versions and opens companion apps; Sahl TV handles checked TV installs and updates. **Sahl Connect is installed on an Android phone**, with connection support built into the main Sahl TV launcher. Its family entry opens setup on Sahl TV and phone-install instructions in other TV apps.
 
 <!-- BEGIN AUTO:APP_VERSIONS -->
 | App | Source version | Minimum Android API | Download |
 | --- | --- | --- | --- |
-| Sahl TV | 1.25.1 | 26 | [SahlTV.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlTV.apk) |
-| Sahl Quran | 1.10.2 | 26 | [SahlQuran.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlQuran.apk) |
-| Sahl PDF | 2.5.2 | 26 | [SahlPDF.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlPDF.apk) |
-| Sahl Files | 1.5.2 | 26 | [SahlFiles.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlFiles.apk) |
-| Sahl Timer | 1.0.0 | 26 | [SahlTimer.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlTimer.apk) |
+| Sahl TV | 1.26.0 | 26 | [SahlTV.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlTV.apk) |
+| Sahl Quran | 1.11.0 | 26 | [SahlQuran.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlQuran.apk) |
+| Sahl PDF | 2.6.0 | 26 | [SahlPDF.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlPDF.apk) |
+| Sahl Files | 1.6.0 | 26 | [SahlFiles.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlFiles.apk) |
+| Sahl Timer | 1.1.0 | 26 | [SahlTimer.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlTimer.apk) |
+| Sahl Connect (Android phone) | 1.0.0 | 26 | [SahlConnect.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlConnect.apk) |
 <!-- END AUTO:APP_VERSIONS -->
 
 Versions above describe the source in this branch; download links point to the latest **published, validated** release and may lag an unmerged change.
 
+- **Sahl Connect (phone):** Encrypted pairing with the main launcher, optional navigation and typing, media/volume, file sending and diagnostics.
 - **Sahl Quran:** Mushaf and large-text views, Surah/Juz/page navigation, bookmarks, reading timer, daily goals, family readers and your own Mushaf PDF.
 - **Sahl PDF:** Book covers, Continue reading, one/two-page view, RTL books, zoom, paper themes, bookmarks and PDF upload from your phone.
 - **Sahl Files:** Internal/USB storage, copy/move/rename/delete, picture/text viewing and receiving files from your phone.
@@ -151,9 +170,9 @@ Versions above describe the source in this branch; download links point to the l
 
 On the TV, choose **Updates → Check for updates**. Auto-update preferences offer Off, Tell me, or Download & install; Android may still require you to confirm installation.
 
-App and build-input changes on `main` produce releases; documentation-only changes do not. Versions use **major.minor.patch**: fixes increase patch, features increase minor, and breaking changes increase major. CI requires a higher version for each changed app (all five for shared code), and keeps SahlTV’s What’s new version in sync. Build numbers still increase for Android update compatibility; rebuilding the same source can retain its release version.
+App and build-input changes on `main` produce releases; documentation-only changes do not. Versions use **major.minor.patch**: fixes increase patch, features increase minor, and breaking changes increase major. CI requires a higher version for each changed app (all six for shared code), and keeps SahlTV’s What’s new version in sync. Build numbers still increase for Android update compatibility; rebuilding the same source can retain its release version.
 
-Every main-branch release builds all five apps, runs source checks, and validates candidate APKs on **1 GB and 2 GB Android TV emulators** before publication. Numbered releases contain APKs, SHA-256 fingerprints and performance reports. [View releases](https://github.com/AliSherif1309/SahlTV-Launcher/releases) · [Validation details and recovery](docs/REFERENCE.md#-updates-you-can-trust-and-recover-v120).
+Every main-branch release builds all six apps, runs source and protocol checks, and validates candidate APKs on **1 GB and 2 GB Android TV emulators** plus an **Android phone emulator** before publication. The phone APK is signed with the family release key and checked for scanner dependencies and excluded font assets. Numbered releases contain APKs, SHA-256 fingerprints and performance reports. [View releases](https://github.com/AliSherif1309/SahlTV-Launcher/releases) · [Validation details and recovery](docs/REFERENCE.md#-updates-you-can-trust-and-recover-v120).
 
 ## Build and contribute
 

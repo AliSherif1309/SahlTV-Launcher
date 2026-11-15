@@ -15,12 +15,12 @@ android {
 
     defaultConfig {
         applicationId = "com.aly.sahltv"
-        testInstrumentationRunner = "android.test.InstrumentationTestRunner"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         minSdk = 26
         targetSdk = 34
         // Every cloud build gets a higher number, so a new APK installs over the old one.
         versionCode = 100 + (System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 0)
-        versionName = "1.25.1"
+        versionName = "1.26.0"
     }
 
     signingConfigs {
@@ -49,10 +49,13 @@ android {
         jvmTarget = "17"
     }
 }
-// No external libraries: everything (sensors, GPS, World Magnetic Model) is built into Android.
+// Android framework UI, shared Sahl helpers and local QR generation for Sahl Connect.
 
 dependencies {
     implementation(project(":common"))   // the shared Sahl family look and helpers
+    implementation("com.google.zxing:core:3.5.3") // local pairing and download QR codes
+    androidTestImplementation("androidx.test:runner:1.5.2")
+    androidTestImplementation("androidx.test.ext:junit:1.1.5")
 }
 
 
