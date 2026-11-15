@@ -56,7 +56,7 @@ import com.aly.sahltv.MainActivity.*
 
 // Launcher menus (the ☰ options and their sub-menus).  (part of the Sahl TV home screen, split out of MainActivity)
 
-internal fun MainActivity.dialog() = FontDialog(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+internal fun MainActivity.dialog() = FontDialog(this)
 
 internal fun MainActivity.appMenu(a: App, row: String) {
     val fav = favorites

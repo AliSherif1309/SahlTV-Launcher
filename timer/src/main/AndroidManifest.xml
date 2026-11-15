@@ -7,7 +7,7 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <application android:name="com.aly.sahl.common.SahlApp" android:allowBackup="false"
         android:label="@string/app_name" android:icon="@drawable/ic_timer" android:banner="@drawable/banner"
-        android:supportsRtl="true" android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
+        android:supportsRtl="true" android:theme="@style/SahlTheme">
         <activity android:name=".TimerActivity" android:exported="true" android:screenOrientation="landscape">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

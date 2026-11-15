@@ -1,7 +1,6 @@
 package com.aly.sahl.common
 
 import android.app.Activity
-import android.R as AndroidR
 import android.content.Intent
 import android.os.Build
 import android.content.res.Configuration
@@ -43,7 +42,7 @@ object Family {
             if (m.pkg == "com.aly.sahlconnect" && television) {
                 items += t("📱  Sahl Connect · Android phone app\n      Pair with the main Sahl TV launcher", "📱  سهل Connect · تطبيق هاتف Android\n      اربطه بواجهة سهل TV الرئيسية") to {
                     if (onConnect != null) onConnect()
-                    else FontDialog(a, AndroidR.style.Theme_DeviceDefault_Dialog_Alert)
+                    else FontDialog(a)
                         .setTitle("Sahl Connect").setMessage(t("Install SahlConnect.apk on your Android phone. On the TV open Sahl TV → Settings → Tools & connection → Sahl Connect.\n\nPhone download: $CONNECT_DOWNLOAD", "ثبّت SahlConnect.apk على هاتف Android. على التلفاز افتح سهل TV ← الإعدادات ← الأدوات والاتصال ← سهل Connect.\n\nتنزيل الهاتف: $CONNECT_DOWNLOAD"))
                         .setPositiveButton(t("Close", "إغلاق"), null).show()
                 }

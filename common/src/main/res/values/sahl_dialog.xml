@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="SahlTheme" parent="android:style/Theme.DeviceDefault.NoActionBar">
+        <item name="android:colorAccent">#E3B85C</item>
+        <item name="android:colorControlActivated">#E3B85C</item>
+        <item name="android:colorControlNormal">#8FA39C</item>
+        <item name="android:colorBackground">#13241F</item>
+        <item name="android:textColorPrimary">#EEF3F1</item>
+        <item name="android:textColorSecondary">#8FA39C</item>
+        <item name="android:alertDialogTheme">@style/SahlDialogTheme</item>
+    </style>
+    <!-- Match common.Ui.C and the custom Dlg panels used by Files and PDF. -->
+    <style name="SahlDialogTheme" parent="android:style/Theme.Material.Dialog.Alert">
+        <item name="android:colorAccent">#E3B85C</item>
+        <item name="android:colorBackground">#13241F</item>
+        <item name="android:windowBackground">@drawable/sahl_dialog_panel</item>
+        <item name="android:textColorPrimary">@color/sahl_dialog_text</item>
+        <item name="android:textColorSecondary">#8FA39C</item>
+        <item name="android:textColorAlertDialogListItem">@color/sahl_dialog_text</item>
+        <item name="android:listSelector">@drawable/sahl_dialog_focus</item>
+        <item name="android:colorControlNormal">#8FA39C</item>
+        <item name="android:colorControlActivated">#E3B85C</item>
+        <item name="android:buttonBarButtonStyle">@style/SahlDialogButton</item>
+    </style>
+    <style name="SahlDialogButton" parent="android:style/Widget.Material.Button.Borderless">
+        <item name="android:textColor">@color/sahl_dialog_button_text</item>
+        <item name="android:background">@drawable/sahl_dialog_focus</item>
+        <item name="android:minHeight">48dp</item>
+        <item name="android:paddingLeft">16dp</item>
+        <item name="android:paddingRight">16dp</item>
+    </style>
+</resources>

@@ -1,6 +1,7 @@
 {
-  "version": "1.26.0",
+  "version": "1.26.1",
   "en": [
+    "Sahl settings throughout the app family: deep-green panels, gold focus and matching confirmation dialogs.",
     "Sahl Connect joins the family: pair the standalone Android phone app with the main Sahl TV launcher.",
     "Encrypted pairing, optional TV navigation and phone typing, and separately enabled file receiving.",
     "The separate Sahl TV Connect Preview is retired; pair again in the main launcher.",
@@ -10,6 +11,7 @@
     "Floating timer with optional cross-app overlay and improved Arabic prayer overlays"
   ],
   "ar": [
+    "إعدادات بطابع سهل في عائلة التطبيقات: لوحات خضراء داكنة وتركيز ذهبي ونوافذ تأكيد متناسقة.",
     "انضم سهل Connect إلى العائلة: اربط تطبيق الهاتف المستقل بواجهة سهل TV الرئيسية.",
     "اقتران مشفّر وتحكّم وكتابة اختياريان واستقبال ملفات بموافقة منفصلة.",
     "لم تعد هناك حاجة إلى نسخة سهل TV Connect التجريبية؛ أعد الاقتران بالواجهة الرئيسية.",
