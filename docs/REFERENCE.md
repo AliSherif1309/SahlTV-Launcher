@@ -306,3 +306,12 @@ in the existing 1 GB / 2 GB Android TV instrumentation matrix.
 Use `major.minor.patch` for each app’s `versionName`. Increase patch for fixes, minor for features (reset patch to zero), and major for breaking changes (reset minor and patch). Each PR changing an app must increase its version compared with the target branch. Shared code, fonts, dependencies and shipped asset generators require bumps for all four apps. Keep `app/src/main/assets/whatsnew.json` at the Sahl TV version and describe changes in English and Arabic. CI checks this before compilation and on production pushes. Run `python3 tools/check_versions.py --base origin/main` locally after committing changes.
 
 Android `versionCode` remains the existing increasing build number, preserving installed-app upgrade compatibility and the updater’s JSON format. Tags stay `build-N` so existing download, recovery and performance tools keep working; release titles show the semantic version and build number. Documentation-only pushes do not publish APKs. Manual recovery or reruns can publish the same source version with a newer build number; recovery retains the recovered source’s own version and notes.
+
+
+## Sahl Timer companion app
+
+Sahl Timer (`com.aly.sahltimer`, `SahlTimer.apk`, Android 8+) is a standalone family member. Launch it from the TV apps list. Choose 5, 10, 15, 25 or 30 minutes directly, or More for the full 1–180 minute presets. Start, Pause/Resume, Reset and Start again share one screen; replacing a running or partially elapsed timer requires confirmation. D-pad focus stays on the selected control during countdown updates. Labels follow the system Arabic/English locale.
+
+Above apps is off by default. Enable overlay permission through its help dialog, return, then explicitly turn the option on. Choose one of four corners. The foreground overlay is non-interactive and does not take focus from playback; open Sahl Timer for controls. No alarm sound, wake lock, automatic TV shutdown or boot auto-start is provided. Paused overlays remain visible; completed overlays close. Saved remaining time survives restart but needs manual resume after a reboot. Firmware restrictions and protected content can hide overlays. The existing Sahl TV timer is independent and retained for compatibility.
+
+Sahl apps lists the fifth family member in every companion. Sahl TV checks SahlTimer.apk package, signing identity and release fingerprint through its normal installer. Release and emulator validation include the timer APK before publication.

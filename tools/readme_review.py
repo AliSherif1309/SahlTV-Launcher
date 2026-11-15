@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 START = '<!-- BEGIN AUTO:APP_VERSIONS -->'
 END = '<!-- END AUTO:APP_VERSIONS -->'
 NAMES = {'app': ('Sahl TV', 'SahlTV.apk'), 'quran': ('Sahl Quran', 'SahlQuran.apk'),
-         'pdf': ('Sahl PDF', 'SahlPDF.apk'), 'files': ('Sahl Files', 'SahlFiles.apk')}
+         'pdf': ('Sahl PDF', 'SahlPDF.apk'), 'files': ('Sahl Files', 'SahlFiles.apk'), 'timer': ('Sahl Timer', 'SahlTimer.apk')}
 DOWNLOAD = 'https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/'
 
 
@@ -141,3 +141,4 @@ def main():
 
 if __name__ == '__main__':
     sys.exit(main())
+

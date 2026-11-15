@@ -13,4 +13,5 @@ dependencyResolutionManagement {
     }
 }
 rootProject.name = "SahlTV"
-include(":common", ":app", ":quran", ":pdf", ":files")
+include(":common", ":app", ":quran", ":pdf", ":files", ":timer")
+

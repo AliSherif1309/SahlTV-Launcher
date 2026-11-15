@@ -3,7 +3,7 @@ from check_versions import affected, check, version
 
 
 def sources(value):
-    return dict.fromkeys(('app', 'quran', 'pdf', 'files'), f'versionName = "{value}"')
+    return dict.fromkeys(('app', 'quran', 'pdf', 'files', 'timer'), f'versionName = "{value}"')
 
 
 class Versions(unittest.TestCase):
@@ -18,7 +18,7 @@ class Versions(unittest.TestCase):
 
     def test_shared_and_generated_inputs(self):
         for path in ('common/src/main/Test.kt', 'tools/make_ayat.py', 'gradle.properties'):
-            self.assertEqual(len(affected([path])), 4)
+            self.assertEqual(len(affected([path])), 5)
 
     def test_docs_and_tests(self):
         self.assertFalse(affected(['README.md', 'docs/REFERENCE.md', 'app/src/androidTest/Test.kt', 'tools/test_versions.py']))
@@ -29,3 +29,4 @@ class Versions(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+

@@ -6,7 +6,7 @@ from pathlib import Path
 import re
 import subprocess
 
-MODULES = ('app', 'quran', 'pdf', 'files')
+MODULES = ('app', 'quran', 'pdf', 'files', 'timer')
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -38,6 +38,8 @@ def check(paths, old, current):
     errors = []
     for module in sorted(affected(paths)):
         name, number = version(current[module])
+        if not old.get(module):
+            continue  # A new module has no previous release.
         previous, prior = version(old[module])
         if name.count('.') != 2 or number <= prior:
             errors.append(f'{module}: bump versionName above {previous} using major.minor.patch (found {name})')
@@ -53,7 +55,10 @@ def main():
     base = git('rev-parse', '--verify', args.base + '^{commit}')
     paths = git('diff', '--name-only', base, 'HEAD', '--').splitlines()
     current = {m: (ROOT / m / 'build.gradle.kts').read_text() for m in MODULES}
-    old = {m: git('show', f'{base}:{m}/build.gradle.kts') for m in MODULES}
+    old = {}
+    for m in MODULES:
+        result = subprocess.run(['git', 'show', f'{base}:{m}/build.gradle.kts'], cwd=ROOT, text=True, capture_output=True)
+        old[m] = result.stdout if result.returncode == 0 else ''
     errors = check(paths, old, current)
     notes = json.loads((ROOT / 'app/src/main/assets/whatsnew.json').read_text())
     if notes['version'] != version(current['app'])[0]:
@@ -65,3 +70,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+

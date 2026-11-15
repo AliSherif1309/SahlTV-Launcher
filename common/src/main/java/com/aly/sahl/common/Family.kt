@@ -14,6 +14,7 @@ object Family {
     class Member(val pkg: String, val icon: String, val en: String, val ar: String, val whatEn: String, val whatAr: String)
 
     val members = listOf(
+        Member("com.aly.sahltimer", "⏱", "Sahl Timer", "سهل · المؤقت", "A simple countdown, visible above your apps", "عد تنازلي بسيط يظهر فوق تطبيقاتك"),
         Member("com.aly.sahltv", "🏠", "Sahl TV", "سهل TV", "The home screen: prayer times, your apps, calm design", "الشاشة الرئيسية: مواقيت الصلاة وتطبيقاتك بتصميم هادئ"),
         Member("com.aly.sahlquran", "📖", "Sahl Quran", "سهل · القرآن", "Read the Mushaf, with a reading timer", "قراءة المصحف مع مؤقت القراءة"),
         Member("com.aly.sahlpdf", "📚", "Sahl PDF", "سهل · كتب", "Your books on the TV, sent once from the phone", "كتبك على التلفاز، تُرسل مرة واحدة من الهاتف"),
@@ -60,3 +61,4 @@ object Family {
     /** Android version of this TV, shown nowhere but useful in reports. */
     val android: String get() = "Android ${Build.VERSION.RELEASE}"
 }
+
