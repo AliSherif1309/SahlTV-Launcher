@@ -64,7 +64,7 @@ To undo, set the three values back to `1`.
 Home Layout 2.2 adds optional **Recent count** (3, 6 or 8) and **tile spacing** (tight, normal or spacious) controls inside the staged Visual layout editor. Defaults remain six Recent apps and normal 6 dp tile margins; card dimensions and upper dashboard proportions stay unchanged. These settings are included in saved layout profiles and reset with Home layout.
 
 ## Build
-Kotlin and Android framework APIs, with six Gradle modules (`app`, `quran`, `pdf`, `files`, `timer`, `common`). App and build-input changes on `main` build release APKs with GitHub Actions and publishes a numbered release plus the `latest` update pointer. Publication waits for source regression checks and candidate validation on Android TV API 29 emulators with 2 GB and 1 GB RAM. Both test the exact candidate APK artifact, not the mutable latest release. Pull requests build all five debug apps and run the same validation.
+Kotlin, Android framework APIs and local QR scanning/encoding libraries, with eight Gradle modules (`app`, `quran`, `pdf`, `files`, `timer`, `connect`, `common`, `connect-protocol`). App and build-input changes on `main` build release APKs with GitHub Actions and publishes a numbered release plus the `latest` update pointer. Publication waits for source regression checks and candidate validation on Android TV API 29 emulators with 2 GB and 1 GB RAM. Both test the exact candidate APK artifact, not the mutable latest release. Pull requests build all six debug apps and run the same TV validation plus Connect phone-emulator tests, protocol tests and lint.
 Release signing uses the repository secrets `SIGNING_KEYSTORE_BASE64`, `SIGNING_STORE_PASSWORD`, `SIGNING_KEY_PASSWORD` and `SIGNING_KEY_ALIAS`.
 
 ## License

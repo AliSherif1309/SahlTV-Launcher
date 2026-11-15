@@ -5,7 +5,6 @@ import android.R as AndroidR
 import android.content.Intent
 import android.os.Build
 import android.content.res.Configuration
-import android.net.Uri
 
 /**
  * "Sahl apps": the same screen across the Sahl family. Shows the family, which ones are on this TV (with version),

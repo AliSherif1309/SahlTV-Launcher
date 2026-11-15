@@ -49,7 +49,7 @@ android {
         jvmTarget = "17"
     }
 }
-// No external libraries: everything (sensors, GPS, World Magnetic Model) is built into Android.
+// Android framework UI, shared Sahl helpers and local QR generation for Sahl Connect.
 
 dependencies {
     implementation(project(":common"))   // the shared Sahl family look and helpers
