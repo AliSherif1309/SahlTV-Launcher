@@ -126,7 +126,7 @@ internal fun MainActivity.pinPad(title: String, check: (String, android.app.Dial
             text = k; textSize = 22f; setTextColor(TEXT); gravity = Gravity.CENTER
             isFocusable = true; isClickable = true; defaultFocusHighlightEnabled = false
             val n = GradientDrawable().apply { setColor(Color.parseColor("#1AFFFFFF")); cornerRadius = dp(10).toFloat() }
-            val f = GradientDrawable().apply { setColor(Color.WHITE); cornerRadius = dp(10).toFloat() }
+            val f = GradientDrawable().apply { setColor(GOLD); cornerRadius = dp(10).toFloat() }
             background = n
             setOnFocusChangeListener { v, has -> v.background = if (has) f else n; (v as TextView).setTextColor(if (has) BG_TOP else TEXT) }
             setOnClickListener {

@@ -6,7 +6,7 @@
     <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
     <application android:label="Sahl Connect" android:icon="@drawable/connect_icon"
         android:allowBackup="false" android:supportsRtl="true" android:usesCleartextTraffic="false"
-        android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
+        android:theme="@style/SahlTheme">
         <activity android:name=".ConnectScannerActivity" android:exported="false"
             android:screenOrientation="fullSensor"
             android:theme="@style/zxing_CaptureTheme" />

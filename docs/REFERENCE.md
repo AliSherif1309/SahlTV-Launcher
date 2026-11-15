@@ -328,3 +328,9 @@ Both devices require Android 8+, on the same private IPv4 Wi-Fi. Navigation requ
 For preview migration, turn off the preview endpoint, update the main launcher, replace the debug phone preview if its signing key conflicts, and pair again. Only uninstall the preview launcher after the main connection works. Navigation and keyboard permissions must be enabled for the main launcher. Existing preview credentials do not migrate. See [complete setup, migration, security and limits](SAHL_CONNECT.md).
 
 The phone APK shares release signing and publication with the family, with version/fingerprint metadata. Phone updates use **Download latest Sahl Connect** and Android's installer; the TV updater installs only TV packages. Release validation includes protocol tests, TV integration and phone scanner/setup tests plus checks that scanner runtime classes are packaged and TV fonts are absent from the phone APK.
+
+## Shared Sahl settings theme
+
+Sahl TV, Quran, PDF, Files and Timer use the same deep-green settings panels, soft-white text, gold headings and rounded corners. Focused choices and action buttons use gold with dark text for remote navigation. Settings lists, single-choice selectors, confirmation messages and input dialogs follow this appearance. Quran paper and PDF reading themes still control reading pages separately.
+
+Sahl Connect's phone setup and confirmation dialogs use the same Sahl colours with the phone's system fonts. TV apps use the packaged Sahl typography when available, falling back to system fonts in builds without the font assets. Existing shared text-size and night-style behavior still applies on TV. Android-owned permission, accessibility, keyboard and installer screens use Android's own theme.

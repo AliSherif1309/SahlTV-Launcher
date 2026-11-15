@@ -599,7 +599,7 @@ class QuranActivity : Activity() {
 
     // ------------------------------------------------------------------ menu
 
-    private fun dialog() = FontDialog(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+    private fun dialog() = FontDialog(this)
     private fun toast(s: String) = Toast.makeText(this, s, Toast.LENGTH_SHORT).show()
 
     private val bookmarks: MutableList<Pair<Int, Int>>

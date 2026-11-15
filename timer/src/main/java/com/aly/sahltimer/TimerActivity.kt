@@ -1,7 +1,6 @@
 package com.aly.sahltimer
 
 import android.app.Activity
-import android.app.AlertDialog
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -54,7 +53,7 @@ class TimerActivity : Activity() {
         for (m in intArrayOf(5, 10, 15, 25, 30)) presets.button(t("$m min", "$m د")) { chooseDuration(m) }
         presets.button(t("More…", "المزيد…")) {
             val minutes = intArrayOf(1, 5, 10, 15, 25, 30, 45, 60, 90, 120, 180)
-            AlertDialog.Builder(this).setTitle(t("Duration", "المدة"))
+            FontDialog(this).setTitle(t("Duration", "المدة"))
                 .setItems(minutes.map { t("$it minutes", "$it دقيقة") }.toTypedArray()) { _, i -> chooseDuration(minutes[i]) }.show()
         }
         val controls = row()
@@ -68,7 +67,7 @@ class TimerActivity : Activity() {
         overlay = options.button("") { toggleOverlay() }
         position = options.button("") {
             val names = cornerNames()
-            AlertDialog.Builder(this).setTitle(t("Timer corner", "موضع المؤقت"))
+            FontDialog(this).setTitle(t("Timer corner", "موضع المؤقت"))
                 .setSingleChoiceItems(names, TimerStore(this).position) { d, i ->
                     change { position = i }; d.dismiss()
                 }.show()
@@ -85,7 +84,7 @@ class TimerActivity : Activity() {
         fun apply() { change { state.select(minutes) } }
         val store = TimerStore(this)
         if (store.state.running || store.state.left != store.state.duration && store.state.left > 0)
-            AlertDialog.Builder(this).setTitle(t("Replace this countdown?", "استبدال العد التنازلي؟"))
+            FontDialog(this).setTitle(t("Replace this countdown?", "استبدال العد التنازلي؟"))
                 .setMessage(t("The new duration will be ready to start.", "ستكون المدة الجديدة جاهزة للبدء."))
                 .setPositiveButton(t("Replace", "استبدال")) { _, _ -> apply() }
                 .setNegativeButton(t("Cancel", "إلغاء"), null).show()
@@ -100,7 +99,7 @@ class TimerActivity : Activity() {
     private fun toggleOverlay() {
         if (TimerStore(this).overlay) { change { overlay = false }; return }
         if (Settings.canDrawOverlays(this)) { change { overlay = true }; return }
-        AlertDialog.Builder(this).setTitle(t("Show above other apps", "إظهار فوق التطبيقات"))
+        FontDialog(this).setTitle(t("Show above other apps", "إظهار فوق التطبيقات"))
             .setMessage(t("Allow Sahl Timer to display over other apps. Then return here and turn this option on. Some TVs and protected videos block overlays.",
                 "اسمح لسهل المؤقت بالظهور فوق التطبيقات، ثم ارجع وفعّل هذا الخيار. قد تمنع بعض أجهزة التلفاز ومقاطع الفيديو المحمية ظهوره."))
             .setPositiveButton(t("Open settings", "فتح الإعدادات")) { _, _ ->

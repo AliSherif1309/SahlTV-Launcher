@@ -105,7 +105,7 @@ object Updater {
         }.start()
     }
 
-    private fun dialog(a: Activity) = FontDialog(a, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+    private fun dialog(a: Activity) = FontDialog(a)
 
     /** "Check for updates": tells you what's new and installs with one press. */
     fun check(a: Activity, ar: Boolean) {

@@ -209,8 +209,8 @@ class SahlApp : Application() {
     }
 }
 
-/** AlertDialog in the Sahl font: titles in Serif Display, messages in Serif Text. */
-class FontDialog(ctx: Context, theme: Int) : AlertDialog.Builder(ctx, theme) {
+/** Shared Sahl settings dialog: green panel, gold focus, and Sahl typography when available. */
+class FontDialog(ctx: Context) : AlertDialog.Builder(ctx, R.style.SahlDialogTheme) {
     override fun create(): AlertDialog = super.create().also { d ->
         // wait until it is shown (its layout is built then), checking for a few seconds
         val h = android.os.Handler(android.os.Looper.getMainLooper())
@@ -218,7 +218,7 @@ class FontDialog(ctx: Context, theme: Int) : AlertDialog.Builder(ctx, theme) {
         val check = object : Runnable { override fun run() {
             if (!d.isShowing) { if (++tries < 50) h.postDelayed(this, 100); return }
             val res = d.context.resources
-            (d.findViewById<View>(res.getIdentifier("alertTitle", "id", "android")) as? TextView)?.let { it.typeface = Fonts.display(true); Fonts.heading(it) }
+            (d.findViewById<View>(res.getIdentifier("alertTitle", "id", "android")) as? TextView)?.let { it.typeface = Fonts.display(true); it.setTextColor(C.GOLD); Fonts.heading(it) }
             (d.findViewById<View>(android.R.id.message) as? TextView)?.let { it.typeface = Fonts.text(); it.setLineSpacing(0f, 1.2f) }
             Fonts.watch(d.window)
         } }

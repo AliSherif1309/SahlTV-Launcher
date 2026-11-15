@@ -116,7 +116,7 @@ class ConnectActivity : Activity() {
         column.addView(text("Apps & favourites", 21f))
         apps = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }.also { column.addView(it) }
         button("Forget this TV") {
-            AlertDialog.Builder(this).setTitle("Forget TV?").setMessage("This removes the key from this phone. Revoke this phone on the TV too if you no longer want it to have access.")
+            FontDialog(this).setTitle("Forget TV?").setMessage("This removes the key from this phone. Revoke this phone on the TV too if you no longer want it to have access.")
                 .setPositiveButton("Forget") { _, _ -> generation++; vault.clear(); identity = null; setupPromptShown = false; screen() }.setNegativeButton("Cancel", null).show()
         }
         refresh()
@@ -169,7 +169,7 @@ class ConnectActivity : Activity() {
         }
         if (identity != null) button("Check TV permissions again", box) { refresh() }
         else box.addView(text("Pair your TV first to check its permission status and open its setup screens from here."))
-        setupDialog = AlertDialog.Builder(this).setTitle("Permissions & setup")
+        setupDialog = FontDialog(this).setTitle("Permissions & setup")
             .setView(ScrollView(this).apply { addView(box) }).setPositiveButton("Done", null).create().also { dialog ->
                 dialog.setOnDismissListener { permissionSummaries.remove(summary); setupDialog = null }
                 dialog.show()
