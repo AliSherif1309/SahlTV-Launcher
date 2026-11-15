@@ -64,7 +64,7 @@ To undo, set the three values back to `1`.
 Home Layout 2.2 adds optional **Recent count** (3, 6 or 8) and **tile spacing** (tight, normal or spacious) controls inside the staged Visual layout editor. Defaults remain six Recent apps and normal 6 dp tile margins; card dimensions and upper dashboard proportions stay unchanged. These settings are included in saved layout profiles and reset with Home layout.
 
 ## Build
-Kotlin and Android framework APIs, with five Gradle modules (`app`, `quran`, `pdf`, `files`, `common`). App and build-input changes on `main` build release APKs with GitHub Actions and publishes a numbered release plus the `latest` update pointer. Publication waits for source regression checks and candidate validation on Android TV API 29 emulators with 2 GB and 1 GB RAM. Both test the exact candidate APK artifact, not the mutable latest release. Pull requests build all four debug apps and run the same validation.
+Kotlin and Android framework APIs, with six Gradle modules (`app`, `quran`, `pdf`, `files`, `timer`, `common`). App and build-input changes on `main` build release APKs with GitHub Actions and publishes a numbered release plus the `latest` update pointer. Publication waits for source regression checks and candidate validation on Android TV API 29 emulators with 2 GB and 1 GB RAM. Both test the exact candidate APK artifact, not the mutable latest release. Pull requests build all five debug apps and run the same validation.
 Release signing uses the repository secrets `SIGNING_KEYSTORE_BASE64`, `SIGNING_STORE_PASSWORD`, `SIGNING_KEY_PASSWORD` and `SIGNING_KEY_ALIAS`.
 
 ## License
@@ -155,15 +155,15 @@ Two small companion apps, built here with no external libraries and offered by �
 Both apps ask once for access to files (Android 10 shows a normal Allow window).
 
 ## ✍ Thmanyah font (v1.13)
-All four apps use the Thmanyah family (ثمانية), following its own guide: **Serif Display** for titles and headings, **Serif Text** for text you read (messages, notes, book titles, text files), and **Sans** for the screen, buttons and numbers (the clock uses Sans Bold; the screensaver clock uses Sans Light). Quran pages keep the Amiri Quran Mushaf font.
+All five apps use the Thmanyah family (ثمانية), following its own guide: **Serif Display** for titles and headings, **Serif Text** for text you read (messages, notes, book titles, text files), and **Sans** for the screen, buttons and numbers (the clock uses Sans Bold; the screensaver clock uses Sans Light). Quran pages keep the Amiri Quran Mushaf font.
 
 **Headings follow Thmanyah's guide**: each short heading gets one touch on its last word only: a swash ending (the font's alternate letter) when the word ends in ب ت ث س ش ص ض ف ق ك م ن ي ى ئ, otherwise one slanted kashida between the last two letters when they join. Never in long text.
 
-**Night style** (on by default): from Isha until Fajr, all four apps turn warmer and softer (less blue light) and switch to the reading font, Serif Text. Sahl TV keeps the prayer times; the other apps ask it.
+**Night style** (on by default): from Isha until Fajr, all five apps turn warmer and softer (less blue light) and switch to the reading font, Serif Text. Sahl TV keeps the prayer times; the other apps ask it.
 
 **Numbers**: 123 or ١٢٣ for the clock, prayer times and countdown.
 
-**Text size** (Sahl TV → Settings → Appearance & comfort): Normal, Large or Extra large, for all four apps. The other apps read it from Sahl TV.
+**Text size** (Sahl TV → Settings → Appearance & comfort): Normal, Large or Extra large, for all five apps. The other apps read it from Sahl TV.
 The font's licence allows using it inside apps but not sharing the font files. So this repository keeps only an encrypted copy (`fonts-locked/`). The cloud build unlocks it with the `FONT_KEY` secret and packs it scrambled into each app (`tools/pack_fonts.py`, `Fonts.kt`). Without the secret, the apps build with the TV's normal font.
 Font © thmanyah Publishing and Distribution, used under thmanyah's Font License.
 
@@ -199,7 +199,7 @@ Font © thmanyah Publishing and Distribution, used under thmanyah's Font License
   Framework instrumentation tests use real D-pad events to check editor focus after redraw, navigation, staged Cancel and Apply behavior. Security regressions exercise LAN peer/Host rejection, token comparison, hashes and update tampering/package rejection. UI/security instrumentation uses a debug target; performance runs against the candidate release APKs on main. No physical TV testing is implied. Historical comparisons remain available manually through perf.yml. Recovery refs without the required validation sources fail closed.
 
 ## 🧩 Code structure (v1.20)
-- `:common`: the Sahl family, shared by all four apps:
+- `:common`: the Sahl family, shared by all five apps:
   - Thmanyah fonts and night style;
   - colours and dialogs;
   - the phone upload page;
@@ -217,7 +217,7 @@ Font © thmanyah Publishing and Distribution, used under thmanyah's Font License
 - **Measured:** the emulator test now also reports *apps on screen after a cold start*. Settings → System & updates → Diagnostics shows it on your TV.
 
 ## ✦ One family
-"Sahl apps" (Sahl TV Settings, and the menus of Quran, PDF and Files) lists the four apps with their versions. It opens an installed one, and installs a missing one through Sahl TV, the family's single, checked update centre.
+"Sahl apps" (Sahl TV Settings, and the menus of Quran, PDF and Files) lists the five apps with their versions. It opens an installed one, and installs a missing one through Sahl TV, the family's single, checked update centre.
 
 
 ### Floating timer (Android TV)
@@ -303,7 +303,7 @@ in the existing 1 GB / 2 GB Android TV instrumentation matrix.
 
 ## Release version policy
 
-Use `major.minor.patch` for each app’s `versionName`. Increase patch for fixes, minor for features (reset patch to zero), and major for breaking changes (reset minor and patch). Each PR changing an app must increase its version compared with the target branch. Shared code, fonts, dependencies and shipped asset generators require bumps for all four apps. Keep `app/src/main/assets/whatsnew.json` at the Sahl TV version and describe changes in English and Arabic. CI checks this before compilation and on production pushes. Run `python3 tools/check_versions.py --base origin/main` locally after committing changes.
+Use `major.minor.patch` for each app’s `versionName`. Increase patch for fixes, minor for features (reset patch to zero), and major for breaking changes (reset minor and patch). Each PR changing an app must increase its version compared with the target branch. Shared code, fonts, dependencies and shipped asset generators require bumps for all five apps. Keep `app/src/main/assets/whatsnew.json` at the Sahl TV version and describe changes in English and Arabic. CI checks this before compilation and on production pushes. Run `python3 tools/check_versions.py --base origin/main` locally after committing changes.
 
 Android `versionCode` remains the existing increasing build number, preserving installed-app upgrade compatibility and the updater’s JSON format. Tags stay `build-N` so existing download, recovery and performance tools keep working; release titles show the semantic version and build number. Documentation-only pushes do not publish APKs. Manual recovery or reruns can publish the same source version with a newer build number; recovery retains the recovered source’s own version and notes.
 

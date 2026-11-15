@@ -151,13 +151,13 @@ Versions above describe the source in this branch; download links point to the l
 
 On the TV, choose **Updates → Check for updates**. Auto-update preferences offer Off, Tell me, or Download & install; Android may still require you to confirm installation.
 
-App and build-input changes on `main` produce releases; documentation-only changes do not. Versions use **major.minor.patch**: fixes increase patch, features increase minor, and breaking changes increase major. CI requires a higher version for each changed app (all four for shared code), and keeps SahlTV’s What’s new version in sync. Build numbers still increase for Android update compatibility; rebuilding the same source can retain its release version.
+App and build-input changes on `main` produce releases; documentation-only changes do not. Versions use **major.minor.patch**: fixes increase patch, features increase minor, and breaking changes increase major. CI requires a higher version for each changed app (all five for shared code), and keeps SahlTV’s What’s new version in sync. Build numbers still increase for Android update compatibility; rebuilding the same source can retain its release version.
 
-Every main-branch release builds all four apps, runs source checks, and validates candidate APKs on **1 GB and 2 GB Android TV emulators** before publication. Numbered releases contain APKs, SHA-256 fingerprints and performance reports. [View releases](https://github.com/AliSherif1309/SahlTV-Launcher/releases) · [Validation details and recovery](docs/REFERENCE.md#-updates-you-can-trust-and-recover-v120).
+Every main-branch release builds all five apps, runs source checks, and validates candidate APKs on **1 GB and 2 GB Android TV emulators** before publication. Numbered releases contain APKs, SHA-256 fingerprints and performance reports. [View releases](https://github.com/AliSherif1309/SahlTV-Launcher/releases) · [Validation details and recovery](docs/REFERENCE.md#-updates-you-can-trust-and-recover-v120).
 
 ## Build and contribute
 
-The project uses Kotlin, Android framework APIs, **JDK 17**, **Gradle 8.7** and Android SDK 34. Modules: `app`, `quran`, `pdf`, `files`, and shared `common`.
+The project uses Kotlin, Android framework APIs, **JDK 17**, **Gradle 8.7** and Android SDK 34. Modules: `app`, `quran`, `pdf`, `files`, `timer`, and shared `common`.
 
 See the [build workflow](.github/workflows/pr-compile.yml) for the complete generated-asset preparation and build sequence. A local build without signing secrets uses a debug key; without `FONT_KEY`, apps fall back to the system font. Thmanyah files are not redistributed as raw fonts.
 
@@ -196,5 +196,3 @@ revision only when an existing setting gains a substantial new capability.
 Code: [MIT](LICENSE). Quran text: [Tanzil](https://tanzil.net), unchanged Uthmani text, CC BY 3.0. Quran typography: Amiri Quran, SIL OFL. Thmanyah typography follows its separate font license; local builds use system fonts without the font secret. Wallpaper attribution is checked at build time and shown in About; see the [detailed credits and feature reference](docs/REFERENCE.md).
 
 Contact: alysherif1309@gmail.com
-
-
