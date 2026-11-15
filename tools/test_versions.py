@@ -3,7 +3,7 @@ from check_versions import affected, check, version
 
 
 def sources(value):
-    return dict.fromkeys(('app', 'quran', 'pdf', 'files', 'timer'), f'versionName = "{value}"')
+    return dict.fromkeys(('app', 'quran', 'pdf', 'files', 'timer', 'connect'), f'versionName = "{value}"')
 
 
 class Versions(unittest.TestCase):
@@ -17,14 +17,15 @@ class Versions(unittest.TestCase):
         self.assertTrue(check(['app/src/main/Test.kt'], sources('1.24.0'), sources('1.23.9')))
 
     def test_shared_and_generated_inputs(self):
-        for path in ('common/src/main/Test.kt', 'tools/make_ayat.py', 'gradle.properties'):
-            self.assertEqual(len(affected([path])), 5)
+        for path in ('common/src/main/Test.kt', 'tools/make_ayat.py', 'gradle.properties', 'connect-protocol/src/main/Protocol.java'):
+            self.assertEqual(len(affected([path])), 6)
 
     def test_docs_and_tests(self):
         self.assertFalse(affected(['README.md', 'docs/REFERENCE.md', 'app/src/androidTest/Test.kt', 'tools/test_versions.py']))
 
     def test_companion_only(self):
         self.assertEqual(affected(['pdf/src/main/Test.kt']), {'pdf'})
+        self.assertEqual(affected(['connect/src/main/Test.kt']), {'connect'})
 
     def test_new_timer_module_has_no_previous_release(self):
         old = sources('1.0.0')

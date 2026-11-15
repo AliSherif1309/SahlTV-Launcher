@@ -155,15 +155,15 @@ Two small companion apps, built here with no external libraries and offered by �
 Both apps ask once for access to files (Android 10 shows a normal Allow window).
 
 ## ✍ Thmanyah font (v1.13)
-All five apps use the Thmanyah family (ثمانية), following its own guide: **Serif Display** for titles and headings, **Serif Text** for text you read (messages, notes, book titles, text files), and **Sans** for the screen, buttons and numbers (the clock uses Sans Bold; the screensaver clock uses Sans Light). Quran pages keep the Amiri Quran Mushaf font.
+All five TV apps use the Thmanyah family (ثمانية), following its own guide: **Serif Display** for titles and headings, **Serif Text** for text you read (messages, notes, book titles, text files), and **Sans** for the screen, buttons and numbers (the clock uses Sans Bold; the screensaver clock uses Sans Light). Quran pages keep the Amiri Quran Mushaf font.
 
 **Headings follow Thmanyah's guide**: each short heading gets one touch on its last word only: a swash ending (the font's alternate letter) when the word ends in ب ت ث س ش ص ض ف ق ك م ن ي ى ئ, otherwise one slanted kashida between the last two letters when they join. Never in long text.
 
-**Night style** (on by default): from Isha until Fajr, all five apps turn warmer and softer (less blue light) and switch to the reading font, Serif Text. Sahl TV keeps the prayer times; the other apps ask it.
+**Night style** (on by default): from Isha until Fajr, all five TV apps turn warmer and softer (less blue light) and switch to the reading font, Serif Text. Sahl TV keeps the prayer times; the other apps ask it.
 
 **Numbers**: 123 or ١٢٣ for the clock, prayer times and countdown.
 
-**Text size** (Sahl TV → Settings → Appearance & comfort): Normal, Large or Extra large, for all five apps. The other apps read it from Sahl TV.
+**Text size** (Sahl TV → Settings → Appearance & comfort): Normal, Large or Extra large, for all five TV apps. The other TV apps read it from Sahl TV.
 The font's licence allows using it inside apps but not sharing the font files. So this repository keeps only an encrypted copy (`fonts-locked/`). The cloud build unlocks it with the `FONT_KEY` secret and packs it scrambled into each app (`tools/pack_fonts.py`, `Fonts.kt`). Without the secret, the apps build with the TV's normal font.
 Font © thmanyah Publishing and Distribution, used under thmanyah's Font License.
 
@@ -199,7 +199,7 @@ Font © thmanyah Publishing and Distribution, used under thmanyah's Font License
   Framework instrumentation tests use real D-pad events to check editor focus after redraw, navigation, staged Cancel and Apply behavior. Security regressions exercise LAN peer/Host rejection, token comparison, hashes and update tampering/package rejection. UI/security instrumentation uses a debug target; performance runs against the candidate release APKs on main. No physical TV testing is implied. Historical comparisons remain available manually through perf.yml. Recovery refs without the required validation sources fail closed.
 
 ## 🧩 Code structure (v1.20)
-- `:common`: the Sahl family, shared by all five apps:
+- `:common`: the Sahl family, shared by all six apps:
   - Thmanyah fonts and night style;
   - colours and dialogs;
   - the phone upload page;
@@ -217,7 +217,7 @@ Font © thmanyah Publishing and Distribution, used under thmanyah's Font License
 - **Measured:** the emulator test now also reports *apps on screen after a cold start*. Settings → System & updates → Diagnostics shows it on your TV.
 
 ## ✦ One family
-"Sahl apps" (Sahl TV Settings, and the menus of Quran, PDF and Files) lists the five apps with their versions. It opens an installed one, and installs a missing one through Sahl TV, the family's single, checked update centre.
+"Sahl apps" (Sahl TV Settings, and the menus of Quran, PDF and Files) lists the five TV apps with their versions and Sahl Connect as an Android phone companion. It opens an installed TV app and installs a missing TV app through Sahl TV, the family’s checked TV update centre. Sahl Connect opens setup in the main launcher and phone-install instructions in other TV apps; its phone APK is never queued for TV installation.
 
 
 ### Floating timer (Android TV)
@@ -303,7 +303,7 @@ in the existing 1 GB / 2 GB Android TV instrumentation matrix.
 
 ## Release version policy
 
-Use `major.minor.patch` for each app’s `versionName`. Increase patch for fixes, minor for features (reset patch to zero), and major for breaking changes (reset minor and patch). Each PR changing an app must increase its version compared with the target branch. Shared code, fonts, dependencies and shipped asset generators require bumps for all five apps. Keep `app/src/main/assets/whatsnew.json` at the Sahl TV version and describe changes in English and Arabic. CI checks this before compilation and on production pushes. Run `python3 tools/check_versions.py --base origin/main` locally after committing changes.
+Use `major.minor.patch` for each app’s `versionName`. Increase patch for fixes, minor for features (reset patch to zero), and major for breaking changes (reset minor and patch). Each PR changing an app must increase its version compared with the target branch. Shared code, fonts, dependencies and shipped asset generators require bumps for all six apps. Keep `app/src/main/assets/whatsnew.json` at the Sahl TV version and describe changes in English and Arabic. CI checks this before compilation and on production pushes. Run `python3 tools/check_versions.py --base origin/main` locally after committing changes.
 
 Android `versionCode` remains the existing increasing build number, preserving installed-app upgrade compatibility and the updater’s JSON format. Tags stay `build-N` so existing download, recovery and performance tools keep working; release titles show the semantic version and build number. Documentation-only pushes do not publish APKs. Manual recovery or reruns can publish the same source version with a newer build number; recovery retains the recovered source’s own version and notes.
 
@@ -315,3 +315,14 @@ Sahl Timer (`com.aly.sahltimer`, `SahlTimer.apk`, Android 8+) is a standalone fa
 Above apps is off by default. Enable overlay permission through its help dialog, return, then explicitly turn the option on. Choose one of four corners. The foreground overlay is non-interactive and does not take focus from playback; open Sahl Timer for controls. No alarm sound, wake lock, automatic TV shutdown or boot auto-start is provided. Paused overlays remain visible; completed overlays close. Saved remaining time survives restart but needs manual resume after a reboot. Firmware restrictions and protected content can hide overlays. The existing Sahl TV timer is independent and retained for compatibility.
 
 Sahl apps lists the fifth family member in every companion. Sahl TV checks SahlTimer.apk package, signing identity and release fingerprint through its normal installer. Release and emulator validation include the timer APK before publication.
+
+
+## Sahl Connect · main launcher and standalone phone app
+
+The sixth family member is **Sahl Connect for Android phones**, package `com.aly.sahlconnect`. The main launcher (`com.aly.sahltv`) hosts the encrypted endpoint; the old separate `com.aly.sahltv.connectpreview` launcher is retired. No preview variant is built or published. **Settings → Tools & connection → Sahl Connect** and **Sahl apps → Sahl Connect** open the main setup menu. Connect is off by default. **Get phone app** shows a public download QR; **Options → Pair a phone** shows a separate private one-use QR/full code after enabling the endpoint.
+
+Both devices require Android 8+, on the same private IPv4 Wi-Fi. Navigation requires explicit TV Accessibility consent, typing requires selecting the main launcher's Sahl Keyboard and opening a field, and file receiving requires separate consent (Android 10+, supported types up to 8 MB). Pairing uses pinned TLS on TCP 8766; credentials are separate from the browser remote and excluded from backup. Turning Connect off closes pairing/connections and disables file receiving. Revoke individual/all phones in the TV menu. The endpoint runs in the launcher process, cannot wake a sleeping/force-stopped TV, and does not provide family sync. New Connect screens currently use English; the phone uses system fonts rather than packaged TV fonts.
+
+For preview migration, turn off the preview endpoint, update the main launcher, replace the debug phone preview if its signing key conflicts, and pair again. Only uninstall the preview launcher after the main connection works. Navigation and keyboard permissions must be enabled for the main launcher. Existing preview credentials do not migrate. See [complete setup, migration, security and limits](SAHL_CONNECT.md).
+
+The phone APK shares release signing and publication with the family, with version/fingerprint metadata. Phone updates use **Download latest Sahl Connect** and Android's installer; the TV updater installs only TV packages. Release validation includes protocol tests, TV integration and phone scanner/setup tests plus checks that scanner runtime classes are packaged and TV fonts are absent from the phone APK.

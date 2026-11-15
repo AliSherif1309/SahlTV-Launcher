@@ -6,7 +6,7 @@ from pathlib import Path
 import re
 import subprocess
 
-MODULES = ('app', 'quran', 'pdf', 'files', 'timer')
+MODULES = ('app', 'quran', 'pdf', 'files', 'timer', 'connect')
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -27,7 +27,7 @@ def affected(paths):
         module = path.split('/')[0]
         if module in MODULES:
             result.add(module)
-        elif (module in ('common', 'fonts-locked', 'gradle') or
+        elif (module in ('common', 'fonts-locked', 'gradle', 'connect-protocol') or
               path in ('build.gradle.kts', 'settings.gradle.kts', 'gradle.properties') or
               path.startswith('tools/') and path not in ('tools/readme_review.py', 'tools/check_versions.py')):
             result.update(MODULES)

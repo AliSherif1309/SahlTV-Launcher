@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 START = '<!-- BEGIN AUTO:APP_VERSIONS -->'
 END = '<!-- END AUTO:APP_VERSIONS -->'
 NAMES = {'app': ('Sahl TV', 'SahlTV.apk'), 'quran': ('Sahl Quran', 'SahlQuran.apk'),
-         'pdf': ('Sahl PDF', 'SahlPDF.apk'), 'files': ('Sahl Files', 'SahlFiles.apk'), 'timer': ('Sahl Timer', 'SahlTimer.apk')}
+         'pdf': ('Sahl PDF', 'SahlPDF.apk'), 'files': ('Sahl Files', 'SahlFiles.apk'), 'timer': ('Sahl Timer', 'SahlTimer.apk'), 'connect': ('Sahl Connect (Android phone)', 'SahlConnect.apk')}
 DOWNLOAD = 'https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/'
 
 
@@ -72,7 +72,7 @@ def local_link_errors(root):
 
 
 def review_changes(paths, decision):
-    implementation = [p for p in paths if p.startswith(('app/', 'common/', 'quran/', 'pdf/', 'files/', 'tools/', '.github/workflows/'))
+    implementation = [p for p in paths if p.startswith(('app/', 'common/', 'quran/', 'pdf/', 'files/', 'timer/', 'connect/', 'connect-protocol/', 'tools/', '.github/workflows/'))
                       or p.endswith(('.gradle.kts', '.gradle', '.properties'))]
     documentation = [p for p in paths if p == 'README.md' or p.startswith('docs/') and p.endswith(('.md', '.svg', '.png', '.jpg', '.webp'))]
     # A checkbox alone cannot stand in for an explanation.
