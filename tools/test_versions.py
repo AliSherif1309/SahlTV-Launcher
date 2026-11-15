@@ -3,7 +3,7 @@ from check_versions import affected, check, version
 
 
 def sources(value):
-    return dict.fromkeys(('app', 'quran', 'pdf', 'files'), f'versionName = "{value}"')
+    return dict.fromkeys(('app', 'quran', 'pdf', 'files', 'timer'), f'versionName = "{value}"')
 
 
 class Versions(unittest.TestCase):
@@ -18,13 +18,19 @@ class Versions(unittest.TestCase):
 
     def test_shared_and_generated_inputs(self):
         for path in ('common/src/main/Test.kt', 'tools/make_ayat.py', 'gradle.properties'):
-            self.assertEqual(len(affected([path])), 4)
+            self.assertEqual(len(affected([path])), 5)
 
     def test_docs_and_tests(self):
         self.assertFalse(affected(['README.md', 'docs/REFERENCE.md', 'app/src/androidTest/Test.kt', 'tools/test_versions.py']))
 
     def test_companion_only(self):
         self.assertEqual(affected(['pdf/src/main/Test.kt']), {'pdf'})
+
+    def test_new_timer_module_has_no_previous_release(self):
+        old = sources('1.0.0')
+        old['timer'] = ''
+        self.assertFalse(check(['timer/src/main/Test.kt'], old, sources('1.0.0')))
+        self.assertTrue(check(['timer/src/main/Test.kt'], sources('1.0.0'), sources('1.0.0')))
 
 
 if __name__ == '__main__':

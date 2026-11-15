@@ -119,17 +119,26 @@ Open **Settings → Tools & connection → Floating timer**. Set a duration, sta
 
 The timer is a visual countdown, with no alarm sound or automatic TV shutdown. Some firmware and protected video can suppress overlays. See [timer behavior and limitations](docs/REFERENCE.md#floating-timer-android-tv).
 
-## One Sahl family · four TV apps
+## Sahl Timer · a standalone TV app
+
+**Sahl Timer** works independently of the launcher. Open it from your TV app list, pick a quick duration (or **More** for 1–180 minutes), then press **Start**. The large countdown and **Pause / Resume**, **Reset** and **Start again** buttons work with the TV remote. Changing an active or paused countdown asks before replacing it.
+
+To keep it visible while watching, select **Above apps**, grant the display-over-apps permission, return and turn the option on. Pick any screen corner. Permission is optional; the timer screen works without it. Return to Sahl Timer to control a floating countdown. It has no sound or automatic TV shutdown; some firmware and protected video block overlays. After a TV restart, resume the saved remaining time manually. The original launcher timer remains available and has separate state.
+
+Open **Sahl apps** to find the rest of the family. Sahl TV offers checked installation and updates for Sahl Timer. The standalone app has Arabic and English labels and does not require Sahl TV to run.
+
+## One Sahl family · five TV apps
 
 Install only the apps you want. **Sahl apps** lists installed versions and opens companion apps; Sahl TV handles checked installs and updates.
 
 <!-- BEGIN AUTO:APP_VERSIONS -->
 | App | Source version | Minimum Android API | Download |
 | --- | --- | --- | --- |
-| Sahl TV | 1.25.0 | 26 | [SahlTV.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlTV.apk) |
-| Sahl Quran | 1.10.1 | 26 | [SahlQuran.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlQuran.apk) |
-| Sahl PDF | 2.5.1 | 26 | [SahlPDF.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlPDF.apk) |
-| Sahl Files | 1.5.1 | 26 | [SahlFiles.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlFiles.apk) |
+| Sahl TV | 1.25.1 | 26 | [SahlTV.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlTV.apk) |
+| Sahl Quran | 1.10.2 | 26 | [SahlQuran.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlQuran.apk) |
+| Sahl PDF | 2.5.2 | 26 | [SahlPDF.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlPDF.apk) |
+| Sahl Files | 1.5.2 | 26 | [SahlFiles.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlFiles.apk) |
+| Sahl Timer | 1.0.0 | 26 | [SahlTimer.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlTimer.apk) |
 <!-- END AUTO:APP_VERSIONS -->
 
 Versions above describe the source in this branch; download links point to the latest **published, validated** release and may lag an unmerged change.
@@ -142,13 +151,13 @@ Versions above describe the source in this branch; download links point to the l
 
 On the TV, choose **Updates → Check for updates**. Auto-update preferences offer Off, Tell me, or Download & install; Android may still require you to confirm installation.
 
-App and build-input changes on `main` produce releases; documentation-only changes do not. Versions use **major.minor.patch**: fixes increase patch, features increase minor, and breaking changes increase major. CI requires a higher version for each changed app (all four for shared code), and keeps SahlTV’s What’s new version in sync. Build numbers still increase for Android update compatibility; rebuilding the same source can retain its release version.
+App and build-input changes on `main` produce releases; documentation-only changes do not. Versions use **major.minor.patch**: fixes increase patch, features increase minor, and breaking changes increase major. CI requires a higher version for each changed app (all five for shared code), and keeps SahlTV’s What’s new version in sync. Build numbers still increase for Android update compatibility; rebuilding the same source can retain its release version.
 
-Every main-branch release builds all four apps, runs source checks, and validates candidate APKs on **1 GB and 2 GB Android TV emulators** before publication. Numbered releases contain APKs, SHA-256 fingerprints and performance reports. [View releases](https://github.com/AliSherif1309/SahlTV-Launcher/releases) · [Validation details and recovery](docs/REFERENCE.md#-updates-you-can-trust-and-recover-v120).
+Every main-branch release builds all five apps, runs source checks, and validates candidate APKs on **1 GB and 2 GB Android TV emulators** before publication. Numbered releases contain APKs, SHA-256 fingerprints and performance reports. [View releases](https://github.com/AliSherif1309/SahlTV-Launcher/releases) · [Validation details and recovery](docs/REFERENCE.md#-updates-you-can-trust-and-recover-v120).
 
 ## Build and contribute
 
-The project uses Kotlin, Android framework APIs, **JDK 17**, **Gradle 8.7** and Android SDK 34. Modules: `app`, `quran`, `pdf`, `files`, and shared `common`.
+The project uses Kotlin, Android framework APIs, **JDK 17**, **Gradle 8.7** and Android SDK 34. Modules: `app`, `quran`, `pdf`, `files`, `timer`, and shared `common`.
 
 See the [build workflow](.github/workflows/pr-compile.yml) for the complete generated-asset preparation and build sequence. A local build without signing secrets uses a debug key; without `FONT_KEY`, apps fall back to the system font. Thmanyah files are not redistributed as raw fonts.
 
@@ -187,4 +196,3 @@ revision only when an existing setting gains a substantial new capability.
 Code: [MIT](LICENSE). Quran text: [Tanzil](https://tanzil.net), unchanged Uthmani text, CC BY 3.0. Quran typography: Amiri Quran, SIL OFL. Thmanyah typography follows its separate font license; local builds use system fonts without the font secret. Wallpaper attribution is checked at build time and shown in About; see the [detailed credits and feature reference](docs/REFERENCE.md).
 
 Contact: alysherif1309@gmail.com
-

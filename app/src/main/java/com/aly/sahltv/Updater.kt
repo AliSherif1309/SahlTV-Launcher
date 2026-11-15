@@ -34,7 +34,7 @@ object Updater {
     /** Every app comes from the one release: Sahl TV, Sahl Quran, Sahl PDF and Sahl Files. */
     class Info(val code: Long, val tv: String, val quran: String, val notes: String,
                val pdfCode: Long = 0, val pdfName: String = "", val filesCode: Long = 0, val filesName: String = "",
-               val base: String = "", val sums: Map<String, String> = emptyMap()) {
+               val base: String = "", val sums: Map<String, String> = emptyMap(), val timerCode: Long = 0, val timerName: String = "") {
         /** Each build's files live in their own numbered release; "latest" only says which build that is. */
         fun url(file: String) = base.ifEmpty { BASE } + file
         fun sha(file: String) = sums[file] ?: ""
@@ -60,7 +60,7 @@ object Updater {
         val c = get(BASE + "version.json")
         val o = org.json.JSONObject(c.inputStream.bufferedReader().use { it.readText() })
         Info(o.getLong("code"), o.optString("sahltv"), o.optString("quran"), o.optString("notes"),
-             o.optLong("pdfCode"), o.optString("pdf"), o.optLong("filesCode"), o.optString("files"), o.optString("base"), sums(o))
+             o.optLong("pdfCode"), o.optString("pdf"), o.optLong("filesCode"), o.optString("files"), o.optString("base"), sums(o), o.optLong("timerCode"), o.optString("timer"))
     } catch (_: Exception) { null }
 
     @Suppress("DEPRECATION")
@@ -83,6 +83,7 @@ object Updater {
         // Sahl PDF and Sahl Files (offered by the launcher only); they install before the launcher updates itself
         if (ctx.packageName == "com.aly.sahltv") {
             for ((pkg, file, nv) in listOf(
+                Triple("com.aly.sahltimer", "SahlTimer.apk", Triple(if (ar) "سهل · المؤقت" else "Sahl Timer", info.timerName, info.timerCode)),
                 Triple("com.aly.sahlfiles", "SahlFiles.apk", Triple(if (ar) "سهل · الملفات" else "Sahl Files", info.filesName, info.filesCode)),
                 Triple("com.aly.sahlpdf", "SahlPDF.apk", Triple(if (ar) "سهل PDF" else "Sahl PDF", info.pdfName, info.pdfCode)))) {
                 val (name, ver, code) = nv
@@ -287,3 +288,4 @@ class InstallReceiver : BroadcastReceiver() {
         }
     }
 }
+

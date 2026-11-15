@@ -52,4 +52,5 @@ jobs:
             perf-*.md
             logcat-*.txt
             instrumentation-*.txt
+            timer-instrumentation-*.txt
           if-no-files-found: error

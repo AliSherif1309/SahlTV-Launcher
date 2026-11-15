@@ -8,6 +8,7 @@ on:
       - 'quran/**'
       - 'pdf/**'
       - 'files/**'
+      - 'timer/**'
       - 'fonts-locked/**'
       - 'gradle/**'
       - '*.gradle.kts'
@@ -102,11 +103,12 @@ jobs:
             echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.jks"
             export SIGNING_KEYSTORE_PATH="$RUNNER_TEMP/release.jks"
           fi
-          gradle assembleRelease :app:assembleDebug :app:assembleDebugAndroidTest --no-daemon
+          gradle assembleRelease :app:assembleDebug :app:assembleDebugAndroidTest :timer:assembleDebug :timer:assembleDebugAndroidTest --no-daemon
           cp app/build/outputs/apk/release/app-release.apk SahlTV.apk
           cp quran/build/outputs/apk/release/quran-release.apk SahlQuran.apk
           cp pdf/build/outputs/apk/release/pdf-release.apk SahlPDF.apk
           cp files/build/outputs/apk/release/files-release.apk SahlFiles.apk
+          cp timer/build/outputs/apk/release/timer-release.apk SahlTimer.apk
           rm -f "$RUNNER_TEMP/release.jks"
       - uses: actions/upload-artifact@v4
         with:
@@ -116,8 +118,11 @@ jobs:
             SahlQuran.apk
             SahlPDF.apk
             SahlFiles.apk
+            SahlTimer.apk
             app/build/outputs/apk/debug/*.apk
             app/build/outputs/apk/androidTest/debug/*.apk
+            timer/build/outputs/apk/debug/*.apk
+            timer/build/outputs/apk/androidTest/debug/*.apk
   validate:
     needs: build
     uses: ./.github/workflows/validate.yml
@@ -151,17 +156,17 @@ jobs:
         run: |
           set -e
           RUN=$GITHUB_RUN_NUMBER; TAG=build-$RUN; SHA=$(git rev-parse HEAD)
-          sha256sum SahlTV.apk SahlQuran.apk SahlPDF.apk SahlFiles.apk > SHA256SUMS
+          sha256sum SahlTV.apk SahlQuran.apk SahlPDF.apk SahlFiles.apk SahlTimer.apk > SHA256SUMS
           python3 - <<'PY'
           import json, os, re, subprocess
           name = lambda f: re.search(r'versionName = "([^"]+)"', open(f).read()).group(1)
           run = int(os.environ["GITHUB_RUN_NUMBER"]); repo = os.environ["GITHUB_REPOSITORY"]
           msg = subprocess.run(["git", "log", "-1", "--format=%s"], capture_output=True, text=True).stdout.strip()
           sums = dict(reversed(l.split()) for l in open("SHA256SUMS") if l.strip())
-          v = {"sahltv": name("app/build.gradle.kts"), "quran": name("quran/build.gradle.kts"), "pdf": name("pdf/build.gradle.kts"), "files": name("files/build.gradle.kts")}
+          v = {"sahltv": name("app/build.gradle.kts"), "quran": name("quran/build.gradle.kts"), "pdf": name("pdf/build.gradle.kts"), "files": name("files/build.gradle.kts"), "timer": name("timer/build.gradle.kts")}
           # what the apps read for "Check for updates": versions, and where/what to download (numbered release + fingerprints)
           json.dump({"code": 100 + run, "sahltv": v["sahltv"], "quran": v["quran"], "pdfCode": 2100 + run, "pdf": v["pdf"],
-                     "filesCode": 100 + run, "files": v["files"], "notes": msg, "build": run,
+                     "timerCode": 100 + run, "timer": v["timer"], "filesCode": 100 + run, "files": v["files"], "notes": msg, "build": run,
                      "base": f"https://github.com/{repo}/releases/download/build-{run}/", "sha256": sums}, open("version.json", "w"))
           # stable release notes, from the app's own What's new
           wn = json.load(open("app/src/main/assets/whatsnew.json"))
@@ -177,16 +182,17 @@ jobs:
           PY
           cat version.json; echo
           # 1) the numbered release: its own tag on this exact commit, never edited afterwards
-          gh release create "$TAG" SahlTV.apk SahlQuran.apk SahlPDF.apk SahlFiles.apk SHA256SUMS version.json reports/*.md \
+          gh release create "$TAG" SahlTV.apk SahlQuran.apk SahlPDF.apk SahlFiles.apk SahlTimer.apk SHA256SUMS version.json reports/*.md \
             --target "$SHA" --title "Sahl TV $(python3 -c "import json;print(json.load(open('version.json'))['sahltv'])") · build $RUN" --notes-file NOTES.md --latest=false
           # 2) "latest" is only a pointer: files replaced in place (never deleted), version.json last,
           #    so a TV never sees a new version before all its files are there
           if gh release view latest >/dev/null 2>&1; then
-            gh release upload latest SahlTV.apk SahlQuran.apk SahlPDF.apk SahlFiles.apk SHA256SUMS --clobber
+            gh release upload latest SahlTV.apk SahlQuran.apk SahlPDF.apk SahlFiles.apk SahlTimer.apk SHA256SUMS --clobber
             gh release upload latest version.json --clobber
             gh release edit latest --latest=false --title "Sahl TV (latest = build $RUN)" --notes-file NOTES.md
           else
-            gh release create latest --latest=false SahlTV.apk SahlQuran.apk SahlPDF.apk SahlFiles.apk SHA256SUMS version.json --title "Sahl TV (latest = build $RUN)" --notes-file NOTES.md
+            gh release create latest --latest=false SahlTV.apk SahlQuran.apk SahlPDF.apk SahlFiles.apk SahlTimer.apk SHA256SUMS version.json --title "Sahl TV (latest = build $RUN)" --notes-file NOTES.md
           fi
           # The numbered build owns GitHub\'s Latest badge; the fixed tag only serves TV downloads.
           gh release edit "$TAG" --latest
+

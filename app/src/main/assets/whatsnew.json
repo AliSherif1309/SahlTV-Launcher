@@ -1,5 +1,5 @@
 {
-  "version": "1.25.0",
+  "version": "1.25.1",
   "en": [
     "Find settings faster with seven categories, global search and New badges for recently added options",
     "Clear major.minor.patch release versions; app changes now require a version bump before release",

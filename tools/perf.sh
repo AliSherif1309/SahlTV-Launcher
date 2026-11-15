@@ -54,7 +54,7 @@ phase 'boot and install'
 adb wait-for-device
 for i in $(seq 1 60); do [ "$(A getprop sys.boot_completed)" = "1" ] && break; sleep 2; done
 [ "$(A getprop sys.boot_completed)" = "1" ] || { echo 'Emulator did not finish booting' >&2; exit 1; }
-for f in SahlTV SahlQuran SahlPDF SahlFiles; do adb install -r -g "$D/$f.apk" >/dev/null 2>&1 || { echo "install $f failed" >&2; exit 1; }; done
+for f in SahlTV SahlQuran SahlPDF SahlFiles SahlTimer; do adb install -r -g "$D/$f.apk" >/dev/null 2>&1 || { echo "install $f failed" >&2; exit 1; }; done
 A cmd package set-home-activity "$ACT" >/dev/null
 A settings put global window_animation_scale 1; A settings put global transition_animation_scale 1
 A am start -W -n "$ACT" >/dev/null; sleep 6          # first start: let it load apps, photos and caches
@@ -125,7 +125,7 @@ if [ "${PERF_KILL_ALL_BASELINE:-0}" = "1" ]; then
   # 4) System-wide kill-all baseline, NOT the launcher's selective broom cleaner.
   # The launcher protects recent apps and active media; this command does not exercise that logic.
   # Open the three companion apps, return Home, then ask Android to kill background processes.
-  APPS="com.aly.sahlquran/.QuranActivity com.aly.sahlpdf/.LibraryActivity com.aly.sahlfiles/.FilesActivity"
+  APPS="com.aly.sahlquran/.QuranActivity com.aly.sahlpdf/.LibraryActivity com.aly.sahlfiles/.FilesActivity com.aly.sahltimer/.TimerActivity"
   phase 'companion apps and system kill-all baseline'
   adb logcat -d > "logcat-$RAM.txt" 2>&1 || { echo 'Cannot save pre-baseline logs' >&2; exit 1; }
   for a in $APPS; do A am start -W -n "$a" >/dev/null; sleep 3; A input keyevent KEYCODE_HOME; sleep 1; done
@@ -187,3 +187,4 @@ if [ "$COLD_MED" -gt 10000 ] || [ "$READY_MED" -gt 15000 ] || [ "$PSS" -gt 256 ]
   exit 1
 fi
 [ "$ALIVE" = "yes" ] && [ "$CRASH" = "0" ]
+

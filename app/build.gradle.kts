@@ -20,7 +20,7 @@ android {
         targetSdk = 34
         // Every cloud build gets a higher number, so a new APK installs over the old one.
         versionCode = 100 + (System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 0)
-        versionName = "1.25.0"
+        versionName = "1.25.1"
     }
 
     signingConfigs {
@@ -54,4 +54,5 @@ android {
 dependencies {
     implementation(project(":common"))   // the shared Sahl family look and helpers
 }
+
 
