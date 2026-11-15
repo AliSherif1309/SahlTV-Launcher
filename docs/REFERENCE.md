@@ -317,6 +317,8 @@ Above apps is off by default. Enable overlay permission through its help dialog,
 Sahl apps lists the fifth family member in every companion. Sahl TV checks SahlTimer.apk package, signing identity and release fingerprint through its normal installer. Release and emulator validation include the timer APK before publication.
 
 
+Separate Favorites retain their existing tiles and remote focus when only Recent apps change. Combined rows still refresh when either list changes.
+
 ## Sahl Connect · main launcher and standalone phone app
 
 The sixth family member is **Sahl Connect for Android phones**, package `com.aly.sahlconnect`. The main launcher (`com.aly.sahltv`) hosts the encrypted endpoint; the old separate `com.aly.sahltv.connectpreview` launcher is retired. No preview variant is built or published. **Settings → Tools & connection → Sahl Connect** and **Sahl apps → Sahl Connect** open the main setup menu. Connect is off by default. **Get phone app** shows a public download QR; **Options → Pair a phone** shows a separate private one-use QR/full code after enabling the endpoint.

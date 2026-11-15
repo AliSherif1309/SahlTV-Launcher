@@ -136,6 +136,8 @@ Open **Sahl apps** to find the rest of the family. Sahl TV offers checked instal
 3. In Sahl Connect on the phone, choose **Scan TV QR** or enter the full pairing code. Keep the private pairing QR open on the TV. It expires after three minutes and works once.
 4. Follow **Permissions & setup** for optional navigation and typing. File receiving requires separate TV consent; supported files up to 8 MB go to `Download/Sahl Connect` on Android 10+ TVs.
 
+Separate Favorites keep their focus when Recent apps change.
+
 Connect is off by default. It supports navigation, typing into an active TV field, media/volume controls, app launching, favourite add/remove and basic diagnostics. Some TV apps do not expose usable focus controls. Connect uses encrypted, certificate-pinned connections; the existing browser remote remains a separate option.
 
 **Switching from the preview:** turn Connect off in the preview launcher, update the main Sahl TV, install the signed phone app, and pair again with the main launcher. If Android reports a phone-app signature conflict, uninstall the debug-signed phone preview first; this clears its pairing. Enable the main launcher's navigation service and keyboard if wanted. Once the main connection works, uninstall **Sahl TV Connect Preview** (`com.aly.sahltv.connectpreview`), keeping **Sahl TV** as your Home app. This change does not automatically uninstall anything from your devices.
