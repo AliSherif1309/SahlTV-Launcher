@@ -26,7 +26,12 @@ class Versions(unittest.TestCase):
     def test_companion_only(self):
         self.assertEqual(affected(['pdf/src/main/Test.kt']), {'pdf'})
 
+    def test_new_timer_module_has_no_previous_release(self):
+        old = sources('1.0.0')
+        old['timer'] = ''
+        self.assertFalse(check(['timer/src/main/Test.kt'], old, sources('1.0.0')))
+        self.assertTrue(check(['timer/src/main/Test.kt'], sources('1.0.0'), sources('1.0.0')))
+
 
 if __name__ == '__main__':
     unittest.main()
-
