@@ -26,7 +26,7 @@ class SettingsDiscoveryTest : ActivityInstrumentationTestCase2<MainActivity>(Mai
         instrumentation.runOnMainSync {
             val actions = a.settingsSections().flatMap { it.second }.map { it.action }
             assertEquals(actions.size, actions.toSet().size)
-            assertEquals((0..44).filter { it != 16 }.toSet(), actions.toSet())
+            assertEquals((0..45).filter { it != 16 }.toSet(), actions.toSet())
         }
     }
 
@@ -38,6 +38,8 @@ class SettingsDiscoveryTest : ActivityInstrumentationTestCase2<MainActivity>(Mai
                 val search = a.settingsList!!.getChildAt(1) as EditText
                 search.setText(if (a.ar) "المؤقت" else "timer")
                 assertNotNull(a.settingsResults!!.findViewWithTag<View>("setting:43"))
+                search.setText(if (a.ar) "اختصارات الريموت" else "remote shortcuts")
+                assertNotNull(a.settingsResults!!.findViewWithTag<View>("setting:45"))
                 search.setText("zzzznonexistent")
                 assertTrue(texts(a.settingsResults!!).any { it.contains(if (a.ar) "لا توجد" else "No settings") })
                 a.settingsBack()

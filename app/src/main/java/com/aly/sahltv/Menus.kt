@@ -148,6 +148,7 @@ internal fun MainActivity.menuAction(which: Int) {
         41 -> dashboardEditor()
         42 -> layoutProfilesMenu()
         43 -> timerMenu()
+        45 -> remoteShortcutsMenu()
         31 -> { prefs.edit().putBoolean("fridayOn", !fridayOn).apply(); Alerts.schedule(this); greetShown = null; updateGreeting()
                 toast(t("Friday mode: ", "وضع الجمعة: ") + onOff(fridayOn)) }
         29 -> dialog().setTitle(t("Diagnostics", "التشخيص")).setMessage(Diagnostics.report(this, ar))

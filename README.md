@@ -51,6 +51,12 @@ Open **Settings → Home screen & apps**. Choose app tile size, row visibility/o
 
 Hold **OK** or press **Menu** on an app to manage favorites, move it, hide it, open app info or uninstall it. A four-digit PIN can protect apps and optionally the TV settings button.
 
+### Get more from your TV remote
+
+Open **Settings → Tools & connection → Remote shortcuts** to test which buttons SahlTV receives and choose Menu shortcuts. On Home, **hold Menu, then release** to open a quick panel with Quran, the floating timer, prayer times, Recent apps and Settings. A short Menu press outside app tiles also opens the panel; app tiles keep their existing Menu actions (Recent tiles toggle Favorites).
+
+You can assign either shortcut to the panel, Quran, timer, prayer times, Recent apps, Settings or no action. These shortcuts work on SahlTV Home only, without additional permissions. Android may reserve Home, power, voice and branded app buttons; the tester does not remap them. See [remote controls](docs/REFERENCE.md#tv-remote-shortcuts).
+
 ## Install in a few minutes
 
 1. [Download SahlTV.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlTV.apk) to your PC.
@@ -154,7 +160,7 @@ Install only the apps you want. **Sahl apps** lists installed TV versions and op
 <!-- BEGIN AUTO:APP_VERSIONS -->
 | App | Source version | Minimum Android API | Download |
 | --- | --- | --- | --- |
-| Sahl TV | 1.26.2 | 26 | [SahlTV.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlTV.apk) |
+| Sahl TV | 1.27.0 | 26 | [SahlTV.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlTV.apk) |
 | Sahl Quran | 1.11.2 | 26 | [SahlQuran.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlQuran.apk) |
 | Sahl PDF | 2.6.2 | 26 | [SahlPDF.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlPDF.apk) |
 | Sahl Files | 1.6.2 | 26 | [SahlFiles.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlFiles.apk) |

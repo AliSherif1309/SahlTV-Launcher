@@ -133,6 +133,7 @@ internal fun MainActivity.settingsSections(): List<Pair<String, List<SRow>>> {
         t("Family & safety", "العائلة والأمان") to listOf(
             SRow(GoldIcon.LOCK, t("PIN & locks", "الرمز السري والأقفال"), t("Lock apps or TV settings with a 4-digit PIN", "قفل التطبيقات أو إعدادات التلفاز برمز من 4 أرقام"), if (pinSet) t("${locked.size} locked", "${locked.size} مقفلة") else t("No PIN", "بدون رمز"), 10)),
         t("Phone & TV", "الهاتف والتلفاز") to listOf(
+            SRow(GoldIcon.SCREEN, t("Remote shortcuts", "اختصارات الريموت"), t("Test buttons, open the quick panel and choose Menu shortcuts on Home", "اختبر الأزرار وافتح القائمة السريعة واختر اختصارات القائمة على الرئيسية"), "", 45),
             SRow(GoldIcon.PHONE, "Sahl Connect", t("Secure Android phone companion", "تطبيق الهاتف الآمن"), onOff(getSharedPreferences("connect", 0).getBoolean("enabled", false)), 44),
             SRow(GoldIcon.PHONE, t("Phone remote", "الريموت من الهاتف"), t("Control the TV and type from your phone's browser", "تحكّم بالتلفاز واكتب من متصفح هاتفك"), onOff(remoteOn), 15),
             SRow(GoldIcon.BROOM, t("Auto clean", "التنظيف التلقائي"), t("Only when memory is low; keeps your recent apps open (off: apps open faster)", "فقط عند انخفاض الذاكرة؛ يُبقي تطبيقاتك الأخيرة (متوقف: التطبيقات تفتح أسرع)"), onOff(autoClean), 9),
@@ -149,7 +150,7 @@ internal fun MainActivity.settingsSections(): List<Pair<String, List<SRow>>> {
         t("Appearance & comfort", "المظهر والراحة") to listOf(5, 18, 34, 19, 7, 25, 24, 12),
         t("Language & clock", "اللغة والساعة") to listOf(0, 26, 3),
         t("Prayer & Islamic", "الصلاة والمناسبات") to listOf(4, 21, 8, 28, 6, 32, 33, 31, 27, 23),
-        t("Tools & connection", "الأدوات والاتصال") to listOf(43, 44, 15, 22, 30),
+        t("Tools & connection", "الأدوات والاتصال") to listOf(45, 43, 44, 15, 22, 30),
         t("Family & safety", "العائلة والأمان") to listOf(10),
         t("System & updates", "النظام والتحديثات") to listOf(9, 29, 20, 14, 17)
     ).map { (title, actions) -> title to actions.map { rows.getValue(it) } }
