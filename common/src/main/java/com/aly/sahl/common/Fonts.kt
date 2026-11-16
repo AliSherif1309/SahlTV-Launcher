@@ -13,7 +13,7 @@ import android.widget.TextView
 import java.io.File
 
 /**
- * The Thmanyah font (ثمانية) for all the app's text, in four weights.
+ * Roboto (Android sans-serif) for English; Thmanyah (ثمانية) for Arabic.
  * The font is inside the app only in scrambled form (its licence does not allow sharing the font files),
  * and is unpacked once into the app's private folder. Without it the app simply uses the TV's normal font.
  * Quran text keeps its own Mushaf font: only the TV's standard fonts are replaced.
@@ -39,6 +39,54 @@ object Fonts {
     private var map: Map<Typeface, Typeface> = emptyMap()
     private val ours: MutableSet<Typeface> = java.util.Collections.newSetFromMap(java.util.concurrent.ConcurrentHashMap())
     private var app: Context? = null
+
+    private val englishRuns = Regex("[\\u0020-\\u024F]+")
+    private val englishApplied = java.util.WeakHashMap<TextView, Pair<CharSequence, Typeface?>>()
+
+    /** Override only Latin runs, leaving Arabic shaping and the view's Thmanyah role intact. */
+    private class EnglishFont(private val family: String, private val style: Int) : android.text.style.MetricAffectingSpan() {
+        private fun apply(tp: android.text.TextPaint) {
+            tp.typeface = Typeface.create(family, (tp.typeface?.style ?: Typeface.NORMAL) or style)
+        }
+        override fun updateDrawState(tp: android.text.TextPaint) = apply(tp)
+        override fun updateMeasureState(tp: android.text.TextPaint) = apply(tp)
+    }
+
+    private fun applyEnglish(tv: TextView) {
+        val value = tv.text ?: return
+        val tf = tv.typeface
+        val previous = englishApplied[tv]
+        if (previous?.first === value && previous.second == tf) return
+        // Preserve Quran/Mushaf faces, monospace codes, and any other deliberately chosen font.
+        if (tf != null && tf !in ours && tf !in map && tf != Typeface.DEFAULT &&
+            tf != Typeface.DEFAULT_BOLD && tf != Typeface.SANS_SERIF) return
+        val family = when {
+            tf != null && tf === light -> "sans-serif-light"
+            tf != null && (tf === medium || tf === dispMed) -> "sans-serif-medium"
+            else -> "sans-serif"
+        }
+        val spans = android.text.SpannableString(value)
+        val oldSpans = spans.getSpans(0, spans.length, EnglishFont::class.java)
+        oldSpans.forEach { spans.removeSpan(it) }
+        val style = if (tf != null && (tf === bold || tf === dispBold || tf === textBold)) Typeface.BOLD else Typeface.NORMAL
+        var changed = oldSpans.isNotEmpty()
+        for (run in englishRuns.findAll(value)) {
+            spans.setSpan(EnglishFont(family, style), run.range.first, run.range.last + 1,
+                android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            changed = true
+        }
+        if (changed) {
+            // Keep EditText's editable buffer and cursor; never replace its text while typing.
+            val editable = value as? android.text.Editable
+            if (editable != null) {
+                editable.getSpans(0, editable.length, EnglishFont::class.java).forEach { editable.removeSpan(it) }
+                spans.getSpans(0, spans.length, EnglishFont::class.java).forEach {
+                    editable.setSpan(it, spans.getSpanStart(it), spans.getSpanEnd(it), android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                }
+            } else tv.text = spans
+        }
+        if (value !is android.text.Editable) englishApplied[tv] = tv.text to tf
+    }
 
     fun init(ctx: Context) {
         if (regular != null) return
@@ -147,6 +195,7 @@ object Fonts {
                 else if (tf !in ours) mp[tf]?.let { v.typeface = it }
             }
             heads[v]?.let { last -> val cur = v.text; if (cur != null && cur.toString() != last) { val out = headline(cur); heads[v] = out.toString(); if (out.toString() != cur.toString() || out is android.text.Spanned) v.text = out } }
+            applyEnglish(v)
             // text size: remember the app's own size, so it is scaled once (and again only if the app changes it)
             val rec = sizes[v]
             if (scale != 1f || rec != null) {
@@ -171,7 +220,7 @@ object Fonts {
         0f, 0f, 0f, 1f, 0f))
 
     fun watch(w: Window?) {
-        if (w == null || (map.isEmpty() && scale == 1f && !night) || watched.put(w, true) != null) return
+        if (w == null || watched.put(w, true) != null) return
         val d = w.decorView
         if (night) d.setLayerType(View.LAYER_TYPE_HARDWARE, android.graphics.Paint().apply { colorFilter = WARM })
         d.viewTreeObserver.addOnGlobalLayoutListener { applyTree(d) }   // before drawing, so new text never flashes in another font
@@ -225,3 +274,4 @@ class FontDialog(ctx: Context) : AlertDialog.Builder(ctx, R.style.SahlDialogThem
         h.post(check)
     }
 }
+

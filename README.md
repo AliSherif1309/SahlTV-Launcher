@@ -22,6 +22,7 @@ A calm, ad-free Android TV launcher with Arabic & English, Islamic essentials, a
 - **Get straight to your apps.** Favorites, Recent and All Apps, with D-pad navigation and no advertising feed.
 - **Make the layout yours.** Preview changes, choose row order, match tile sizes, arrange dashboard cards, and save named profiles.
 - **Keep Islamic essentials close.** Prayer times and countdown, Hijri date, daily Ayah, adhkar, Ramadan and Sunnah fasting cards.
+- **Read comfortably in either language.** Roboto for English across all five apps; Arabic keeps Thmanyah.
 - **Use Arabic comfortably.** Right-to-left UI, packaged Thmanyah typography, 123 / ١٢٣ numerals, larger text and warmer night styling.
 - **Control it from your phone.** Pair a browser on your home Wi-Fi to launch apps, control playback and type on the TV.
 - **Keep a timer in view.** A remote-friendly countdown on Home, with an optional overlay above other apps.
@@ -153,12 +154,12 @@ Install only the apps you want. **Sahl apps** lists installed TV versions and op
 <!-- BEGIN AUTO:APP_VERSIONS -->
 | App | Source version | Minimum Android API | Download |
 | --- | --- | --- | --- |
-| Sahl TV | 1.26.1 | 26 | [SahlTV.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlTV.apk) |
-| Sahl Quran | 1.11.1 | 26 | [SahlQuran.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlQuran.apk) |
-| Sahl PDF | 2.6.1 | 26 | [SahlPDF.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlPDF.apk) |
-| Sahl Files | 1.6.1 | 26 | [SahlFiles.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlFiles.apk) |
-| Sahl Timer | 1.1.1 | 26 | [SahlTimer.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlTimer.apk) |
-| Sahl Connect (Android phone) | 1.0.1 | 26 | [SahlConnect.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlConnect.apk) |
+| Sahl TV | 1.26.2 | 26 | [SahlTV.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlTV.apk) |
+| Sahl Quran | 1.11.2 | 26 | [SahlQuran.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlQuran.apk) |
+| Sahl PDF | 2.6.2 | 26 | [SahlPDF.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlPDF.apk) |
+| Sahl Files | 1.6.2 | 26 | [SahlFiles.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlFiles.apk) |
+| Sahl Timer | 1.1.2 | 26 | [SahlTimer.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlTimer.apk) |
+| Sahl Connect (Android phone) | 1.0.2 | 26 | [SahlConnect.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlConnect.apk) |
 <!-- END AUTO:APP_VERSIONS -->
 
 Versions above describe the source in this branch; download links point to the latest **published, validated** release and may lag an unmerged change.

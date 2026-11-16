@@ -154,8 +154,10 @@ Two small companion apps, built here with no external libraries and offered by �
 
 Both apps ask once for access to files (Android 10 shows a normal Allow window).
 
-## ✍ Thmanyah font (v1.13)
-All five TV apps use the Thmanyah family (ثمانية), following its own guide: **Serif Display** for titles and headings, **Serif Text** for text you read (messages, notes, book titles, text files), and **Sans** for the screen, buttons and numbers (the clock uses Sans Bold; the screensaver clock uses Sans Light). Quran pages keep the Amiri Quran Mushaf font.
+## ✍ English and Arabic fonts
+All five TV apps use Roboto (Android’s built-in sans-serif family) for English headings, body text, controls and Western numerals. Arabic in mixed-language labels keeps Thmanyah. Medium, bold and light roles are retained. TV manufacturers may customize the system face. English requires no download or font secret. Monospace codes and Quran/document fonts stay unchanged; phone pages use the phone’s available system fonts.
+
+Arabic keeps the Thmanyah family (ثمانية), following its own guide: **Serif Display** for titles and headings, **Serif Text** for text you read (messages, notes, book titles, text files), and **Sans** for the screen, buttons and numbers (the clock uses Sans Bold; the screensaver clock uses Sans Light). Quran pages keep the Amiri Quran Mushaf font.
 
 **Headings follow Thmanyah's guide**: each short heading gets one touch on its last word only: a swash ending (the font's alternate letter) when the word ends in ب ت ث س ش ص ض ف ق ك م ن ي ى ئ, otherwise one slanted kashida between the last two letters when they join. Never in long text.
 
