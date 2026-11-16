@@ -278,6 +278,7 @@ class MainActivity : Activity(), RemoteServer.Host {
 
     override fun onPause() {
         super.onPause()
+        remoteControls.cancel()
         resumed = false
         homeTimer.pause()
         Diagnostics.stopFrames(window)
@@ -346,6 +347,8 @@ class MainActivity : Activity(), RemoteServer.Host {
 
     // ------------------------------------------------------------------ clock screensaver
 
+    internal val remoteControls by lazy { RemoteControls(this) }
+
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         lastInput = System.currentTimeMillis()
         if (settingsView != null && saver == null && event.keyCode == KeyEvent.KEYCODE_BACK) {
@@ -356,6 +359,7 @@ class MainActivity : Activity(), RemoteServer.Host {
             if (event.action == KeyEvent.ACTION_UP) hideSaver()
             return true
         }
+        if (settingsView == null) return remoteControls.dispatch(event) { super.dispatchKeyEvent(it) }
         return super.dispatchKeyEvent(event)
     }
 

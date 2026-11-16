@@ -1,6 +1,7 @@
 {
-  "version": "1.26.2",
+  "version": "1.27.0",
   "en": [
+    "Remote shortcuts: test your buttons, hold Menu and release for a quick panel, and choose your own Home shortcuts.",
     "Roboto for English throughout the Sahl app family; Arabic keeps Thmanyah.",
     "Sahl settings throughout the app family: deep-green panels, gold focus and matching confirmation dialogs.",
     "Sahl Connect joins the family: pair the standalone Android phone app with the main Sahl TV launcher.",
@@ -12,6 +13,7 @@
     "Floating timer with optional cross-app overlay and improved Arabic prayer overlays"
   ],
   "ar": [
+    "اختصارات الريموت: اختبر الأزرار واضغط القائمة مطولًا ثم اتركها لفتح القائمة السريعة، واختر اختصاراتك للشاشة الرئيسية.",
     "خط Roboto للإنجليزية في عائلة تطبيقات سهل، مع الإبقاء على ثمانية للعربية.",
     "إعدادات بطابع سهل في عائلة التطبيقات: لوحات خضراء داكنة وتركيز ذهبي ونوافذ تأكيد متناسقة.",
     "انضم سهل Connect إلى العائلة: اربط تطبيق الهاتف المستقل بواجهة سهل TV الرئيسية.",

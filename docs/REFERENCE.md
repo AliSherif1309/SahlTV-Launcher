@@ -24,6 +24,16 @@ A replacement home screen for Android TV / Mi TV. It opens instantly, shows only
 - **Backup & restore:** saves all settings (favourites, order, hidden and locked apps, previews, language…) to `Download/SahlTV-backup.json` on the TV. Keep a copy on your PC with `adb pull /sdcard/Download/SahlTV-backup.json`.
 - **No tracking.** Optional features use Android services (media access and timer overlays). Apps load in the background and icons are kept in memory, so the Home button is instant.
 
+## TV remote shortcuts
+
+In **Settings → Tools & connection → Remote shortcuts**, choose **Test my remote**, configure short Menu outside app tiles or hold Menu, open the quick panel directly, or reset both shortcuts. Each shortcut defaults to the quick panel. Choices are Quick panel, Sahl Quran, Floating timer (the launcher's timer), Prayer times, Recent apps, Settings and Do nothing. Choices persist across restarts and are included in the existing settings backup.
+
+The quick panel offers Quran, the launcher timer, prayer times, Recent apps, Settings and Remote shortcuts. Quran must be installed; otherwise a message directs you to Sahl apps. Opening Quran or a Recent app follows the normal launcher PIN checks, and hidden apps are omitted from Recent. Prayer times uses the existing city setup when needed.
+
+Menu shortcuts operate only on Home, outside Settings, dialogs and the screensaver. Hold Menu for Android's long-press interval and release it to run the hold shortcut; it does not also perform the short action. Repeated Menu-down events do not retrigger actions. Canceled presses and presses interrupted by leaving Home do nothing. Short Menu on app tiles keeps its existing action: toggle Favorites in Recent, app options elsewhere. Hold OK retains app options. The screensaver still consumes its wake key.
+
+The tester displays the six latest received key events, including Android key name/code, press/release and repeat count. It consumes tested keys so they do not activate Home shortcuts; **Back closes the test**. Home, power, voice, volume or branded buttons may be handled by the TV before reaching SahlTV. Missing events are not evidence of a faulty remote. The tester and shortcuts require no extra permissions, do not remap system buttons and do not run over other apps. No accessibility service is added.
+
 ## Customize the home layout
 Open **Sahl TV → Settings → Home screen & apps** to access the visual layout preview, upper dashboard card controls, and layout profiles. The visual editor lets you change app tile size, combined or separate rows, Favorites/Recent visibility, and which row comes first before applying. Its preview displays your actual Favorites and Recent app names. If Favorites is empty or hidden, Recent becomes the first available app row.
 
