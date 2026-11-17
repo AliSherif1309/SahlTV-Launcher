@@ -880,10 +880,10 @@ class QuranActivity : Activity() {
                 val mark = exact[w]
                 val page = PdfPageMapping.page(pdfOffset, mark.index)
                 if (page !in 1..604) { toast(t("Line up this PDF first", "طابق صفحات هذا الملف أولًا")); return@setItems }
-                // A single page restores even-page bookmarks exactly, without rounding to the right-hand page.
+                // Restore the normal spread containing the saved page, without entering zoom.
                 prefs.edit().putString("view", "mushaf").apply()
-                zoom = true; zoomPage = page; highlight = mark.surah to mark.ayah
-                applyView(); zoomScroll.post { showZoom() }
+                zoom = false; mPage = PdfPageMapping.spreadStart(page); highlight = mark.surah to mark.ayah
+                applyView(); spread.post { sizePages(); showSpread() }
             } else if (w < exact.size + legacy.size) {
                 legacy[w - exact.size].let { goTo(it.first, it.second) }
             } else { saveBookmarks(emptyList()); savePdfMarks(emptyList()) }
