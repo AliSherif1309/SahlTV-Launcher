@@ -54,16 +54,16 @@ fun Context.label(text: CharSequence, size: Float, color: Int = C.TEXT, bold: Bo
     if (bold) setTypeface(typeface, Typeface.BOLD)
 }
 
-/** Rounded button: glass when idle, gold with dark text when selected with the remote. */
+/** Rounded button: glass when idle, green with white text and a gold border on focus. */
 fun Context.pill(text: String, onClick: () -> Unit) = TextView(this).apply {
     this.text = text; textSize = 16f; setTextColor(C.TEXT); gravity = Gravity.CENTER
     setPadding(dp(18), dp(10), dp(18), dp(10))
     isFocusable = true; isClickable = true; defaultFocusHighlightEnabled = false
     val idle = rounded(C.CARD, 22, 1, Color.argb(90, 227, 184, 92))
-    val on = rounded(C.GOLD, 22)
+    val on = rounded(Color.parseColor("#245D50"), 22, 2, C.GOLD)
     background = idle
     setOnFocusChangeListener { _, has ->
-        background = if (has) on else idle; setTextColor(if (has) C.DARK else C.TEXT)
+        background = if (has) on else idle; setTextColor(C.TEXT)
         animate().scaleX(if (has) 1.06f else 1f).scaleY(if (has) 1.06f else 1f).setDuration(120).start()
     }
     setOnClickListener { onClick() }
@@ -82,7 +82,7 @@ fun View.goldFocus(ring: View, scale: Float = 1.06f, extra: ((Boolean) -> Unit)?
 
 fun Context.ring(radiusDp: Int) = View(this).apply { background = rounded(Color.TRANSPARENT, radiusDp, 3, C.GOLD) }
 
-/** Calm dialogs that work with the remote (▲ ▼ OK Back). */
+/** Calm dialogs that work with the remote (  OK Back). */
 object Dlg {
     fun base(a: Activity, title: String?, body: View, wide: Boolean = false): Dialog {
         val d = Dialog(a)
@@ -107,8 +107,8 @@ object Dlg {
         this.text = text; textSize = 17f; setTextColor(C.TEXT)
         setPadding(a.dp(14), a.dp(11), a.dp(14), a.dp(11))
         isFocusable = true; isClickable = true; defaultFocusHighlightEnabled = false
-        val on = a.rounded(C.GOLD, 10)
-        setOnFocusChangeListener { _, has -> background = if (has) on else null; setTextColor(if (has) C.DARK else C.TEXT) }
+        val on = a.rounded(Color.parseColor("#245D50"), 10, 2, C.GOLD)
+        setOnFocusChangeListener { _, has -> background = if (has) on else null; setTextColor(C.TEXT) }
         setOnClickListener { onClick() }
     }
 
@@ -129,7 +129,7 @@ object Dlg {
         box.addView(a.label(msg, 17f, C.TEXT).apply { typeface = Fonts.text(); setLineSpacing(0f, 1.2f); setPadding(a.dp(4), 0, a.dp(4), a.dp(14)) })
         lateinit var d: Dialog
         val btns = LinearLayout(a).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.END; clipChildren = false }
-        val no = a.pill(t("Cancel", "إلغاء")) { d.dismiss() }
+        val no = a.pill(t("Cancel", "?????")) { d.dismiss() }
         btns.addView(no)
         btns.addView(a.pill(yes) { d.dismiss(); onYes() }, LinearLayout.LayoutParams(-2, -2).apply { marginStart = a.dp(12) })
         box.addView(btns)
@@ -142,7 +142,7 @@ object Dlg {
         val box = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL }
         box.addView(a.label(msg, 17f, C.TEXT).apply { typeface = Fonts.text(); setLineSpacing(0f, 1.2f); setPadding(a.dp(4), 0, a.dp(4), a.dp(14)) })
         lateinit var d: Dialog
-        val ok = a.pill(t("OK", "حسنًا")) { d.dismiss() }
+        val ok = a.pill(t("OK", "?????")) { d.dismiss() }
         box.addView(ok, LinearLayout.LayoutParams(-2, -2).apply { gravity = Gravity.END })
         d = base(a, title, box)
         d.setOnShowListener { ok.requestFocus() }
@@ -162,8 +162,8 @@ object Dlg {
         val go = { val s = et.text.toString().trim(); d.dismiss(); if (s.isNotEmpty()) onOk(s) }
         et.setOnEditorActionListener { _, id, ev -> if (id == EditorInfo.IME_ACTION_DONE || ev?.keyCode == KeyEvent.KEYCODE_ENTER) { go(); true } else false }
         val btns = LinearLayout(a).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.END; setPadding(0, a.dp(14), 0, 0); clipChildren = false }
-        btns.addView(a.pill(t("Cancel", "إلغاء")) { d.dismiss() })
-        btns.addView(a.pill(t("OK", "موافق")) { go() }, LinearLayout.LayoutParams(-2, -2).apply { marginStart = a.dp(12) })
+        btns.addView(a.pill(t("Cancel", "?????")) { d.dismiss() })
+        btns.addView(a.pill(t("OK", "?????")) { go() }, LinearLayout.LayoutParams(-2, -2).apply { marginStart = a.dp(12) })
         box.addView(btns)
         d = base(a, title, box)
         d.setOnShowListener { et.requestFocus() }

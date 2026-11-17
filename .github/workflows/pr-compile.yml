@@ -43,7 +43,7 @@ jobs:
           python3 tools/pack_fonts.py
       - name: Build all debug apps and instrumentation tests
         run: |
-          gradle assembleDebug :connect-protocol:test :app:assembleDebugAndroidTest :timer:assembleDebugAndroidTest :connect:assembleDebugAndroidTest :app:lintDebug :connect:lintDebug --no-daemon --stacktrace
+          gradle assembleDebug :quran:testDebugUnitTest :connect-protocol:test :app:assembleDebugAndroidTest :timer:assembleDebugAndroidTest :connect:assembleDebugAndroidTest :app:lintDebug :quran:lintDebug :connect:lintDebug --no-daemon --stacktrace
           cp app/build/outputs/apk/debug/app-debug.apk SahlTV.apk
           cp quran/build/outputs/apk/debug/quran-debug.apk SahlQuran.apk
           cp pdf/build/outputs/apk/debug/pdf-debug.apk SahlPDF.apk
@@ -69,4 +69,3 @@ jobs:
     with:
       artifact: SahlTV-debug-validation
       source_sha: ${{ github.sha }}
-
