@@ -161,7 +161,7 @@ Install only the apps you want. **Sahl apps** lists installed TV versions and op
 | App | Source version | Minimum Android API | Download |
 | --- | --- | --- | --- |
 | Sahl TV | 1.27.2 | 26 | [SahlTV.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlTV.apk) |
-| Sahl Quran | 1.12.2 | 26 | [SahlQuran.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlQuran.apk) |
+| Sahl Quran | 1.12.3 | 26 | [SahlQuran.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlQuran.apk) |
 | Sahl PDF | 2.6.4 | 26 | [SahlPDF.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlPDF.apk) |
 | Sahl Files | 1.6.4 | 26 | [SahlFiles.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlFiles.apk) |
 | Sahl Timer | 1.1.4 | 26 | [SahlTimer.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlTimer.apk) |
@@ -230,7 +230,7 @@ Contact: alysherif1309@gmail.com
 New PDF alignment starts at the first PDF page without guessing how many opening pages to skip. If app page 1 opens PDF page 5, choose **OK → My Mushaf (PDF) → Use PDF page 1 as Mushaf page 1**. This resets alignment and opens the beginning; exact PDF bookmarks keep their saved locations. Use **Line up the pages again** only when the file has real opening pages before Al-Fatihah.
 
 
-In Sahl Quran, **OK → Bookmark this page** lets you choose the right or left page, then an Ayah. PDF bookmarks retain the exact PDF page and show the Surah, Ayah and page number. If your uploaded Mushaf’s printed number differs from the menu, use **My Mushaf (PDF) → Correct the printed page number** and enter the number on the right page (or the single page). Ayah choices require the standard 604-page Madinah layout. See [PDF bookmark details](docs/REFERENCE.md#quran-pdf-bookmarks).
+In Sahl Quran, **OK → Bookmark this page** lets you choose the right or left page, then an Ayah. PDF bookmarks retain the exact PDF page and show the Surah, Ayah and page number. Selecting a PDF bookmark opens the normal two-page spread containing that page, without zooming. If your uploaded Mushaf’s printed number differs from the menu, use **My Mushaf (PDF) → Correct the printed page number** and enter the number on the right page (or the single page). Ayah choices require the standard 604-page Madinah layout. See [PDF bookmark details](docs/REFERENCE.md#quran-pdf-bookmarks).
 
 Selected settings and shared dialogs keep soft-white text on green with a gold border, matching the main Settings.
 

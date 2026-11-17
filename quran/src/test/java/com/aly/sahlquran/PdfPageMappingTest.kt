@@ -4,6 +4,16 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class PdfPageMappingTest {
+    @Test fun bookmarkDestinationKeepsEitherPageVisibleInANormalSpread() {
+        for (page in listOf(1, 2, 491, 492, 603, 604)) {
+            val start = PdfPageMapping.spreadStart(page)
+            assertEquals(1, start % 2)
+            assertTrue(page == start || page == start + 1)
+        }
+        assertEquals(491, PdfPageMapping.spreadStart(492))
+        assertEquals(603, PdfPageMapping.spreadStart(604))
+    }
+
     @Test fun freshPdfAlwaysStartsAtItsFirstPage() {
         for (count in listOf(604, 608, 610, 620)) {
             assertEquals(0, PdfPageMapping.alignmentStart(-1, count))
