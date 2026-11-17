@@ -160,12 +160,12 @@ Install only the apps you want. **Sahl apps** lists installed TV versions and op
 <!-- BEGIN AUTO:APP_VERSIONS -->
 | App | Source version | Minimum Android API | Download |
 | --- | --- | --- | --- |
-| Sahl TV | 1.27.1 | 26 | [SahlTV.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlTV.apk) |
-| Sahl Quran | 1.12.2 | 26 | [SahlQuran.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlQuran.apk) |
-| Sahl PDF | 2.6.3 | 26 | [SahlPDF.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlPDF.apk) |
-| Sahl Files | 1.6.3 | 26 | [SahlFiles.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlFiles.apk) |
-| Sahl Timer | 1.1.3 | 26 | [SahlTimer.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlTimer.apk) |
-| Sahl Connect (Android phone) | 1.0.3 | 26 | [SahlConnect.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlConnect.apk) |
+| Sahl TV | 1.27.2 | 26 | [SahlTV.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlTV.apk) |
+| Sahl Quran | 1.12.3 | 26 | [SahlQuran.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlQuran.apk) |
+| Sahl PDF | 2.6.4 | 26 | [SahlPDF.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlPDF.apk) |
+| Sahl Files | 1.6.4 | 26 | [SahlFiles.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlFiles.apk) |
+| Sahl Timer | 1.1.4 | 26 | [SahlTimer.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlTimer.apk) |
+| Sahl Connect (Android phone) | 1.0.4 | 26 | [SahlConnect.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlConnect.apk) |
 <!-- END AUTO:APP_VERSIONS -->
 
 Versions above describe the source in this branch; download links point to the latest **published, validated** release and may lag an unmerged change.
@@ -233,3 +233,7 @@ New PDF alignment starts at the first PDF page without guessing how many opening
 In Sahl Quran, **OK → Bookmark this page** lets you choose the right or left page, then an Ayah. PDF bookmarks retain the exact PDF page and show the Surah, Ayah and page number. Selecting a PDF bookmark opens the normal two-page spread containing that page, without zooming. If your uploaded Mushaf’s printed number differs from the menu, use **My Mushaf (PDF) → Correct the printed page number** and enter the number on the right page (or the single page). Ayah choices require the standard 604-page Madinah layout. See [PDF bookmark details](docs/REFERENCE.md#quran-pdf-bookmarks).
 
 Selected settings and shared dialogs keep soft-white text on green with a gold border, matching the main Settings.
+
+### Card subtitles and Arabic dialogs
+
+In **Settings → Home screen & apps**, **Ramadan & fasting subtitles** keeps the sentence below each title visible by default. Turn it off to restore automatic compact cards on ordinary days. **Adhkar subtitle** shows a morning/evening reminder by default and can be switched off independently. Arabic About and shared settings dialogs align their titles and messages from the right.

@@ -148,7 +148,11 @@ internal fun MainActivity.buildPanel(): LinearLayout {
     adhkarCard = card(true) { openAdhkar() }.apply { visibility = View.GONE; minimumHeight = dp(46) }
     adhkarCard.addView(GoldIcon(this, GoldIcon.BOOK, GOLD), LinearLayout.LayoutParams(dp(30), dp(30)).apply { marginEnd = dp(12) })
     adhkarTitle = TextView(this).apply { textSize = 17f; setTextColor(TEXT); typeface = Fonts.display(true); maxLines = 1 }
-    adhkarCard.addView(adhkarTitle, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
+    val adhkarTexts = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+    adhkarTexts.addView(adhkarTitle)
+    adhkarSub = TextView(this).apply { textSize = 14f; setTextColor(MUTED); maxLines = 2 }
+    adhkarTexts.addView(adhkarSub)
+    adhkarCard.addView(adhkarTexts, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
     row2.addView(adhkarCard, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f).apply { marginStart = dp(12) })
     col.addView(row2)
 

@@ -99,6 +99,8 @@ internal fun MainActivity.launcherMenu() = showSettings()
 internal fun MainActivity.menuAction(which: Int) {
     if (which in listOf(0, 5, 7)) prefs.edit().putBoolean("reopenSettings", true).apply()
     when (which) {
+        46 -> { prefs.edit().putBoolean("islamicSubtitlesAlways", !prefs.getBoolean("islamicSubtitlesAlways", true)).apply(); updateClock() }
+        47 -> { prefs.edit().putBoolean("adhkarSubtitle", !prefs.getBoolean("adhkarSubtitle", true)).apply(); updateClock() }
         0 -> { prefs.edit().putString("lang", if (ar) "en" else "ar").apply(); recreate() }
         1 -> previewsMenu()
         2 -> { prefs.edit().putBoolean("sortUsed", !sortMostUsed).apply(); render(false) }
