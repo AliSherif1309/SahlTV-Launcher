@@ -245,7 +245,7 @@ class QuranActivity : Activity() {
         img.tag = idx
         worker.execute {
             val bmp = doc.render(idx, w, h)
-            handler.post { if (img.tag == idx) { img.setImageBitmap(bmp); img.colorFilter = PdfMushaf.filter(theme) } }
+            handler.post { if (pdf === doc && img.tag == idx) { img.setImageBitmap(bmp); img.colorFilter = PdfMushaf.filter(theme) } }
         }
     }
 
@@ -852,7 +852,9 @@ class QuranActivity : Activity() {
         if (legacy.isEmpty() && exact.isEmpty()) { toast(t("No bookmarks yet", "لا توجد علامات بعد")); return }
         val labels = exact.map { mark ->
             val page = PdfPageMapping.page(pdfOffset, mark.index)
-            verseLabel(mark.surah, mark.ayah) + t(" · page $page · PDF", " · صفحة ${arabicNum(page)} · PDF")
+            verseLabel(mark.surah, mark.ayah) + if (page in 1..604)
+                t(" · page $page · PDF", " · صفحة ${arabicNum(page)} · PDF")
+            else t(" · PDF page ${mark.index + 1}", " · صفحة الملف ${arabicNum(mark.index + 1)}")
         } + legacy.map { (s, a) ->
             verseLabel(s, a) + d.pageOf(s, a).takeIf { it > 0 }.let { p ->
                 if (p == null) "" else t(" · page $p", " · صفحة ${arabicNum(p)}")
