@@ -336,7 +336,7 @@ class QuranActivity : Activity() {
         val doc = pdf ?: return
         if (!mushaf) prefs.edit().putString("view", "mushaf").apply()
         aligning = true; zoom = false
-        alignIdx = if (pdfOffset >= 0) pdfOffset else (doc.pageCount - 604).coerceIn(0, 6)
+        alignIdx = PdfPageMapping.alignmentStart(pdfOffset, doc.pageCount)
         applyView(); zoomScroll.post { showAlign() }
     }
 
@@ -355,7 +355,7 @@ class QuranActivity : Activity() {
     }
 
     private fun finishAlign(ok: Boolean) {
-        if (ok) { prefs.edit().putInt("pdfOffset", alignIdx).putString("src", "pdf").apply(); toast(t("Lined up ✓ — your Mushaf is ready", "تمت المطابقة ✓ — مصحفك جاهز")) }
+        if (ok) { prefs.edit().putInt("pdfOffset", alignIdx).putString("src", "pdf").apply(); mPage = 1; zoomPage = 1; toast(t("Lined up ✓ — your Mushaf is ready", "تمت المطابقة ✓ — مصحفك جاهز")) }
         aligning = false; noteTv.visibility = View.GONE
         applyView(); spread.post { sizePages(); showSpread() }
     }
@@ -716,12 +716,14 @@ class QuranActivity : Activity() {
         val items = arrayListOf<Pair<String, () -> Unit>>(
             (if (usePdf) t("Use the built-in pages instead", "استخدام الصفحات المدمجة بدلًا منه") else t("Use my Mushaf", "استخدام مصحفي")) to {
                 prefs.edit().putString("src", if (usePdf) "builtin" else "pdf").apply(); if (usePdf && pdfOffset < 0) startAlign() else { applyTheme(); showSpread() } },
+            t("Use PDF page 1 as Mushaf page 1", "اعتبار صفحة PDF الأولى الصفحة ١ من المصحف") to { resetPdfStart() },
             t("Correct the printed page number", "تصحيح رقم الصفحة المطبوعة") to { correctPdfPage() },
             t("Line up the pages again", "إعادة مطابقة الصفحات") to { startAlign() },
             t("Replace with another PDF (e.g. a Tajweed Mushaf)", "استبداله بملف آخر (مثل مصحف التجويد)") to { sendFromPhone() },
             t("Remove my Mushaf from the TV", "حذف مصحفي من التلفاز") to {
                 doc.close(); pdf = null; PdfMushaf.file(this).delete(); prefs.edit().remove("pdfOffset").apply(); applyTheme(); showSpread() })
-        dialog().setTitle(t("My Mushaf (PDF, ${doc.pageCount} pages)", "مصحفي (PDF، ${arabicNum(doc.pageCount)} صفحة)"))
+        val mapping = if (pdfOffset >= 0) t(" · Mushaf 1 = PDF ${pdfOffset + 1}", " · المصحف ١ = PDF ${arabicNum(pdfOffset + 1)}") else ""
+        dialog().setTitle(t("My Mushaf (PDF, ${doc.pageCount} pages)", "مصحفي (PDF، ${arabicNum(doc.pageCount)} صفحة)") + mapping)
             .setItems(items.map { it.first }.toTypedArray()) { _, w -> items[w].second() }.show()
     }
 
@@ -823,6 +825,19 @@ class QuranActivity : Activity() {
         if (visible.size == 1) chooseAyah(page)
         else dialog().setTitle(t("Bookmark · choose page", "إضافة علامة · اختر الصفحة"))
             .setItems(visible.map { p -> t("Page $p", "صفحة ${arabicNum(p)}") }.toTypedArray()) { _, w -> chooseAyah(visible[w]) }.show()
+    }
+
+    private fun resetPdfStart() {
+        if (pdf == null) return
+        dialog().setTitle(t("Start at the first PDF page?", "البدء من صفحة PDF الأولى؟"))
+            .setMessage(t("Mushaf page 1 will show PDF page 1. No opening pages will be skipped. Your PDF bookmarks are kept at their exact locations.",
+                "ستعرض الصفحة ١ من المصحف صفحة PDF الأولى دون تخطي صفحات البداية. ستبقى علامات PDF في مواقعها الأصلية."))
+            .setNegativeButton(t("Cancel", "إلغاء"), null)
+            .setPositiveButton(t("Use page 1", "استخدام الصفحة ١")) { _, _ ->
+                prefs.edit().putInt("pdfOffset", 0).putString("src", "pdf").putString("view", "mushaf").apply()
+                aligning = false; zoom = false; mPage = 1; zoomPage = 1; highlight = null
+                applyView(); spread.post { sizePages(); showSpread() }
+            }.show()
     }
 
     private fun correctPdfPage() {

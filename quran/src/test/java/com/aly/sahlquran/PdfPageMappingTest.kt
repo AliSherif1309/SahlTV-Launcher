@@ -4,6 +4,23 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class PdfPageMappingTest {
+    @Test fun freshPdfAlwaysStartsAtItsFirstPage() {
+        for (count in listOf(604, 608, 610, 620)) {
+            assertEquals(0, PdfPageMapping.alignmentStart(-1, count))
+            assertEquals(0, PdfPageMapping.index(PdfPageMapping.alignmentStart(-1, count), 1))
+        }
+    }
+
+    @Test fun explicitAlignmentIsRetainedAndResetCanReachTheFirstPdfPage() {
+        assertEquals(4, PdfPageMapping.alignmentStart(4, 608))
+        assertEquals(4, PdfPageMapping.index(4, 1)) // the reported app page 1 / PDF page 5 mismatch
+        assertEquals(0, PdfPageMapping.index(0, 1))
+        assertEquals(1, PdfPageMapping.page(0, 0))
+        val bookmark = PdfPageMapping.index(4, 487)
+        assertEquals(491, PdfPageMapping.page(0, bookmark))
+        assertEquals(bookmark, PdfPageMapping.index(0, 491))
+    }
+
     @Test fun correctScreenshotOffsetWithoutMovingThePdfLocation() {
         // Menu says 487 while the same PDF page is printed as 491.
         val location = PdfPageMapping.index(6, 487)
