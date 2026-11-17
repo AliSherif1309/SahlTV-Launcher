@@ -794,14 +794,14 @@ class QuranActivity : Activity() {
             .put("ayah", m.ayah).put("document", m.document)) }
         prefs.edit().putString(k("pdfBookmarks"), array.toString()).apply()
     }
-    private val currentPdfMarks get() = pdfMarks.filter { it.document == pdfDocument }
+    private val currentPdfMarks get() = pdfMarks.filter { it.document == pdfDocument && it.index < (pdf?.pageCount ?: 0) }
     private val bookmarkCount get() = bookmarks.size + if (usePdf) currentPdfMarks.size else 0
     private fun verseLabel(s: Int, a: Int) = t("${QuranData.NAMES_EN[s - 1]} · Ayah $a",
         "${QuranData.NAMES_AR[s - 1]} · الآية ${arabicNum(a)}")
 
     private fun addBookmark() {
         val d = data ?: return
-        val page = if (zoom) zoomPage else mPage
+        val page = if (!mushaf) d.pageOf(surah, pagesOf(surah)[pageIdx][0]) else if (zoom) zoomPage else mPage
         val visible = if (mushaf && !zoom) listOf(page, page + 1).filter { it <= 604 } else listOf(page)
         fun chooseAyah(p: Int) {
             val verses = if (mushaf) d.pageAyahs(p) else pagesOf(surah)[pageIdx].let { range ->
