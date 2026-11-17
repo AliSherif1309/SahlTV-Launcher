@@ -1,6 +1,7 @@
 {
-  "version": "1.27.0",
+  "version": "1.27.1",
   "en": [
+    "Selected settings keep white text with green focus and a gold border. Quran PDF bookmarks save the exact page and selected Ayah; printed page numbers can be corrected.",
     "Remote shortcuts: test your buttons, hold Menu and release for a quick panel, and choose your own Home shortcuts.",
     "Roboto for English throughout the Sahl app family; Arabic keeps Thmanyah.",
     "Sahl settings throughout the app family: deep-green panels, gold focus and matching confirmation dialogs.",
@@ -13,6 +14,7 @@
     "Floating timer with optional cross-app overlay and improved Arabic prayer overlays"
   ],
   "ar": [
+    "نص الإعدادات المحددة يبقى أبيض مع تركيز أخضر وإطار ذهبي. علامات PDF في القرآن تحفظ الصفحة نفسها والآية المختارة مع إمكانية تصحيح رقم الصفحة المطبوعة.",
     "اختصارات الريموت: اختبر الأزرار واضغط القائمة مطولًا ثم اتركها لفتح القائمة السريعة، واختر اختصاراتك للشاشة الرئيسية.",
     "خط Roboto للإنجليزية في عائلة تطبيقات سهل، مع الإبقاء على ثمانية للعربية.",
     "إعدادات بطابع سهل في عائلة التطبيقات: لوحات خضراء داكنة وتركيز ذهبي ونوافذ تأكيد متناسقة.",

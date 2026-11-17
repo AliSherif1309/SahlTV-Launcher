@@ -343,6 +343,16 @@ The phone APK shares release signing and publication with the family, with versi
 
 ## Shared Sahl settings theme
 
-Sahl TV, Quran, PDF, Files and Timer use the same deep-green settings panels, soft-white text, gold headings and rounded corners. Focused choices and action buttons use gold with dark text for remote navigation. Settings lists, single-choice selectors, confirmation messages and input dialogs follow this appearance. Quran paper and PDF reading themes still control reading pages separately.
+Sahl TV, Quran, PDF, Files and Timer use the same deep-green settings panels, soft-white text, gold headings and rounded corners. Focused choices and action buttons keep soft-white text on a green highlight with a gold border for remote navigation. Settings lists, single-choice selectors, confirmation messages and input dialogs follow this appearance. Quran paper and PDF reading themes still control reading pages separately.
 
 Sahl Connect's phone setup and confirmation dialogs use the same Sahl colours with the phone's system fonts. TV apps use the packaged Sahl typography when available, falling back to system fonts in builds without the font assets. Existing shared text-size and night-style behavior still applies on TV. Android-owned permission, accessibility, keyboard and installer screens use Android's own theme.
+
+## Quran PDF bookmarks
+
+In Sahl Quran, open **OK → Bookmark this page**. In two-page view, select either visible page, then choose the Ayah on that page; single-page and large-text views go straight to the Ayah choices. Bookmarks show explicit Surah, Ayah and page labels. PDF bookmarks save the zero-based PDF location separately from the verse reference, so later alignment changes do not move the saved PDF page. Opening one uses single-page view to restore even pages exactly. Each reader has separate bookmarks; bookmarks for a replaced PDF are kept separate and are not offered for the new document. Clear all bookmarks clears that reader's verse and PDF bookmarks.
+
+If the printed page number differs from the menu (for example printed 491 while the menu says 487), open **My Mushaf (PDF) → Correct the printed page number**. Enter the number printed on the right page in a spread, or on the single page. This adjusts the PDF offset without changing the PDF file. You can also use **Line up the pages again** and select Al-Fatihah. The file must contain all 604 consecutive Madinah pages after any front matter. Ayah choices use the bundled Madinah page metadata, not OCR; other pagination and inserted/missing pages are not supported by this mapping.
+
+Existing verse-only bookmarks remain available with explicit Ayah and page labels. They cannot recover the intended PDF page if saved under an incorrect old alignment; recreate affected bookmarks after correcting the alignment. A bookmark points to a page and verse reference; scanned PDF verses are not individually highlighted.
+
+The current illustrations in docs/images cover the Home dashboard and tile layout, not these reader dialogs; they remain labeled illustrations.

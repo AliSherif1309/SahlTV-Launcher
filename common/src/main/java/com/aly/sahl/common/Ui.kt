@@ -54,16 +54,16 @@ fun Context.label(text: CharSequence, size: Float, color: Int = C.TEXT, bold: Bo
     if (bold) setTypeface(typeface, Typeface.BOLD)
 }
 
-/** Rounded button: glass when idle, gold with dark text when selected with the remote. */
+/** Rounded button: glass when idle, green with white text and a gold border on focus. */
 fun Context.pill(text: String, onClick: () -> Unit) = TextView(this).apply {
     this.text = text; textSize = 16f; setTextColor(C.TEXT); gravity = Gravity.CENTER
     setPadding(dp(18), dp(10), dp(18), dp(10))
     isFocusable = true; isClickable = true; defaultFocusHighlightEnabled = false
     val idle = rounded(C.CARD, 22, 1, Color.argb(90, 227, 184, 92))
-    val on = rounded(C.GOLD, 22)
+    val on = rounded(Color.parseColor("#245D50"), 22, 2, C.GOLD)
     background = idle
     setOnFocusChangeListener { _, has ->
-        background = if (has) on else idle; setTextColor(if (has) C.DARK else C.TEXT)
+        background = if (has) on else idle; setTextColor(C.TEXT)
         animate().scaleX(if (has) 1.06f else 1f).scaleY(if (has) 1.06f else 1f).setDuration(120).start()
     }
     setOnClickListener { onClick() }
@@ -107,8 +107,8 @@ object Dlg {
         this.text = text; textSize = 17f; setTextColor(C.TEXT)
         setPadding(a.dp(14), a.dp(11), a.dp(14), a.dp(11))
         isFocusable = true; isClickable = true; defaultFocusHighlightEnabled = false
-        val on = a.rounded(C.GOLD, 10)
-        setOnFocusChangeListener { _, has -> background = if (has) on else null; setTextColor(if (has) C.DARK else C.TEXT) }
+        val on = a.rounded(Color.parseColor("#245D50"), 10, 2, C.GOLD)
+        setOnFocusChangeListener { _, has -> background = if (has) on else null; setTextColor(C.TEXT) }
         setOnClickListener { onClick() }
     }
 

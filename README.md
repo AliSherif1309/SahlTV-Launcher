@@ -160,12 +160,12 @@ Install only the apps you want. **Sahl apps** lists installed TV versions and op
 <!-- BEGIN AUTO:APP_VERSIONS -->
 | App | Source version | Minimum Android API | Download |
 | --- | --- | --- | --- |
-| Sahl TV | 1.27.0 | 26 | [SahlTV.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlTV.apk) |
-| Sahl Quran | 1.11.2 | 26 | [SahlQuran.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlQuran.apk) |
-| Sahl PDF | 2.6.2 | 26 | [SahlPDF.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlPDF.apk) |
-| Sahl Files | 1.6.2 | 26 | [SahlFiles.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlFiles.apk) |
-| Sahl Timer | 1.1.2 | 26 | [SahlTimer.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlTimer.apk) |
-| Sahl Connect (Android phone) | 1.0.2 | 26 | [SahlConnect.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlConnect.apk) |
+| Sahl TV | 1.27.1 | 26 | [SahlTV.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlTV.apk) |
+| Sahl Quran | 1.12.0 | 26 | [SahlQuran.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlQuran.apk) |
+| Sahl PDF | 2.6.3 | 26 | [SahlPDF.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlPDF.apk) |
+| Sahl Files | 1.6.3 | 26 | [SahlFiles.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlFiles.apk) |
+| Sahl Timer | 1.1.3 | 26 | [SahlTimer.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlTimer.apk) |
+| Sahl Connect (Android phone) | 1.0.3 | 26 | [SahlConnect.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlConnect.apk) |
 <!-- END AUTO:APP_VERSIONS -->
 
 Versions above describe the source in this branch; download links point to the latest **published, validated** release and may lag an unmerged change.
@@ -224,3 +224,9 @@ revision only when an existing setting gains a substantial new capability.
 Code: [MIT](LICENSE). Quran text: [Tanzil](https://tanzil.net), unchanged Uthmani text, CC BY 3.0. Quran typography: Amiri Quran, SIL OFL. Thmanyah typography follows its separate font license; local builds use system fonts without the font secret. Wallpaper attribution is checked at build time and shown in About; see the [detailed credits and feature reference](docs/REFERENCE.md).
 
 Contact: alysherif1309@gmail.com
+
+### Quran PDF bookmarks and readable settings
+
+In Sahl Quran, **OK → Bookmark this page** lets you choose the right or left page, then an Ayah. PDF bookmarks retain the exact PDF page and show the Surah, Ayah and page number. If your uploaded Mushaf’s printed number differs from the menu, use **My Mushaf (PDF) → Correct the printed page number** and enter the number on the right page (or the single page). Ayah choices require the standard 604-page Madinah layout. See [PDF bookmark details](docs/REFERENCE.md#quran-pdf-bookmarks).
+
+Selected settings and shared dialogs keep soft-white text on green with a gold border, matching the main Settings.

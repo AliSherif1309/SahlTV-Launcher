@@ -240,18 +240,19 @@ class QuranActivity : Activity() {
     /** Draws one Mushaf page from your PDF into an ImageView, off the main thread. */
     private fun pdfInto(img: android.widget.ImageView, page: Int, w: Int, h: Int) {
         val doc = pdf ?: return
-        val idx = pdfOffset.coerceAtLeast(0) + page - 1
+        val idx = PdfPageMapping.index(pdfOffset.coerceAtLeast(0), page)
+        img.setImageDrawable(null)
         img.tag = idx
         worker.execute {
             val bmp = doc.render(idx, w, h)
-            handler.post { if (img.tag == idx) { img.setImageBitmap(bmp); img.colorFilter = PdfMushaf.filter(theme) } }
+            handler.post { if (pdf === doc && img.tag == idx) { img.setImageBitmap(bmp); img.colorFilter = PdfMushaf.filter(theme) } }
         }
     }
 
     private fun prefetch(page: Int) {
         val doc = pdf ?: return
         if (!usePdf || pageW <= 0 || page > 604) return
-        val idx = pdfOffset.coerceAtLeast(0) + page - 1
+        val idx = PdfPageMapping.index(pdfOffset.coerceAtLeast(0), page)
         worker.execute { doc.render(idx, pageW, pageH) }
     }
 
@@ -437,7 +438,7 @@ class QuranActivity : Activity() {
 
     private fun goTo(s: Int, a: Int) {
         val d = data
-        if (mushaf && d != null) { mPage = d.pageOf(s.coerceIn(1, 114), a).coerceAtLeast(1); showSpread(); return }
+        if (mushaf && d != null) { mPage = d.pageOf(s.coerceIn(1, 114), a).coerceAtLeast(1); if (zoom) zoomPage = mPage; showSpread(); return }
         surah = s.coerceIn(1, 114)
         val pages = pagesOf(surah)
         pageIdx = pages.indexOfFirst { a in it[0]..it[1] }.coerceAtLeast(0)
@@ -625,12 +626,8 @@ class QuranActivity : Activity() {
         items.add(t("🔢  Go to juz'", "🔢  الانتقال إلى جزء") to { juzMenu() })
         if (d.quarterStarts.isNotEmpty()) items.add(t("۞  Go to hizb", "۞  الانتقال إلى حزب") to { hizbMenu() })
         if (hasPages) items.add(t("📄  Go to Mushaf page", "📄  الانتقال إلى صفحة المصحف") to { pageMenu() })
-        items.add(t("🔖  Bookmark this page", "🔖  إضافة علامة لهذه الصفحة") to {
-            val first = if (mushaf) d.pageAyahs(curPage).firstOrNull() ?: (surah to 1) else surah to pagesOf(surah)[pageIdx][0]
-            val l = bookmarks; if (l.none { it == first }) l.add(0, first); saveBookmarks(l.take(30))
-            toast(t("Bookmarked", "تمت إضافة العلامة"))
-        })
-        items.add(t("📑  Bookmarks (${bookmarks.size})", "📑  العلامات (${arabicNum(bookmarks.size)})") to { bookmarksMenu() })
+        items.add(t("🔖  Bookmark this page", "🔖  إضافة علامة لهذه الصفحة") to { addBookmark() })
+        items.add(t("📑  Bookmarks (${bookmarkCount})", "📑  العلامات (${arabicNum(bookmarkCount)})") to { bookmarksMenu() })
         // view
         if (hasPages) items.add((if (mushaf) t("📗  View: Mushaf pages  (switch to large text)", "📗  العرض: صفحات المصحف  (التبديل إلى خط كبير)")
                                  else t("📗  View: Large text  (switch to Mushaf pages)", "📗  العرض: خط كبير  (التبديل إلى صفحات المصحف)")) to {
@@ -719,6 +716,7 @@ class QuranActivity : Activity() {
         val items = arrayListOf<Pair<String, () -> Unit>>(
             (if (usePdf) t("Use the built-in pages instead", "استخدام الصفحات المدمجة بدلًا منه") else t("Use my Mushaf", "استخدام مصحفي")) to {
                 prefs.edit().putString("src", if (usePdf) "builtin" else "pdf").apply(); if (usePdf && pdfOffset < 0) startAlign() else { applyTheme(); showSpread() } },
+            t("Correct the printed page number", "تصحيح رقم الصفحة المطبوعة") to { correctPdfPage() },
             t("Line up the pages again", "إعادة مطابقة الصفحات") to { startAlign() },
             t("Replace with another PDF (e.g. a Tajweed Mushaf)", "استبداله بملف آخر (مثل مصحف التجويد)") to { sendFromPhone() },
             t("Remove my Mushaf from the TV", "حذف مصحفي من التلفاز") to {
@@ -736,7 +734,8 @@ class QuranActivity : Activity() {
             if (ok) {
                 dlg?.dismiss()
                 pdf?.close(); pdf = PdfMushaf.open(PdfMushaf.file(this))
-                prefs.edit().remove("pdfOffset").putString("src", "pdf").apply()
+                prefs.edit().remove("pdfOffset").putString("src", "pdf")
+                    .putString("pdfDocument", java.util.UUID.randomUUID().toString()).apply()
                 toast(t("Received ✓ — now show me where Al-Fatihah is", "تم الاستلام ✓ — حدّد الآن صفحة الفاتحة"))
                 startAlign()
             } else msg.text = t("That file isn't a full Mushaf PDF (it needs 600+ pages). Try another file.", "هذا الملف ليس مصحفًا كاملًا بصيغة PDF (يحتاج ٦٠٠ صفحة فأكثر). جرّب ملفًا آخر.")
@@ -777,13 +776,102 @@ class QuranActivity : Activity() {
         }.show()
     }
 
+    // PDF locations are stored independently of Quran metadata and of subsequent offset changes.
+    private data class PdfMark(val index: Int, val surah: Int, val ayah: Int, val document: String)
+    private val pdfDocument get() = prefs.getString("pdfDocument", "original") ?: "original"
+    private val pdfMarks: List<PdfMark> get() {
+        val array = try { org.json.JSONArray(prefs.getString(k("pdfBookmarks"), "[]")) } catch (_: Exception) { org.json.JSONArray() }
+        return (0 until array.length()).mapNotNull { i ->
+            val o = array.optJSONObject(i) ?: return@mapNotNull null
+            val index = o.optInt("index", -1); val s = o.optInt("surah"); val a = o.optInt("ayah")
+            if (index < 0 || s !in 1..114 || a !in 1..(data?.ayahs?.get(s - 1)?.size ?: 0)) null
+            else PdfMark(index, s, a, o.optString("document", "original"))
+        }
+    }
+    private fun savePdfMarks(marks: List<PdfMark>) {
+        val array = org.json.JSONArray()
+        marks.forEach { m -> array.put(org.json.JSONObject().put("index", m.index).put("surah", m.surah)
+            .put("ayah", m.ayah).put("document", m.document)) }
+        prefs.edit().putString(k("pdfBookmarks"), array.toString()).apply()
+    }
+    private val currentPdfMarks get() = pdfMarks.filter { it.document == pdfDocument && it.index < (pdf?.pageCount ?: 0) }
+    private val bookmarkCount get() = bookmarks.size + if (usePdf) currentPdfMarks.size else 0
+    private fun verseLabel(s: Int, a: Int) = t("${QuranData.NAMES_EN[s - 1]} · Ayah $a",
+        "${QuranData.NAMES_AR[s - 1]} · الآية ${arabicNum(a)}")
+
+    private fun addBookmark() {
+        val d = data ?: return
+        val page = if (!mushaf) d.pageOf(surah, pagesOf(surah)[pageIdx][0]) else if (zoom) zoomPage else mPage
+        val visible = if (mushaf && !zoom) listOf(page, page + 1).filter { it <= 604 } else listOf(page)
+        fun chooseAyah(p: Int) {
+            val verses = if (mushaf) d.pageAyahs(p) else pagesOf(surah)[pageIdx].let { range ->
+                (range[0]..range[1]).map { surah to it }
+            }
+            if (verses.isEmpty()) return
+            dialog().setTitle(t("Bookmark · page $p · choose Ayah", "علامة · صفحة ${arabicNum(p)} · اختر الآية"))
+                .setItems(verses.map { verseLabel(it.first, it.second) }.toTypedArray()) { _, which ->
+                    val (s, a) = verses[which]
+                    if (mushaf && usePdf && pdfOffset >= 0) {
+                        val mark = PdfMark(PdfPageMapping.index(pdfOffset, p), s, a, pdfDocument)
+                        savePdfMarks((listOf(mark) + pdfMarks.filterNot { it == mark }).take(120))
+                    } else {
+                        val l = bookmarks; l.remove(s to a); l.add(0, s to a); saveBookmarks(l.take(30))
+                    }
+                    toast(t("Bookmarked · ", "تمت إضافة العلامة · ") + verseLabel(s, a))
+                }.show()
+        }
+        if (visible.size == 1) chooseAyah(page)
+        else dialog().setTitle(t("Bookmark · choose page", "إضافة علامة · اختر الصفحة"))
+            .setItems(visible.map { p -> t("Page $p", "صفحة ${arabicNum(p)}") }.toTypedArray()) { _, w -> chooseAyah(visible[w]) }.show()
+    }
+
+    private fun correctPdfPage() {
+        if (!usePdf || pdfOffset < 0) return
+        val current = if (zoom) zoomPage else mPage
+        val input = android.widget.EditText(this).apply {
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER; setSingleLine(); setText(current.toString()); selectAll()
+        }
+        dialog().setTitle(t("Printed number on the right page (or single page)", "الرقم المطبوع على الصفحة اليمنى (أو الصفحة الواحدة)"))
+            .setView(input).setNegativeButton(t("Cancel", "إلغاء"), null)
+            .setPositiveButton(t("Save", "حفظ")) { _, _ ->
+                val printed = input.text.toString().toIntOrNull()
+                val offset = printed?.let { PdfPageMapping.correctedOffset(pdfOffset, current, it, pdf?.pageCount ?: 0) }
+                if (printed == null || offset == null) {
+                    toast(t("Enter a valid page for a complete 604-page Mushaf.", "أدخل صفحة صحيحة لمصحف كامل من ٦٠٤ صفحات.")); return@setPositiveButton
+                }
+                prefs.edit().putInt("pdfOffset", offset).apply()
+                mPage = printed; zoomPage = printed
+                showSpread()
+            }.show()
+    }
+
     private fun bookmarksMenu() {
-        val l = bookmarks
-        if (l.isEmpty()) { toast(t("No bookmarks yet", "لا توجد علامات بعد")); return }
-        val labels = l.map { (s, a) -> if (ar) "${QuranData.NAMES_AR[s - 1]} ${arabicNum(a)}" else "${QuranData.NAMES_EN[s - 1]} $s:$a" }.toMutableList()
-        labels.add(t("🗑  Clear all bookmarks", "🗑  حذف كل العلامات"))
+        val d = data ?: return
+        val legacy = bookmarks
+        val exact = if (usePdf) currentPdfMarks else emptyList()
+        if (legacy.isEmpty() && exact.isEmpty()) { toast(t("No bookmarks yet", "لا توجد علامات بعد")); return }
+        val labels = exact.map { mark ->
+            val page = PdfPageMapping.page(pdfOffset, mark.index)
+            verseLabel(mark.surah, mark.ayah) + if (page in 1..604)
+                t(" · page $page · PDF", " · صفحة ${arabicNum(page)} · PDF")
+            else t(" · PDF page ${mark.index + 1}", " · صفحة الملف ${arabicNum(mark.index + 1)}")
+        } + legacy.map { (s, a) ->
+            verseLabel(s, a) + d.pageOf(s, a).takeIf { it > 0 }.let { p ->
+                if (p == null) "" else t(" · page $p", " · صفحة ${arabicNum(p)}")
+            }
+        } + t("🗑  Clear all bookmarks", "🗑  حذف كل العلامات")
         dialog().setTitle(t("Bookmarks", "العلامات")).setItems(labels.toTypedArray()) { _, w ->
-            if (w < l.size) goTo(l[w].first, l[w].second) else saveBookmarks(emptyList())
+            if (w < exact.size) {
+                val mark = exact[w]
+                val page = PdfPageMapping.page(pdfOffset, mark.index)
+                if (page !in 1..604) { toast(t("Line up this PDF first", "طابق صفحات هذا الملف أولًا")); return@setItems }
+                // A single page restores even-page bookmarks exactly, without rounding to the right-hand page.
+                prefs.edit().putString("view", "mushaf").apply()
+                zoom = true; zoomPage = page; highlight = mark.surah to mark.ayah
+                applyView(); zoomScroll.post { showZoom() }
+            } else if (w < exact.size + legacy.size) {
+                legacy[w - exact.size].let { goTo(it.first, it.second) }
+            } else { saveBookmarks(emptyList()); savePdfMarks(emptyList()) }
         }.show()
     }
 
