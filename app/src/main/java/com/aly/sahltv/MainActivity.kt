@@ -423,6 +423,7 @@ class MainActivity : Activity(), RemoteServer.Host {
     internal lateinit var ramSub: TextView
     internal lateinit var fastCard: LinearLayout
     internal lateinit var adhkarCard: LinearLayout
+    internal lateinit var adhkarSub: TextView
     internal lateinit var adhkarTitle: TextView
     internal lateinit var fastTitle: TextView
     internal lateinit var fastSub: TextView

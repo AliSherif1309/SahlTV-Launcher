@@ -359,3 +359,11 @@ If the printed page number differs from the menu (for example printed 491 while 
 Existing verse-only bookmarks remain available with explicit Ayah and page labels. They cannot recover the intended PDF page if saved under an incorrect old alignment; recreate affected bookmarks after correcting the alignment. A bookmark points to a page and verse reference; scanned PDF verses are not individually highlighted.
 
 The current illustrations in docs/images cover the Home dashboard and tile layout, not these reader dialogs; they remain labeled illustrations.
+
+## Card subtitles and dialog direction
+
+**Settings → Home screen & apps → Ramadan & fasting subtitles** is on by default, including existing installations. Subtitles stay visible whenever the Ramadan/occasion or fasting card is visible. Switching off restores the automatic compact layout on ordinary days; highlighted occasions retain their descriptions. This setting does not enable hidden cards or fasting reminders.
+
+**Settings → Home screen & apps → Adhkar subtitle** is on by default. It adds “Begin your morning with remembrance of Allah” / “End your day with remembrance of Allah” (localized into Arabic) below the adhkar title. Turn it off to show only the title/progress. Prayer-time windows and hiding completed adhkar remain unchanged.
+
+Shared About/settings dialogs explicitly follow the app language: Arabic uses RTL layout with title and message aligned to the start (right); English uses LTR. Mixed Latin credits and addresses retain bidirectional text handling.

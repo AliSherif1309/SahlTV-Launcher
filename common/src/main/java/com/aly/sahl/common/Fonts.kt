@@ -266,9 +266,11 @@ class FontDialog(ctx: Context) : AlertDialog.Builder(ctx, R.style.SahlDialogThem
         var tries = 0
         val check = object : Runnable { override fun run() {
             if (!d.isShowing) { if (++tries < 50) h.postDelayed(this, 100); return }
+            val rtl = java.util.Locale.getDefault().language == "ar"
+            d.window?.decorView?.layoutDirection = if (rtl) View.LAYOUT_DIRECTION_RTL else View.LAYOUT_DIRECTION_LTR
             val res = d.context.resources
-            (d.findViewById<View>(res.getIdentifier("alertTitle", "id", "android")) as? TextView)?.let { it.typeface = Fonts.display(true); it.setTextColor(C.GOLD); Fonts.heading(it) }
-            (d.findViewById<View>(android.R.id.message) as? TextView)?.let { it.typeface = Fonts.text(); it.setLineSpacing(0f, 1.2f) }
+            (d.findViewById<View>(res.getIdentifier("alertTitle", "id", "android")) as? TextView)?.let { it.typeface = Fonts.display(true); it.setTextColor(C.GOLD); it.textAlignment = View.TEXT_ALIGNMENT_VIEW_START; it.gravity = android.view.Gravity.START; Fonts.heading(it) }
+            (d.findViewById<View>(android.R.id.message) as? TextView)?.let { it.typeface = Fonts.text(); it.textAlignment = View.TEXT_ALIGNMENT_VIEW_START; it.gravity = android.view.Gravity.START; it.setLineSpacing(0f, 1.2f) }
             Fonts.watch(d.window)
         } }
         h.post(check)

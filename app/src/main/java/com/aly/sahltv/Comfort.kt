@@ -108,6 +108,8 @@ internal fun MainActivity.settingsSections(): List<Pair<String, List<SRow>>> {
             SRow(GoldIcon.CLOCK, t("Clock", "الساعة"), t("Show time as 24-hour or 12-hour", "عرض الوقت بنظام 24 أو 12 ساعة"), if (clock24) t("24-hour", "24 ساعة") else t("12-hour", "12 ساعة"), 3),
             SRow(GoldIcon.SCREEN, t("Clock screensaver", "شاشة توقف الساعة"), t("A dim moving clock when the TV sits idle", "ساعة خافتة متحركة عند عدم الاستخدام"), if (saverMin == 0) t("Off", "متوقفة") else t("After $saverMin min", "بعد $saverMin د"), 12)),
         t("Home screen", "الشاشة الرئيسية") to listOf(
+            SRow(GoldIcon.BOOK, t("Ramadan & fasting subtitles", "وصف بطاقات رمضان والصيام"), t("Always show the sentence below the title; turn off for automatic compact cards", "إظهار الجملة تحت العنوان دائمًا؛ عطّل للبطاقات المختصرة تلقائيًا"), onOff(prefs.getBoolean("islamicSubtitlesAlways", true)), 46),
+            SRow(GoldIcon.BOOK, t("Adhkar subtitle", "وصف بطاقة الأذكار"), t("Show a reminder below morning and evening adhkar", "إظهار جملة تذكير تحت أذكار الصباح والمساء"), onOff(prefs.getBoolean("adhkarSubtitle", true)), 47),
             SRow(GoldIcon.SCREEN, t("Upper dashboard cards", "بطاقات اللوحة العلوية"), t("Show, hide and reorder cards", "إظهار وإخفاء وترتيب البطاقات"), "", 41),
             SRow(GoldIcon.SCREEN, t("Layout profiles", "ملفات التخطيط"), t("Save and restore home arrangements", "حفظ واستعادة ترتيبات الشاشة"), "", 42),
             SRow(GoldIcon.SCREEN, t("Visual layout editor", "محرر التخطيط المرئي"),
@@ -146,7 +148,7 @@ internal fun MainActivity.settingsSections(): List<Pair<String, List<SRow>>> {
 
     val rows = sections.flatMap { it.second }.associateBy { it.action }
     return listOf(
-        t("Home screen & apps", "الشاشة الرئيسية والتطبيقات") to listOf(41, 42, 40, 35, 36, 37, 38, 39, 1, 2, 11, 13),
+        t("Home screen & apps", "الشاشة الرئيسية والتطبيقات") to listOf(41, 42, 40, 46, 47, 35, 36, 37, 38, 39, 1, 2, 11, 13),
         t("Appearance & comfort", "المظهر والراحة") to listOf(5, 18, 34, 19, 7, 25, 24, 12),
         t("Language & clock", "اللغة والساعة") to listOf(0, 26, 3),
         t("Prayer & Islamic", "الصلاة والمناسبات") to listOf(4, 21, 8, 28, 6, 32, 33, 31, 27, 23),

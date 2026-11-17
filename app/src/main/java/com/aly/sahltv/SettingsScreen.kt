@@ -96,9 +96,9 @@ internal fun MainActivity.version(): String = try {
 } catch (_: Exception) { "" }
 
 internal fun MainActivity.slimIslamic(on: Boolean) {
-    if (slim == on) return
-    slim = on
-    for (sub in listOf(ramSub, fastSub)) sub.visibility = if (on) View.GONE else View.VISIBLE
-    for (tt in listOf(ramTitle, fastTitle)) tt.textSize = if (on) 16f else 18f
-    for (c in listOf(ramCard, fastCard)) { c.minimumHeight = dp(if (on) 46 else 64); c.setPadding(c.paddingLeft, dp(if (on) 6 else 10), c.paddingRight, dp(if (on) 6 else 10)) }
+    val compact = on && !prefs.getBoolean("islamicSubtitlesAlways", true)
+    slim = compact
+    for (sub in listOf(ramSub, fastSub)) sub.visibility = if (compact) View.GONE else View.VISIBLE
+    for (tt in listOf(ramTitle, fastTitle)) tt.textSize = if (compact) 16f else 18f
+    for (c in listOf(ramCard, fastCard)) { c.minimumHeight = dp(if (compact) 46 else 64); c.setPadding(c.paddingLeft, dp(if (compact) 6 else 10), c.paddingRight, dp(if (compact) 6 else 10)) }
 }

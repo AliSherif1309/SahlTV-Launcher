@@ -26,7 +26,7 @@ class SettingsDiscoveryTest : ActivityInstrumentationTestCase2<MainActivity>(Mai
         instrumentation.runOnMainSync {
             val actions = a.settingsSections().flatMap { it.second }.map { it.action }
             assertEquals(actions.size, actions.toSet().size)
-            assertEquals((0..45).filter { it != 16 }.toSet(), actions.toSet())
+            assertEquals((0..47).filter { it != 16 }.toSet(), actions.toSet())
         }
     }
 

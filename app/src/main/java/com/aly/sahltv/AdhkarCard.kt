@@ -29,6 +29,11 @@ internal fun MainActivity.updateAdhkar() {
     val at = state.substringBefore(":", "").toIntOrNull()
     val name = if (k == "m") t("Morning adhkar", "أذكار الصباح") else t("Evening adhkar", "أذكار المساء")
     adhkarTitle.text = if (at != null && at > 0) digits(t("$name  ·  ${at + 1}/$total", "$name  ·  ${at + 1}/$total")) else name
+    adhkarSub.text = if (k == "m") t("Begin your morning with remembrance of Allah", "ابدأ صباحك بذكر الله")
+        else t("End your day with remembrance of Allah", "اختم يومك بذكر الله")
+    val showSubtitle = prefs.getBoolean("adhkarSubtitle", true)
+    adhkarSub.visibility = if (showSubtitle) View.VISIBLE else View.GONE
+    adhkarCard.minimumHeight = dp(if (showSubtitle) 64 else 46)
     adhkarCard.visibility = View.VISIBLE
 }
 

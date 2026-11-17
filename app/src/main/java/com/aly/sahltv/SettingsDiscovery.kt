@@ -19,7 +19,7 @@ internal object SettingsDiscovery {
     // Register new options here with a monotonically increasing discovery revision.
     // Opening an option acknowledges only that revision, persisted across app updates.
     fun revision(action: Int): Int? = when (action) {
-        40, 41, 42, 43, 44, 45 -> 1
+        40, 41, 42, 43, 44, 45, 46, 47 -> 1
         else -> null
     }
 }
