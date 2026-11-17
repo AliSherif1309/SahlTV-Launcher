@@ -1,11 +1,11 @@
 <div align="center">
 
-# Sahl TV � ???
+# Sahl TV · سهل
 ### Your TV. Your apps. Your home.
 
 A calm, ad-free Android TV launcher with Arabic & English, Islamic essentials, a phone remote, and a layout you control.
 
-[**Download SahlTV.apk**](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlTV.apk) � [All releases](https://github.com/AliSherif1309/SahlTV-Launcher/releases) � [Installation](#install-in-a-few-minutes) � [Report a problem](https://github.com/AliSherif1309/SahlTV-Launcher/issues)
+[**Download SahlTV.apk**](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlTV.apk) · [All releases](https://github.com/AliSherif1309/SahlTV-Launcher/releases) · [Installation](#install-in-a-few-minutes) · [Report a problem](https://github.com/AliSherif1309/SahlTV-Launcher/issues)
 
 [![Build APK](https://github.com/AliSherif1309/SahlTV-Launcher/actions/workflows/build.yml/badge.svg)](https://github.com/AliSherif1309/SahlTV-Launcher/actions/workflows/build.yml)
 [![README review](https://github.com/AliSherif1309/SahlTV-Launcher/actions/workflows/readme-review.yml/badge.svg)](https://github.com/AliSherif1309/SahlTV-Launcher/actions/workflows/readme-review.yml)
@@ -23,7 +23,7 @@ A calm, ad-free Android TV launcher with Arabic & English, Islamic essentials, a
 - **Make the layout yours.** Preview changes, choose row order, match tile sizes, arrange dashboard cards, and save named profiles.
 - **Keep Islamic essentials close.** Prayer times and countdown, Hijri date, daily Ayah, adhkar, Ramadan and Sunnah fasting cards.
 - **Read comfortably in either language.** Roboto for English across all five apps; Arabic keeps Thmanyah.
-- **Use Arabic comfortably.** Right-to-left UI, packaged Thmanyah typography, 123 / ??? numerals, larger text and warmer night styling.
+- **Use Arabic comfortably.** Right-to-left UI, packaged Thmanyah typography, 123 / ١٢٣ numerals, larger text and warmer night styling.
 - **Control it from your phone.** Pair a browser on your home Wi-Fi to launch apps, control playback and type on the TV.
 - **Keep a timer in view.** A remote-friendly countdown on Home, with an optional overlay above other apps.
 
@@ -38,7 +38,7 @@ A calm, ad-free Android TV launcher with Arabic & English, Islamic essentials, a
 | **Visual layout editor** | See actual Favorites/Recent app names, choose the first row, and Apply or Cancel staged changes. Empty Favorites lets Recent appear first. |
 | **Consistent app tiles** | Compact, Normal or Large proportions across every app row. Changing tiles keeps upper dashboard card sizes. |
 | **Layout profiles** | Default, Minimal and Family presets, plus three named custom slots. |
-| **Floating timer** | Set 1-180 minutes; start, pause, resume, reset, show/hide and choose a corner. Optional above-app mode requires overlay permission. |
+| **Floating timer** | Set 1–180 minutes; start, pause, resume, reset, show/hide and choose a corner. Optional above-app mode requires overlay permission. |
 | **Arabic prayer banners** | Prayer overlays now use Thmanyah and the saved numeral style. |
 
 ## A home screen you can arrange
@@ -47,13 +47,13 @@ A calm, ad-free Android TV launcher with Arabic & English, Islamic essentials, a
 
 *Conceptual layout guide. Dimensions are the app's tile presets in dp; the diagram is not to scale.*
 
-Open **Settings  Home screen & apps**. Choose app tile size, row visibility/order, combined or separate rows, Recent count and spacing. Adjust upper dashboard cards separately, preview your arrangement, then **Apply**. Save a profile to return to it later.
+Open **Settings → Home screen & apps**. Choose app tile size, row visibility/order, combined or separate rows, Recent count and spacing. Adjust upper dashboard cards separately, preview your arrangement, then **Apply**. Save a profile to return to it later.
 
 Hold **OK** or press **Menu** on an app to manage favorites, move it, hide it, open app info or uninstall it. A four-digit PIN can protect apps and optionally the TV settings button.
 
 ### Get more from your TV remote
 
-Open **Settings  Tools & connection  Remote shortcuts** to test which buttons SahlTV receives and choose Menu shortcuts. On Home, **hold Menu, then release** to open a quick panel with Quran, the floating timer, prayer times, Recent apps and Settings. A short Menu press outside app tiles also opens the panel; app tiles keep their existing Menu actions (Recent tiles toggle Favorites).
+Open **Settings → Tools & connection → Remote shortcuts** to test which buttons SahlTV receives and choose Menu shortcuts. On Home, **hold Menu, then release** to open a quick panel with Quran, the floating timer, prayer times, Recent apps and Settings. A short Menu press outside app tiles also opens the panel; app tiles keep their existing Menu actions (Recent tiles toggle Favorites).
 
 You can assign either shortcut to the panel, Quran, timer, prayer times, Recent apps, Settings or no action. These shortcuts work on SahlTV Home only, without additional permissions. Android may reserve Home, power, voice and branded app buttons; the tester does not remap them. See [remote controls](docs/REFERENCE.md#tv-remote-shortcuts).
 
@@ -73,7 +73,7 @@ You can assign either shortcut to the panel, Quran, timer, prayer times, Recent 
 Some TVs use wireless-debugging pairing and a different port; follow the address/pairing instructions shown by your TV.
 
 <details>
-<summary><b>Make Sahl the default Home screen � reversible ADB setup</b></summary>
+<summary><b>Make Sahl the default Home screen · reversible ADB setup</b></summary>
 
 Use your TV's default-home selector if it offers one. Otherwise, first confirm Sahl opens successfully, then list the Home apps:
 
@@ -116,30 +116,30 @@ Do not disable unrelated system packages. Keep ADB available until Home works.
 
 ### Pair your phone
 
-On the TV, open **Settings  Tools & connection  Phone remote  Pair a phone**. On a phone connected to the same home Wi-Fi, open the address shown on the TV and enter its one-time six-digit code. Pairing lasts three minutes; five incorrect attempts close it. Manage or revoke devices under **Paired phones**.
+On the TV, open **Settings → Tools & connection → Phone remote → Pair a phone**. On a phone connected to the same home Wi-Fi, open the address shown on the TV and enter its one-time six-digit code. Pairing lasts three minutes; five incorrect attempts close it. Manage or revoke devices under **Paired phones**.
 
 The remote uses local HTTP and relies on trusted home Wi-Fi. Some actions need one-time ADB setup; see the [permissions guide](docs/REFERENCE.md#optional-permissions).
 
 ### Start a floating timer
 
-Open **Settings  Tools & connection  Floating timer**. Set a duration, start it, and choose a screen corner. Home-only mode works without overlay permission. For **Above other apps**, follow the permission help, return Home, and explicitly enable the option.
+Open **Settings → Tools & connection → Floating timer**. Set a duration, start it, and choose a screen corner. Home-only mode works without overlay permission. For **Above other apps**, follow the permission help, return Home, and explicitly enable the option.
 
 The timer is a visual countdown, with no alarm sound or automatic TV shutdown. Some firmware and protected video can suppress overlays. See [timer behavior and limitations](docs/REFERENCE.md#floating-timer-android-tv).
 
-## Sahl Timer � a standalone TV app
+## Sahl Timer · a standalone TV app
 
-**Sahl Timer** works independently of the launcher. Open it from your TV app list, pick a quick duration (or **More** for 1-180 minutes), then press **Start**. The large countdown and **Pause / Resume**, **Reset** and **Start again** buttons work with the TV remote. Changing an active or paused countdown asks before replacing it.
+**Sahl Timer** works independently of the launcher. Open it from your TV app list, pick a quick duration (or **More** for 1–180 minutes), then press **Start**. The large countdown and **Pause / Resume**, **Reset** and **Start again** buttons work with the TV remote. Changing an active or paused countdown asks before replacing it.
 
 To keep it visible while watching, select **Above apps**, grant the display-over-apps permission, return and turn the option on. Pick any screen corner. Permission is optional; the timer screen works without it. Return to Sahl Timer to control a floating countdown. It has no sound or automatic TV shutdown; some firmware and protected video block overlays. After a TV restart, resume the saved remaining time manually. The original launcher timer remains available and has separate state.
 
 Open **Sahl apps** to find the rest of the family. Sahl TV offers checked installation and updates for Sahl Timer. The standalone app has Arabic and English labels and does not require Sahl TV to run.
 
-## Sahl Connect � a standalone Android phone app
+## Sahl Connect · a standalone Android phone app
 
 **Sahl Connect** joins the Sahl family as a separate phone app paired with the **main Sahl TV launcher**. It replaces the need for the separate Sahl TV Connect Preview launcher. Both devices need Android 8.0+ and the same private IPv4 Wi-Fi network.
 
-1. Update the main **Sahl TV** launcher. Open **Settings  Tools & connection  Sahl Connect** (also available through **Sahl apps**).
-2. Choose **Get phone app** and scan the public download QR with your phone camera. Install `SahlConnect.apk` on the **phone**, then choose **Options  Turn Sahl Connect on  Pair a phone** on the TV. Reopen Options once the encrypted connection is ready.
+1. Update the main **Sahl TV** launcher. Open **Settings → Tools & connection → Sahl Connect** (also available through **Sahl apps**).
+2. Choose **Get phone app** and scan the public download QR with your phone camera. Install `SahlConnect.apk` on the **phone**, then choose **Options → Turn Sahl Connect on → Pair a phone** on the TV. Reopen Options once the encrypted connection is ready.
 3. In Sahl Connect on the phone, choose **Scan TV QR** or enter the full pairing code. Keep the private pairing QR open on the TV. It expires after three minutes and works once.
 4. Follow **Permissions & setup** for optional navigation and typing. File receiving requires separate TV consent; supported files up to 8 MB go to `Download/Sahl Connect` on Android 10+ TVs.
 
@@ -151,7 +151,7 @@ Connect is off by default. It supports navigation, typing into an active TV fiel
 
 Phone updates are downloaded using **Download latest Sahl Connect** in the phone app; the TV installer does not install phone APKs. See [Connect setup, migration and limitations](docs/SAHL_CONNECT.md).
 
-## One Sahl family � five TV apps and Sahl Connect
+## One Sahl family · five TV apps and Sahl Connect
 
 Settings across the Sahl family use the Sahl theme: deep-green panels, soft-white text, rounded corners and gold remote-focus highlights. This includes settings choices and confirmation dialogs; Android permission and installer screens keep the system appearance.
 
@@ -177,11 +177,11 @@ Versions above describe the source in this branch; download links point to the l
 
 ## Updates and reliability
 
-On the TV, choose **Updates  Check for updates**. Auto-update preferences offer Off, Tell me, or Download & install; Android may still require you to confirm installation.
+On the TV, choose **Updates → Check for updates**. Auto-update preferences offer Off, Tell me, or Download & install; Android may still require you to confirm installation.
 
-App and build-input changes on `main` produce releases; documentation-only changes do not. Versions use **major.minor.patch**: fixes increase patch, features increase minor, and breaking changes increase major. CI requires a higher version for each changed app (all six for shared code), and keeps SahlTV's What's new version in sync. Build numbers still increase for Android update compatibility; rebuilding the same source can retain its release version.
+App and build-input changes on `main` produce releases; documentation-only changes do not. Versions use **major.minor.patch**: fixes increase patch, features increase minor, and breaking changes increase major. CI requires a higher version for each changed app (all six for shared code), and keeps SahlTV’s What’s new version in sync. Build numbers still increase for Android update compatibility; rebuilding the same source can retain its release version.
 
-Every main-branch release builds all six apps, runs source and protocol checks, and validates candidate APKs on **1 GB and 2 GB Android TV emulators** plus an **Android phone emulator** before publication. The phone APK is signed with the family release key and checked for scanner dependencies and excluded font assets. Numbered releases contain APKs, SHA-256 fingerprints and performance reports. [View releases](https://github.com/AliSherif1309/SahlTV-Launcher/releases) � [Validation details and recovery](docs/REFERENCE.md#-updates-you-can-trust-and-recover-v120).
+Every main-branch release builds all six apps, runs source and protocol checks, and validates candidate APKs on **1 GB and 2 GB Android TV emulators** plus an **Android phone emulator** before publication. The phone APK is signed with the family release key and checked for scanner dependencies and excluded font assets. Numbered releases contain APKs, SHA-256 fingerprints and performance reports. [View releases](https://github.com/AliSherif1309/SahlTV-Launcher/releases) · [Validation details and recovery](docs/REFERENCE.md#-updates-you-can-trust-and-recover-v120).
 
 ## Build and contribute
 
@@ -189,7 +189,7 @@ The project uses Kotlin, Android framework APIs, **JDK 17**, **Gradle 8.7** and 
 
 See the [build workflow](.github/workflows/pr-compile.yml) for the complete generated-asset preparation and build sequence. A local build without signing secrets uses a debug key; without `FONT_KEY`, apps fall back to the system font. Thmanyah files are not redistributed as raw fonts.
 
-Found a problem? [Open an issue](https://github.com/AliSherif1309/SahlTV-Launcher/issues) with your TV model, Android version, app version and steps to reproduce. Screenshots and **Settings  System & updates  Diagnostics** results help. Feature ideas and pull requests are welcome.
+Found a problem? [Open an issue](https://github.com/AliSherif1309/SahlTV-Launcher/issues) with your TV model, Android version, app version and steps to reproduce. Screenshots and **Settings → System & updates → Diagnostics** results help. Feature ideas and pull requests are welcome.
 
 ### Keeping this page current
 
@@ -203,7 +203,7 @@ python3 tools/readme_review.py --check
 python3 -m unittest discover -s tools -p 'test_readme_review.py'
 ```
 
-For internal changes with no reader impact, put `README review: not needed - <specific reason>` in the PR description (or commit message for direct pushes). This records a human decision; the workflow does not claim to understand every feature or automatically invent feature descriptions. See [documentation maintenance](docs/DOCUMENTATION.md).
+For internal changes with no reader impact, put `README review: not needed — <specific reason>` in the PR description (or commit message for direct pushes). This records a human decision; the workflow does not claim to understand every feature or automatically invent feature descriptions. See [documentation maintenance](docs/DOCUMENTATION.md).
 
 ### Finding settings
 
@@ -213,7 +213,7 @@ System & updates. Search matches setting names, descriptions and current values
 across all categories. Arabic search ignores vowel marks, tatweel and alef variants.
 Back clears a search, returns from a category, then returns to the home screen.
 
-Recently added settings display a small localized **New / ????** badge until opened.
+Recently added settings display a small localized **New / جديد** badge until opened.
 Opening a category alone does not dismiss its badges. Discovery state stays on the
 TV across app updates. When adding a setting, place its action in `settingsSections()`
 and register its discovery revision in `SettingsDiscovery.revision()`; raise the
@@ -227,6 +227,6 @@ Contact: alysherif1309@gmail.com
 
 ### Quran PDF bookmarks and readable settings
 
-In Sahl Quran, **OK  Bookmark this page** lets you choose the right or left page, then an Ayah. PDF bookmarks retain the exact PDF page and show the Surah, Ayah and page number. If your uploaded Mushaf's printed number differs from the menu, use **My Mushaf (PDF)  Correct the printed page number** and enter the number on the right page (or the single page). Ayah choices require the standard 604-page Madinah layout. See [PDF bookmark details](docs/REFERENCE.md#quran-pdf-bookmarks).
+In Sahl Quran, **OK → Bookmark this page** lets you choose the right or left page, then an Ayah. PDF bookmarks retain the exact PDF page and show the Surah, Ayah and page number. If your uploaded Mushaf’s printed number differs from the menu, use **My Mushaf (PDF) → Correct the printed page number** and enter the number on the right page (or the single page). Ayah choices require the standard 604-page Madinah layout. See [PDF bookmark details](docs/REFERENCE.md#quran-pdf-bookmarks).
 
 Selected settings and shared dialogs keep soft-white text on green with a gold border, matching the main Settings.
