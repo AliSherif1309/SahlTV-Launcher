@@ -1,6 +1,7 @@
 {
-  "version": "1.27.1",
+  "version": "1.27.2",
   "en": [
+    "Arabic About dialogs follow RTL. Ramadan and fasting subtitles stay visible, with an optional compact layout. Morning/evening adhkar gain an optional reminder sentence.",
     "Selected settings keep white text with green focus and a gold border. Quran PDF bookmarks save the exact page and selected Ayah; printed page numbers can be corrected.",
     "Remote shortcuts: test your buttons, hold Menu and release for a quick panel, and choose your own Home shortcuts.",
     "Roboto for English throughout the Sahl app family; Arabic keeps Thmanyah.",
@@ -14,6 +15,7 @@
     "Floating timer with optional cross-app overlay and improved Arabic prayer overlays"
   ],
   "ar": [
+    "نوافذ حول التطبيق تتبع اتجاه العربية. يبقى وصف رمضان والصيام ظاهرًا مع خيار البطاقات المختصرة، وجملة تذكير اختيارية لأذكار الصباح والمساء.",
     "نص الإعدادات المحددة يبقى أبيض مع تركيز أخضر وإطار ذهبي. علامات PDF في القرآن تحفظ الصفحة نفسها والآية المختارة مع إمكانية تصحيح رقم الصفحة المطبوعة.",
     "اختصارات الريموت: اختبر الأزرار واضغط القائمة مطولًا ثم اتركها لفتح القائمة السريعة، واختر اختصاراتك للشاشة الرئيسية.",
     "خط Roboto للإنجليزية في عائلة تطبيقات سهل، مع الإبقاء على ثمانية للعربية.",
