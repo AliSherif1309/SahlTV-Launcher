@@ -885,6 +885,7 @@ class QuranActivity : Activity() {
                 zoom = false; mPage = PdfPageMapping.spreadStart(page); highlight = mark.surah to mark.ayah
                 applyView(); spread.post { sizePages(); showSpread() }
             } else if (w < exact.size + legacy.size) {
+                zoom = false; applyView()
                 legacy[w - exact.size].let { goTo(it.first, it.second) }
             } else { saveBookmarks(emptyList()); savePdfMarks(emptyList()) }
         }.show()
