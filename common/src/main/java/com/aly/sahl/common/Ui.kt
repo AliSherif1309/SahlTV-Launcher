@@ -37,6 +37,14 @@ object C {
 val isAr: Boolean get() = Locale.getDefault().language == "ar"
 fun t(en: String, ar: String) = if (isAr) ar else en
 
+/** True when this app's screen language is Arabic: the in-app choice ("lang" in the sahl prefs) wins, otherwise the system language. */
+fun Context.uiIsAr(): Boolean {
+    val saved = try { getSharedPreferences("sahl", Context.MODE_PRIVATE).getString("lang", null) } catch (_: Exception) { null }
+    return if (saved != null) saved == "ar" else resources.configuration.locales[0].language == "ar"
+}
+/** Layout direction that follows the screen language (RTL for Arabic, LTR otherwise). */
+fun Context.uiDirection(): Int = if (uiIsAr()) View.LAYOUT_DIRECTION_RTL else View.LAYOUT_DIRECTION_LTR
+
 fun Context.dp(v: Int) = (v * resources.displayMetrics.density).toInt()
 fun Context.dpf(v: Float) = v * resources.displayMetrics.density
 
@@ -91,7 +99,7 @@ object Dlg {
             orientation = LinearLayout.VERTICAL
             background = a.rounded(C.PANEL, 18, 1, Color.argb(120, 227, 184, 92))
             setPadding(a.dp(20), a.dp(16), a.dp(20), a.dp(16))
-            layoutDirection = if (isAr) View.LAYOUT_DIRECTION_RTL else View.LAYOUT_DIRECTION_LTR
+            layoutDirection = a.uiDirection()
             clipChildren = false; clipToPadding = false
         }
         if (title != null) panel.addView(a.label(title, 21f, C.GOLD, true).apply { typeface = Fonts.display(true); Fonts.heading(this); setPadding(a.dp(4), 0, a.dp(4), a.dp(10)) })

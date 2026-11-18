@@ -63,6 +63,7 @@ internal fun MainActivity.showSaver() {
     val pray = TextView(this).apply { textSize = 18f; setTextColor(Color.parseColor("#2E8F66")); setPadding(0, dp(6), 0, 0) }
     val box = LinearLayout(this).apply {
         orientation = LinearLayout.VERTICAL; tag = "box"
+        layoutDirection = if (ar) View.LAYOUT_DIRECTION_RTL else View.LAYOUT_DIRECTION_LTR
         addView(clock); addView(day); addView(date); addView(pray)
     }
     val f = FrameLayout(this).apply {

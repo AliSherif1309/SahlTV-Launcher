@@ -217,6 +217,8 @@ class MainActivity : Activity(), RemoteServer.Host {
         dimView = View(this).apply { setBackgroundColor(Color.BLACK); alpha = 0f }
         root.addView(dimView, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
         setContentView(root)
+        // the whole window follows the launcher language (it can differ from the system language)
+        window.decorView.layoutDirection = if (ar) View.LAYOUT_DIRECTION_RTL else View.LAYOUT_DIRECTION_LTR
         Diagnostics.watchFirstFrame(this)
         root.viewTreeObserver.addOnDrawListener(object : android.view.ViewTreeObserver.OnDrawListener {
             override fun onDraw() {

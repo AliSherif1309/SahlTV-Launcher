@@ -33,6 +33,8 @@ class RemoteKeyboard : InputMethodService() {
             text = if (ar) "📱  اكتب عبر Sahl Connect أو متصفح الهاتف: http://$ip:${RemoteServer.PORT}   ·   رجوع للإغلاق"
                    else "📱  Type in Sahl Connect or phone browser: http://$ip:${RemoteServer.PORT}   ·   Back to close"
             textSize = 16f; setTextColor(Color.WHITE); gravity = Gravity.CENTER
+            layoutDirection = if (ar) View.LAYOUT_DIRECTION_RTL else View.LAYOUT_DIRECTION_LTR
+            textDirection = if (ar) View.TEXT_DIRECTION_RTL else View.TEXT_DIRECTION_LTR
             setBackgroundColor(Color.parseColor("#E60E1A24"))
             val p = (14 * resources.displayMetrics.density).toInt()
             setPadding(p, p, p, p)
