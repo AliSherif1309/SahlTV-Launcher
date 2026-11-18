@@ -1,6 +1,7 @@
 package com.aly.sahltv
 
 import com.aly.sahl.common.Fonts
+import com.aly.sahl.common.withUiDirection
 import com.aly.sahl.common.FontDialog
 
 import android.app.Activity
@@ -186,6 +187,8 @@ class MainActivity : Activity(), RemoteServer.Host {
     internal val cityIndex get() = prefs.getInt("city", 0)
 
     // ------------------------------------------------------------------ lifecycle
+
+    override fun attachBaseContext(base: android.content.Context) = super.attachBaseContext(base.withUiDirection())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

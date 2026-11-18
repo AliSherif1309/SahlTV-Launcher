@@ -45,6 +45,17 @@ fun Context.uiIsAr(): Boolean {
 /** Layout direction that follows the screen language (RTL for Arabic, LTR otherwise). */
 fun Context.uiDirection(): Int = if (uiIsAr()) View.LAYOUT_DIRECTION_RTL else View.LAYOUT_DIRECTION_LTR
 
+/**
+ * A context whose configuration has the screen-language direction. Use it in an Activity's attachBaseContext:
+ * Android then lays out the activity and every dialog it opens right-to-left for Arabic, even when the
+ * TV's system language is English. Only the direction changes; numbers and dates are untouched.
+ */
+fun Context.withUiDirection(): Context {
+    val cfg = android.content.res.Configuration(resources.configuration)
+    cfg.setLayoutDirection(if (uiIsAr()) Locale("ar") else Locale.ENGLISH)
+    return createConfigurationContext(cfg)
+}
+
 fun Context.dp(v: Int) = (v * resources.displayMetrics.density).toInt()
 fun Context.dpf(v: Float) = v * resources.displayMetrics.density
 
@@ -100,6 +111,7 @@ object Dlg {
             background = a.rounded(C.PANEL, 18, 1, Color.argb(120, 227, 184, 92))
             setPadding(a.dp(20), a.dp(16), a.dp(20), a.dp(16))
             layoutDirection = a.uiDirection()
+            textDirection = if (a.uiIsAr()) View.TEXT_DIRECTION_ANY_RTL else View.TEXT_DIRECTION_FIRST_STRONG
             clipChildren = false; clipToPadding = false
         }
         if (title != null) panel.addView(a.label(title, 21f, C.GOLD, true).apply { typeface = Fonts.display(true); Fonts.heading(this); setPadding(a.dp(4), 0, a.dp(4), a.dp(10)) })
