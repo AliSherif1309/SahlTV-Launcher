@@ -12,6 +12,7 @@ import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
 import com.aly.sahl.common.Fonts
+import com.aly.sahl.common.withUiDirection
 import org.json.JSONArray
 import org.json.JSONObject
 import java.time.LocalDate
@@ -42,6 +43,8 @@ class AdhkarActivity : Activity() {
     private lateinit var source: TextView
     private lateinit var progress: TextView
     private val quranFont: Typeface? by lazy { try { Typeface.createFromAsset(assets, "AmiriQuran.ttf") } catch (_: Exception) { null } }
+
+    override fun attachBaseContext(base: android.content.Context) = super.attachBaseContext(base.withUiDirection())
 
     override fun onCreate(b: Bundle?) {
         super.onCreate(b)

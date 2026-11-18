@@ -266,7 +266,13 @@ class FontDialog(ctx: Context) : AlertDialog.Builder(ctx, R.style.SahlDialogThem
         var tries = 0
         val check = object : Runnable { override fun run() {
             if (!d.isShowing) { if (++tries < 50) h.postDelayed(this, 100); return }
-            d.window?.decorView?.layoutDirection = d.context.uiDirection()
+            val ar = d.context.uiIsAr()
+            d.window?.decorView?.let { dv ->
+                dv.layoutDirection = if (ar) View.LAYOUT_DIRECTION_RTL else View.LAYOUT_DIRECTION_LTR
+                // a line that starts with English (Android TV, CC BY…) must still start on the right in Arabic
+                dv.textDirection = if (ar) View.TEXT_DIRECTION_ANY_RTL else View.TEXT_DIRECTION_FIRST_STRONG
+                dv.requestLayout()
+            }
             val res = d.context.resources
             (d.findViewById<View>(res.getIdentifier("alertTitle", "id", "android")) as? TextView)?.let { it.typeface = Fonts.display(true); it.setTextColor(C.GOLD); it.textAlignment = View.TEXT_ALIGNMENT_VIEW_START; it.gravity = android.view.Gravity.START; Fonts.heading(it) }
             (d.findViewById<View>(android.R.id.message) as? TextView)?.let { it.typeface = Fonts.text(); it.textAlignment = View.TEXT_ALIGNMENT_VIEW_START; it.gravity = android.view.Gravity.START; it.setLineSpacing(0f, 1.2f) }
