@@ -161,7 +161,7 @@ Install only the apps you want. **Sahl apps** lists installed TV versions and op
 | App | Source version | Minimum Android API | Download |
 | --- | --- | --- | --- |
 | Sahl TV | 1.27.4 | 26 | [SahlTV.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlTV.apk) |
-| Sahl Quran | 1.12.5 | 26 | [SahlQuran.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlQuran.apk) |
+| Sahl Quran | 1.12.6 | 26 | [SahlQuran.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlQuran.apk) |
 | Sahl PDF | 2.6.6 | 26 | [SahlPDF.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlPDF.apk) |
 | Sahl Files | 1.6.6 | 26 | [SahlFiles.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlFiles.apk) |
 | Sahl Timer | 1.1.6 | 26 | [SahlTimer.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlTimer.apk) |
@@ -171,7 +171,7 @@ Install only the apps you want. **Sahl apps** lists installed TV versions and op
 Versions above describe the source in this branch; download links point to the latest **published, validated** release and may lag an unmerged change.
 
 - **Sahl Connect (phone):** Encrypted pairing with the main launcher, optional navigation and typing, media/volume, file sending and diagnostics.
-- **Sahl Quran:** Mushaf and large-text views, Surah/Juz/page navigation, bookmarks, reading timer, daily goals, family readers and your own Mushaf PDF.
+- **Sahl Quran:** Mushaf and large-text views, Surah/Juz/page navigation, bookmarks (add or remove one by one), reading timer, daily goals, family readers and your own Mushaf PDF.
 - **Sahl PDF:** Book covers, Continue reading, one/two-page view, RTL books, zoom, paper themes, bookmarks and PDF upload from your phone.
 - **Sahl Files:** Internal/USB storage, copy/move/rename/delete, picture/text viewing and receiving files from your phone.
 

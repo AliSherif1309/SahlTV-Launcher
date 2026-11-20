@@ -876,10 +876,35 @@ class QuranActivity : Activity() {
             }
         } + t("🗑  Clear all bookmarks", "🗑  حذف كل العلامات")
         dialog().setTitle(t("Bookmarks", "العلامات")).setItems(labels.toTypedArray()) { _, w ->
+            if (w >= exact.size + legacy.size) { confirmClearBookmarks(); return@setItems }
+            // Each bookmark offers Open or Remove, so a single علامة can be deleted.
+            dialog().setTitle(labels[w]).setItems(arrayOf(t("📖  Open", "📖  فتح"),
+                t("🗑  Remove this bookmark", "🗑  حذف هذه العلامة"))) { _, choice ->
+                if (choice == 0) openBookmark(w, exact, legacy) else removeBookmark(w, exact, legacy)
+            }.show()
+        }.show()
+    }
+
+    private fun removeBookmark(w: Int, exact: List<PdfMark>, legacy: List<Pair<Int, Int>>) {
+        if (w < exact.size) savePdfMarks(pdfMarks.filterNot { it == exact[w] })
+        else saveBookmarks(bookmarks.filterNot { it == legacy[w - exact.size] })
+        toast(t("Bookmark removed", "تم حذف العلامة"))
+    }
+
+    private fun confirmClearBookmarks() {
+        dialog().setTitle(t("Clear all bookmarks?", "حذف كل العلامات؟"))
+            .setNegativeButton(t("Cancel", "إلغاء"), null)
+            .setPositiveButton(t("Clear all", "حذف الكل")) { _, _ ->
+                saveBookmarks(emptyList()); savePdfMarks(emptyList())
+                toast(t("All bookmarks removed", "تم حذف كل العلامات"))
+            }.show()
+    }
+
+    private fun openBookmark(w: Int, exact: List<PdfMark>, legacy: List<Pair<Int, Int>>) {
             if (w < exact.size) {
                 val mark = exact[w]
                 val page = PdfPageMapping.page(pdfOffset, mark.index)
-                if (page !in 1..604) { toast(t("Line up this PDF first", "طابق صفحات هذا الملف أولًا")); return@setItems }
+                if (page !in 1..604) { toast(t("Line up this PDF first", "طابق صفحات هذا الملف أولًا")); return }
                 // Restore the normal spread containing the saved page, without entering zoom.
                 prefs.edit().putString("view", "mushaf").apply()
                 zoom = false; mPage = PdfPageMapping.spreadStart(page); highlight = mark.surah to mark.ayah
@@ -887,8 +912,7 @@ class QuranActivity : Activity() {
             } else if (w < exact.size + legacy.size) {
                 zoom = false; applyView()
                 legacy[w - exact.size].let { goTo(it.first, it.second) }
-            } else { saveBookmarks(emptyList()); savePdfMarks(emptyList()) }
-        }.show()
+            }
     }
 
     private fun sizeMenu() {
