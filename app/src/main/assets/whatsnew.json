@@ -1,5 +1,5 @@
 {
-  "version": "1.27.7",
+  "version": "1.27.8",
   "en": [
     "Keep the Arabic clock screensaver inside the TV screen bounds instead of drifting off the right edge.",
     "Arabic About dialogs follow RTL. Ramadan and fasting subtitles stay visible, with an optional compact layout. Morning/evening adhkar gain an optional reminder sentence.",

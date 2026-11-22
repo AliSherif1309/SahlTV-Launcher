@@ -34,6 +34,8 @@ object Fonts {
     @Volatile var scale = 1f
     /** Night style (after Isha until Fajr, set in Sahl TV): warmer colours and the reading font (Serif Text). */
     @Volatile var night = false
+    /** Language chosen in Sahl TV ("ar" or "en"), or null to follow the TV system locale. */
+    @Volatile var lang: String? = null
     private var nightMap: Map<Typeface, Typeface> = emptyMap()
     private val sizes = java.util.WeakHashMap<TextView, Pair<Float, Float>>()
     private var map: Map<Typeface, Typeface> = emptyMap()
@@ -252,6 +254,7 @@ class SahlApp : Application() {
                 if (c.moveToFirst()) {
                     Fonts.scale = c.getFloat(0).coerceIn(1f, 1.25f)
                     if (c.columnCount > 1) Fonts.night = c.getInt(1) == 1
+                    if (c.columnCount > 2) Fonts.lang = c.getString(2)?.takeIf { it.isNotEmpty() }
                 }
             }
         } catch (_: Exception) {}

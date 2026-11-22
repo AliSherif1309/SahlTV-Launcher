@@ -26,10 +26,13 @@ class TimerOverlayService : Service() {
         override fun run() {
             val store = TimerStore(this@TimerOverlayService)
             val now = SystemClock.elapsedRealtime()
-            if (store.state.finish(now) || now - lastSave >= 1000) { store.save(); lastSave = now }
-            if (!store.visible || !store.overlay || !Settings.canDrawOverlays(this@TimerOverlayService) || store.state.left == 0L) { stopSelf(); return }
+            val sw = store.stopwatchMode
+            if (!sw && (store.state.finish(now) || now - lastSave >= 1000)) { store.save(); lastSave = now }
+            else if (sw && now - lastSave >= 1000) { store.save(); lastSave = now }
+            if (!store.visible || !store.overlay || !Settings.canDrawOverlays(this@TimerOverlayService) || (!sw && store.state.left == 0L)) { stopSelf(); return }
             try {
                 val pos = store.position
+                val text = if (sw) stopwatchText(store.stopwatch.elapsed(now)) else timerText(store.state.remaining(now))
                 val existing = label
                 if (existing == null) {
                     val params = WindowManager.LayoutParams(-2, -2, WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
@@ -39,12 +42,11 @@ class TimerOverlayService : Service() {
                         alpha = 0.8f
                     }
                     val created = timerLabel(this@TimerOverlayService)
-                    created.text = timerText(store.state.remaining(now))
+                    created.text = text
                     wm.addView(created, params)
                     label = created
                     lastPosition = pos
                 } else {
-                    val text = timerText(store.state.remaining(now))
                     if (existing.text?.toString() != text) existing.text = text
                     if (pos != lastPosition) {
                         val params = (existing.layoutParams as WindowManager.LayoutParams).apply { gravity = timerGravity(pos) }
