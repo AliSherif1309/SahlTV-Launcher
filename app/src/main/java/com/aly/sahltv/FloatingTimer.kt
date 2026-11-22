@@ -46,16 +46,33 @@ internal fun timerLabel(context: Context) = TextView(context).apply {
 }
 internal class HomeTimer(private val activity: MainActivity) {
     private var label: TextView? = null
+    private var lastPosition = -1
     private val tick = object : Runnable {
         override fun run() {
             val store = TimerStore(activity)
-            if (store.state.finish(SystemClock.elapsedRealtime())) store.save()
+            val now = SystemClock.elapsedRealtime()
+            if (store.state.finish(now)) store.save()
             if (store.visible) {
-                val view = label ?: timerLabel(activity).also { label = it; activity.rootFrame.addView(it) }
-                view.text = activity.digits(timerText(store.state.remaining(SystemClock.elapsedRealtime())))
-                view.layoutParams = FrameLayout.LayoutParams(-2, -2, timerGravity(store.position)).apply { setMargins(activity.dp(32), activity.dp(24), activity.dp(32), activity.dp(24)) }
-                view.visibility = if (activity.settingsView == null && activity.saver == null && !(store.overlay && store.state.remaining(SystemClock.elapsedRealtime()) > 0 && Settings.canDrawOverlays(activity))) View.VISIBLE else View.GONE
-            } else { label?.let { activity.rootFrame.removeView(it) }; label = null }
+                val pos = store.position
+                val view = label ?: timerLabel(activity).also {
+                    it.layoutParams = FrameLayout.LayoutParams(-2, -2, timerGravity(pos)).apply {
+                        setMargins(activity.dp(32), activity.dp(24), activity.dp(32), activity.dp(24))
+                    }
+                    lastPosition = pos
+                    label = it
+                    activity.rootFrame.addView(it)
+                }
+                val nextText = activity.digits(timerText(store.state.remaining(now)))
+                if (view.text?.toString() != nextText) view.text = nextText
+                if (pos != lastPosition) {
+                    view.layoutParams = FrameLayout.LayoutParams(-2, -2, timerGravity(pos)).apply {
+                        setMargins(activity.dp(32), activity.dp(24), activity.dp(32), activity.dp(24))
+                    }
+                    lastPosition = pos
+                }
+                val wantVis = if (activity.settingsView == null && activity.saver == null && !(store.overlay && store.state.remaining(now) > 0 && Settings.canDrawOverlays(activity))) View.VISIBLE else View.GONE
+                if (view.visibility != wantVis) view.visibility = wantVis
+            } else { label?.let { activity.rootFrame.removeView(it) }; label = null; lastPosition = -1 }
             activity.handler.postDelayed(this, 250)
         }
     }

@@ -19,22 +19,38 @@ import android.widget.TextView
 class TimerOverlayService : Service() {
     private val handler = Handler(Looper.getMainLooper())
     private var label: TextView? = null
+    private var lastPosition = -1
     private val wm by lazy { getSystemService(WindowManager::class.java) }
     private val tick = object : Runnable {
         override fun run() {
             val store = TimerStore(this@TimerOverlayService)
-            if (store.state.finish(SystemClock.elapsedRealtime())) store.save()
+            val now = SystemClock.elapsedRealtime()
+            if (store.state.finish(now)) store.save()
             if (!store.visible || !store.overlay || !Settings.canDrawOverlays(this@TimerOverlayService) || store.state.left == 0L) { stopSelf(); return }
             try {
-                val params = WindowManager.LayoutParams(-2, -2, WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-                    WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
-                    PixelFormat.TRANSLUCENT).apply {
-                    gravity = timerGravity(store.position); x = (32 * resources.displayMetrics.density).toInt(); y = (24 * resources.displayMetrics.density).toInt()
-                    alpha = 0.8f
+                val pos = store.position
+                val existing = label
+                if (existing == null) {
+                    val params = WindowManager.LayoutParams(-2, -2, WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+                        WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
+                        PixelFormat.TRANSLUCENT).apply {
+                        gravity = timerGravity(pos); x = (32 * resources.displayMetrics.density).toInt(); y = (24 * resources.displayMetrics.density).toInt()
+                        alpha = 0.8f
+                    }
+                    val created = timerLabel(this@TimerOverlayService)
+                    created.text = timerText(store.state.remaining(now))
+                    wm.addView(created, params)
+                    label = created
+                    lastPosition = pos
+                } else {
+                    val text = timerText(store.state.remaining(now))
+                    if (existing.text?.toString() != text) existing.text = text
+                    if (pos != lastPosition) {
+                        val params = (existing.layoutParams as WindowManager.LayoutParams).apply { gravity = timerGravity(pos) }
+                        wm.updateViewLayout(existing, params)
+                        lastPosition = pos
+                    }
                 }
-                val view = label ?: timerLabel(this@TimerOverlayService).also { wm.addView(it, params); label = it }
-                view.text = timerText(store.state.remaining(SystemClock.elapsedRealtime()))
-                wm.updateViewLayout(view, params)
             } catch (_: RuntimeException) { store.overlay = false; stopSelf(); return }
             handler.postDelayed(this, 250)
         }
