@@ -8,4 +8,4 @@ For internal changes without reader impact, record a specific reason in the PR d
 
 ## GitHub workflow
 
-- When pushing changes to GitHub, always push a branch, open a pull request, and merge it into `main` (never push directly to `main`).
+- Across all chats in this project, when pushing changes to GitHub, automatically push a branch, open a pull request, and merge it into `main` without asking for confirmation (never push directly to `main`).
