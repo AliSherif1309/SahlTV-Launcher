@@ -4,7 +4,7 @@
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
     <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
-    <application android:label="Sahl Connect" android:icon="@drawable/connect_icon"
+    <application android:label="Sahl Connect" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher_round"
         android:allowBackup="false" android:supportsRtl="true" android:usesCleartextTraffic="false"
         android:theme="@style/SahlTheme">
         <activity android:name=".ConnectScannerActivity" android:exported="false"

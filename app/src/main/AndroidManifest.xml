@@ -47,7 +47,7 @@
         android:fullBackupContent="@xml/connect_backup"
         android:dataExtractionRules="@xml/connect_extraction"
         android:banner="@drawable/banner"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher_round"
         android:label="@string/app_name"
         android:requestLegacyExternalStorage="true"
         android:theme="@style/SahlTheme">
