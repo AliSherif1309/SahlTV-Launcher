@@ -70,7 +70,10 @@ internal fun MainActivity.autoUpdateTick() {
     if (mode == 2) Updater.autoDownload(this, ar) {
         setUpd(true); prefs.edit().putLong("autoAsk", 0L).apply()
         if (resumed && settingsView == null) { prefs.edit().putLong("autoAsk", System.currentTimeMillis()).apply(); Updater.installDownloaded(this) }
-    } else Updater.checkQuietly(this, ar) { has -> setUpd(has) }
+    } else {
+        Updater.checkQuietly(this, ar) { has -> setUpd(has) }
+        if (resumed && settingsView == null) Updater.checkOnStart(this, ar)
+    }
 }
 
 internal fun MainActivity.autoUpdName() = when (autoUpd) { 0 -> t("Off", "متوقف"); 2 -> t("Download & install", "تنزيل وتثبيت"); else -> t("Tell me", "إعلامي فقط") }
