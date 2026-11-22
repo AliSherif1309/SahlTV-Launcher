@@ -1,6 +1,7 @@
 {
-  "version": "1.27.8",
+  "version": "1.27.9",
   "en": [
+    "Unified Sahl Emerald & Gold Seal app icons across the Sahl app family.",
     "Keep the Arabic clock screensaver inside the TV screen bounds instead of drifting off the right edge.",
     "Arabic About dialogs follow RTL. Ramadan and fasting subtitles stay visible, with an optional compact layout. Morning/evening adhkar gain an optional reminder sentence.",
     "Selected settings keep white text with green focus and a gold border. Quran PDF bookmarks save the exact page and selected Ayah; printed page numbers can be corrected.",
@@ -16,6 +17,7 @@
     "Floating timer with optional cross-app overlay and improved Arabic prayer overlays"
   ],
   "ar": [
+    "أيقونات موحدة بطابع سهل الزمردي والذهبي عبر عائلة تطبيقات سهل.",
     "إبقاء شاشة توقف الساعة العربية داخل حدود شاشة التلفاز بدل انزياحها خارج الحافة اليمنى.",
     "نوافذ حول التطبيق تتبع اتجاه العربية. يبقى وصف رمضان والصيام ظاهرًا مع خيار البطاقات المختصرة، وجملة تذكير اختيارية لأذكار الصباح والمساء.",
     "نص الإعدادات المحددة يبقى أبيض مع تركيز أخضر وإطار ذهبي. علامات PDF في القرآن تحفظ الصفحة نفسها والآية المختارة مع إمكانية تصحيح رقم الصفحة المطبوعة.",
