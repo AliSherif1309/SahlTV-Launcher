@@ -137,6 +137,30 @@ object Updater {
         }.start()
     }
 
+    private var checkedOnStart = false
+
+    /** Quietly checks on app open and pops up the update dialog once per run if an installed app has an update. */
+    fun checkOnStart(a: Activity, ar: Boolean) {
+        if (checkedOnStart) return
+        checkedOnStart = true
+        fun t(en: String, x: String) = if (ar) x else en
+        Thread {
+            val info = fetch() ?: return@Thread
+            val list = items(a, info, ar)
+            if (list.none { it.from.isNotEmpty() }) return@Thread
+            main.post {
+                if (a.isFinishing || a.isDestroyed) return@post
+                val msg = StringBuilder()
+                for (it in list) msg.append("• ").append(it.name).append("   ")
+                    .append(if (it.from.isEmpty()) t("not installed → ${it.to}", "غير مثبّت ← ${it.to}") else "${it.from} → ${it.to}").append("\n")
+                if (info.notes.isNotBlank()) msg.append("\n").append(t("What's new: ", "الجديد: ")).append(info.notes)
+                dialog(a).setTitle(t("Update available", "يتوفّر تحديث")).setMessage(msg.toString())
+                    .setPositiveButton(t("Update now", "تحديث الآن")) { _, _ -> start(a, list, ar) }
+                    .setNegativeButton(t("Later", "لاحقًا"), null).show()
+            }
+        }.start()
+    }
+
     private fun start(a: Activity, list: List<Item>, ar: Boolean) {
         fun t(en: String, x: String) = if (ar) x else en
         if (Build.VERSION.SDK_INT >= 26 && !a.packageManager.canRequestPackageInstalls()) {

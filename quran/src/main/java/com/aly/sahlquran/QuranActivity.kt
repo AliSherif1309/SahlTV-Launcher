@@ -560,6 +560,7 @@ class QuranActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
+        Updater.checkOnStart(this, ar)
         if (pausedByLeaving) { pausedByLeaving = false; resumeTimer() }
         if (data != null && mushaf && !aligning) { if (zoom) showZoom() else showSpread() }   // night paper may have started
     }

@@ -1,5 +1,5 @@
 {
-  "version": "1.27.4",
+  "version": "1.27.5",
   "en": [
     "Arabic About dialogs follow RTL. Ramadan and fasting subtitles stay visible, with an optional compact layout. Morning/evening adhkar gain an optional reminder sentence.",
     "Selected settings keep white text with green focus and a gold border. Quran PDF bookmarks save the exact page and selected Ayah; printed page numbers can be corrected.",
