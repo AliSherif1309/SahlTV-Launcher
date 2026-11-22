@@ -64,11 +64,14 @@ internal fun MainActivity.showSaver() {
     val box = LinearLayout(this).apply {
         orientation = LinearLayout.VERTICAL; tag = "box"
         layoutDirection = if (ar) View.LAYOUT_DIRECTION_RTL else View.LAYOUT_DIRECTION_LTR
+        translationX = dp(48).toFloat()
+        translationY = dp(24).toFloat()
         addView(clock); addView(day); addView(date); addView(pray)
     }
     val f = FrameLayout(this).apply {
         setBackgroundColor(Color.BLACK); alpha = 0f
-        addView(box, FrameLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT))
+        // Explicit physical LEFT so RTL does not anchor the box at the right edge while drifting +X.
+        addView(box, FrameLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT, Gravity.TOP or Gravity.LEFT))
     }
     rootFrame.addView(f, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
     saver = f
@@ -83,9 +86,22 @@ internal fun MainActivity.showSaver() {
 internal fun MainActivity.moveSaver(f: FrameLayout) {
     (f.tag as? Runnable)?.run()
     val box = f.findViewWithTag<View>("box") ?: return
-    val maxX = (f.width - box.width).coerceAtLeast(1); val maxY = (f.height - box.height).coerceAtLeast(1)
-    box.animate().translationX((Math.random() * maxX).toFloat()).translationY((Math.random() * maxY).toFloat())
-        .setDuration(2000).start()
+    if (f.width <= 0 || f.height <= 0) return
+    box.measure(
+        View.MeasureSpec.makeMeasureSpec(f.width, View.MeasureSpec.AT_MOST),
+        View.MeasureSpec.makeMeasureSpec(f.height, View.MeasureSpec.AT_MOST)
+    )
+    val w = maxOf(box.width, box.measuredWidth)
+    val h = maxOf(box.height, box.measuredHeight)
+    val padX = dp(48).toFloat()
+    val padY = dp(24).toFloat()
+    val minX = if (w + padX * 2 <= f.width) padX else ((f.width - w) / 2f).coerceAtLeast(0f)
+    val maxX = if (w + padX * 2 <= f.width) f.width - w - padX else minX
+    val minY = if (h + padY * 2 <= f.height) padY else ((f.height - h) / 2f).coerceAtLeast(0f)
+    val maxY = if (h + padY * 2 <= f.height) f.height - h - padY else minY
+    val targetX = minX + Math.random().toFloat() * (maxX - minX)
+    val targetY = minY + Math.random().toFloat() * (maxY - minY)
+    box.animate().x(targetX).y(targetY).setDuration(2000).start()
 }
 
 internal fun MainActivity.hideSaver() {
