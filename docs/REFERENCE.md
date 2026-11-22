@@ -322,7 +322,7 @@ Android `versionCode` remains the existing increasing build number, preserving i
 
 ## Sahl Timer companion app
 
-Sahl Timer (`com.aly.sahltimer`, `SahlTimer.apk`, Android 8+) is a standalone family member. Launch it from the TV apps list. Choose 5, 10, 15, 25 or 30 minutes directly, or More for the full 1–180 minute presets. Start, Pause/Resume, Reset and Start again share one screen; replacing a running or partially elapsed timer requires confirmation. D-pad focus stays on the selected control during countdown updates. Labels follow the system Arabic/English locale.
+Sahl Timer (`com.aly.sahltimer`, `SahlTimer.apk`, Android 8+) is a standalone family member. Launch it from the TV apps list. Switch between Timer (5, 10, 15, 25 or 30 minutes directly, or More for 1–180 minute presets) and Stopwatch mode. Start, Pause/Resume, Reset and Start again share one screen; replacing a running or partially elapsed timer requires confirmation. D-pad focus stays on the selected control during updates, and the clock stays fixed in place. Labels and RTL layout follow the Sahl TV launcher language when installed, or the system Arabic/English locale.
 
 Above apps is off by default. Enable overlay permission through its help dialog, return, then explicitly turn the option on. Choose one of four corners. The foreground overlay is non-interactive and does not take focus from playback; open Sahl Timer for controls. No alarm sound, wake lock, automatic TV shutdown or boot auto-start is provided. Paused overlays remain visible; completed overlays close. Saved remaining time survives restart but needs manual resume after a reboot. Firmware restrictions and protected content can hide overlays. The existing Sahl TV timer is independent and retained for compatibility.
 

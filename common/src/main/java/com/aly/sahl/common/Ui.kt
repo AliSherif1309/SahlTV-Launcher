@@ -34,13 +34,15 @@ object C {
     val DARK = Color.parseColor("#0B1E1A")
 }
 
-val isAr: Boolean get() = Locale.getDefault().language == "ar"
+val isAr: Boolean get() = Fonts.lang?.let { it == "ar" } ?: (Locale.getDefault().language == "ar")
 fun t(en: String, ar: String) = if (isAr) ar else en
 
 /** True when this app's screen language is Arabic: the in-app choice ("lang" in the sahl prefs) wins, otherwise the system language. */
 fun Context.uiIsAr(): Boolean {
     val saved = try { getSharedPreferences("sahl", Context.MODE_PRIVATE).getString("lang", null) } catch (_: Exception) { null }
-    return if (saved != null) saved == "ar" else resources.configuration.locales[0].language == "ar"
+    if (saved != null) return saved == "ar"
+    Fonts.lang?.let { return it == "ar" }
+    return resources.configuration.locales[0].language == "ar"
 }
 /** Layout direction that follows the screen language (RTL for Arabic, LTR otherwise). */
 fun Context.uiDirection(): Int = if (uiIsAr()) View.LAYOUT_DIRECTION_RTL else View.LAYOUT_DIRECTION_LTR

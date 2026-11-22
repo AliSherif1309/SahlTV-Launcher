@@ -17,8 +17,12 @@ import com.aly.sahl.common.*
 /** A single screen; timer ticks never rebuild controls or move remote focus. */
 class TimerActivity : Activity() {
     private val handler = Handler(Looper.getMainLooper())
+    private lateinit var subtitle: TextView
     private lateinit var clock: TextView
     private lateinit var status: TextView
+    private lateinit var presets: LinearLayout
+    private lateinit var timerModeBtn: TextView
+    private lateinit var stopwatchModeBtn: TextView
     private lateinit var start: TextView
     private lateinit var overlay: TextView
     private lateinit var position: TextView
@@ -26,24 +30,19 @@ class TimerActivity : Activity() {
         override fun run() { if (refresh()) handler.postDelayed(this, 250) }
     }
 
+    override fun attachBaseContext(base: android.content.Context) = super.attachBaseContext(base.withUiDirection())
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val content = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL
             clipChildren = false; clipToPadding = false
             setPadding(dp(40), dp(20), dp(40), dp(24)); background = backdrop()
-            layoutDirection = if (isAr) android.view.View.LAYOUT_DIRECTION_RTL else android.view.View.LAYOUT_DIRECTION_LTR
+            layoutDirection = uiDirection()
         }
         setContentView(ScrollView(this).apply { isFillViewport = true; addView(content) })
         content.addView(label(t("Sahl Timer", "سهل · المؤقت"), 28f, C.GOLD, true))
-        content.addView(label(t("Choose your time. Press Start.", "اختر المدة واضغط بدء."), 16f, C.MUTED))
-        clock = label("", 76f, C.TEXT, true).apply {
-            gravity = Gravity.CENTER; textDirection = android.view.View.TEXT_DIRECTION_LTR
-            fontFeatureSettings = "tnum"
-            importantForAccessibility = android.view.View.IMPORTANT_FOR_ACCESSIBILITY_NO
-        }
-        content.addView(clock)
-        status = label("", 16f, C.MUTED); content.addView(status)
+        subtitle = label("", 16f, C.MUTED); content.addView(subtitle)
         fun row(): LinearLayout = LinearLayout(this).apply {
             gravity = Gravity.CENTER; clipChildren = false; clipToPadding = false
             setPadding(0, dp(10), 0, dp(6)); content.addView(this)
@@ -51,7 +50,17 @@ class TimerActivity : Activity() {
         fun LinearLayout.button(text: String, action: () -> Unit): TextView = pill(text, action).also {
             addView(it, LinearLayout.LayoutParams(-2, -2).apply { setMargins(dp(6), 0, dp(6), 0) })
         }
-        val presets = row()
+        val modes = row()
+        timerModeBtn = modes.button(t("Timer", "المؤقت")) { change { stopwatchMode = false } }
+        stopwatchModeBtn = modes.button(t("Stopwatch", "ساعة إيقاف")) { change { stopwatchMode = true } }
+        clock = label("", 76f, C.TEXT, true).apply {
+            gravity = Gravity.CENTER; textDirection = android.view.View.TEXT_DIRECTION_LTR
+            maxLines = 1; includeFontPadding = false; fontFeatureSettings = "tnum"
+            importantForAccessibility = android.view.View.IMPORTANT_FOR_ACCESSIBILITY_NO
+        }
+        content.addView(clock, LinearLayout.LayoutParams(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.WRAP_CONTENT))
+        status = label("", 16f, C.MUTED); content.addView(status)
+        presets = row()
         for (m in intArrayOf(5, 10, 15, 25, 30)) presets.button(t("$m min", "$m د")) { chooseDuration(m) }
         presets.button(t("More…", "المزيد…")) {
             val minutes = intArrayOf(1, 5, 10, 15, 25, 30, 45, 60, 90, 120, 180)
@@ -60,11 +69,18 @@ class TimerActivity : Activity() {
         }
         val controls = row()
         start = controls.button(t("Start", "بدء")) {
-            change { val now = SystemClock.elapsedRealtime()
-                if (state.running) state.pause(now) else { if (state.left == 0L) state.reset(); state.start(now); visible = true }
+            change {
+                val now = SystemClock.elapsedRealtime()
+                if (stopwatchMode) {
+                    if (stopwatch.running) stopwatch.pause(now) else { stopwatch.start(now); visible = true }
+                } else {
+                    if (state.running) state.pause(now) else { if (state.left == 0L) state.reset(); state.start(now); visible = true }
+                }
             }
         }
-        controls.button(t("Reset", "إعادة ضبط")) { change { state.reset() } }
+        controls.button(t("Reset", "إعادة ضبط")) {
+            change { if (stopwatchMode) stopwatch.reset() else state.reset() }
+        }
         val options = row()
         overlay = options.button("") { toggleOverlay() }
         position = options.button("") {
@@ -75,7 +91,7 @@ class TimerActivity : Activity() {
                 }.show()
         }
         row().button(t("Sahl apps", "تطبيقات سهل")) { Family.show(this) }
-        content.addView(label(t("Visual countdown • No alarm or TV shutdown", "عد تنازلي مرئي • بدون صوت أو إيقاف التلفاز"), 14f, C.MUTED))
+        content.addView(label(t("Visual countdown & stopwatch • No alarm or TV shutdown", "عد تنازلي وساعة إيقاف مرئية • بدون صوت أو إيقاف التلفاز"), 14f, C.MUTED))
         refresh()
         start.requestFocus()
     }
@@ -114,25 +130,47 @@ class TimerActivity : Activity() {
     }
 
     private fun setIfChanged(tv: TextView, text: String) {
-        if (tv.text?.toString() != text) tv.text = text
+        if (tv.text?.toString() != text) {
+            tv.text = text
+            if (tv.isAttachedToWindow) Fonts.applyTree(tv)
+        }
     }
 
     private fun refresh(): Boolean {
         val store = TimerStore(this)
         val now = SystemClock.elapsedRealtime()
         if (store.state.finish(now)) store.save()
-        setIfChanged(clock, timerText(store.state.remaining(now)))
-        setIfChanged(start, if (store.state.running) t("Pause", "إيقاف مؤقت") else if (store.state.left == 0L) t("Start again", "بدء مجددًا")
-            else if (store.state.left < store.state.duration) t("Resume", "استئناف") else t("Start", "بدء"))
-        setIfChanged(status, when {
-            store.state.left == 0L -> t("Time is up", "انتهى الوقت")
-            store.state.running -> t("Counting down", "العد التنازلي جارٍ")
-            store.state.left < store.state.duration -> t("Paused", "متوقف مؤقتًا")
-            else -> t("Ready", "جاهز")
-        })
+        val sw = store.stopwatchMode
+        setIfChanged(timerModeBtn, if (!sw) t("• Timer", "• المؤقت") else t("Timer", "المؤقت"))
+        setIfChanged(stopwatchModeBtn, if (sw) t("• Stopwatch", "• ساعة إيقاف") else t("Stopwatch", "ساعة إيقاف"))
+        val presetsVis = if (sw) android.view.View.GONE else android.view.View.VISIBLE
+        if (presets.visibility != presetsVis) presets.visibility = presetsVis
+        if (sw) {
+            val elapsed = store.stopwatch.elapsed(now)
+            setIfChanged(subtitle, t("Press Start to count up.", "اضغط بدء لبدء العد."))
+            setIfChanged(clock, stopwatchText(elapsed))
+            setIfChanged(start, if (store.stopwatch.running) t("Pause", "إيقاف مؤقت")
+                else if (elapsed > 0L) t("Resume", "استئناف") else t("Start", "بدء"))
+            setIfChanged(status, when {
+                store.stopwatch.running -> t("Counting up", "العد التصاعدي جارٍ")
+                elapsed > 0L -> t("Paused", "متوقف مؤقتًا")
+                else -> t("Ready", "جاهز")
+            })
+        } else {
+            setIfChanged(subtitle, t("Choose your time. Press Start.", "اختر المدة واضغط بدء."))
+            setIfChanged(clock, timerText(store.state.remaining(now)))
+            setIfChanged(start, if (store.state.running) t("Pause", "إيقاف مؤقت") else if (store.state.left == 0L) t("Start again", "بدء مجددًا")
+                else if (store.state.left < store.state.duration) t("Resume", "استئناف") else t("Start", "بدء"))
+            setIfChanged(status, when {
+                store.state.left == 0L -> t("Time is up", "انتهى الوقت")
+                store.state.running -> t("Counting down", "العد التنازلي جارٍ")
+                store.state.left < store.state.duration -> t("Paused", "متوقف مؤقتًا")
+                else -> t("Ready", "جاهز")
+            })
+        }
         setIfChanged(overlay, t("Above apps: ", "فوق التطبيقات: ") + if (store.overlay && Settings.canDrawOverlays(this)) t("On", "مفعّل") else t("Off", "متوقف"))
         setIfChanged(position, cornerNames()[store.position])
-        return store.state.running
+        return if (sw) store.stopwatch.running else store.state.running
     }
     override fun onResume() {
         super.onResume()

@@ -20,3 +20,21 @@ internal fun timerText(ms: Long): String {
     return java.lang.String.format(java.util.Locale.US, "%02d:%02d", seconds / 60, seconds % 60)
 }
 
+/** Elapsed-realtime stopwatch: clock/time-zone changes never affect elapsed time. */
+internal class StopwatchState(var accumulated: Long = 0L, var startedAt: Long = 0L) {
+    val running get() = startedAt > 0L
+    fun elapsed(now: Long) = if (running) accumulated + (now - startedAt).coerceAtLeast(0L) else accumulated
+    fun start(now: Long) { if (!running) startedAt = now }
+    fun pause(now: Long) { accumulated = elapsed(now); startedAt = 0L }
+    fun reset() { accumulated = 0L; startedAt = 0L }
+}
+
+internal fun stopwatchText(ms: Long): String {
+    val totalSeconds = ms.coerceAtLeast(0L) / 1000
+    val hours = totalSeconds / 3600
+    val minutes = (totalSeconds % 3600) / 60
+    val seconds = totalSeconds % 60
+    return if (hours > 0) java.lang.String.format(java.util.Locale.US, "%d:%02d:%02d", hours, minutes, seconds)
+    else java.lang.String.format(java.util.Locale.US, "%02d:%02d", minutes, seconds)
+}
+

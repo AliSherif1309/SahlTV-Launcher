@@ -17,7 +17,7 @@ android {
         targetSdk = 34
         // Every cloud build gets a higher number, so a new APK installs over the old one.
         versionCode = 2100 + (System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 0)
-        versionName = "2.6.6"
+        versionName = "2.6.7"
     }
 
     signingConfigs {

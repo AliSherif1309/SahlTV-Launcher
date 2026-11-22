@@ -19,6 +19,11 @@ internal class TimerStore(private val context: Context) {
     val state = TimerState(prefs.getLong("duration", 300_000L).coerceIn(60_000L, 10_800_000L),
         prefs.getLong("left", 300_000L).coerceIn(0L, 10_800_000L),
         if (boot >= 0 && boot == prefs.getInt("boot", -2)) prefs.getLong("deadline", 0) else 0)
+    val stopwatch = StopwatchState(prefs.getLong("sw_acc", 0L).coerceAtLeast(0L),
+        if (boot >= 0 && boot == prefs.getInt("boot", -2)) prefs.getLong("sw_start", 0L) else 0L)
+    var stopwatchMode: Boolean
+        get() = prefs.getBoolean("sw_mode", false)
+        set(value) { prefs.edit().putBoolean("sw_mode", value).apply() }
     var visible: Boolean
         get() = prefs.getBoolean("visible", false)
         set(value) { prefs.edit().putBoolean("visible", value).apply() }
@@ -28,8 +33,13 @@ internal class TimerStore(private val context: Context) {
     var position: Int
         get() = prefs.getInt("position", 1).coerceIn(0, 3)
         set(value) { prefs.edit().putInt("position", value.coerceIn(0, 3)).apply() }
-    fun save() { prefs.edit().putLong("duration", state.duration).putLong("left", state.remaining(SystemClock.elapsedRealtime()))
-        .putLong("deadline", state.deadline).putInt("boot", boot).apply() }
+    fun save() {
+        val now = SystemClock.elapsedRealtime()
+        prefs.edit().putLong("duration", state.duration).putLong("left", state.remaining(now))
+            .putLong("deadline", state.deadline)
+            .putLong("sw_acc", stopwatch.elapsed(now)).putLong("sw_start", stopwatch.startedAt)
+            .putInt("boot", boot).apply()
+    }
 }
 internal fun timerGravity(position: Int) = when (position) {
     0 -> Gravity.TOP or Gravity.LEFT
@@ -47,7 +57,8 @@ internal fun timerLabel(context: Context) = TextView(context).apply {
 internal fun syncTimerOverlay(context: Context) {
     val store = TimerStore(context)
     val intent = Intent(context, TimerOverlayService::class.java)
-    if (store.visible && store.overlay && store.state.remaining(SystemClock.elapsedRealtime()) > 0 && Settings.canDrawOverlays(context)) {
+    val active = store.stopwatchMode || store.state.remaining(SystemClock.elapsedRealtime()) > 0
+    if (store.visible && store.overlay && active && Settings.canDrawOverlays(context)) {
         try { context.startForegroundService(intent) } catch (_: RuntimeException) {
             store.overlay = false
             android.widget.Toast.makeText(context, R.string.timer_overlay_failed, android.widget.Toast.LENGTH_LONG).show()

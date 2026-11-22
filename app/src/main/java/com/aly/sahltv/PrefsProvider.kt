@@ -22,8 +22,9 @@ class PrefsProvider : ContentProvider() {
     override fun onCreate() = true
     override fun query(uri: Uri, projection: Array<out String>?, selection: String?, selectionArgs: Array<out String>?, sortOrder: String?): Cursor {
         val ctx = context!!
-        val c = MatrixCursor(arrayOf("scale", "night"))
-        c.addRow(arrayOf(ctx.getSharedPreferences("sahl", android.content.Context.MODE_PRIVATE).getFloat("textScale", 1f), if (isNight(ctx)) 1 else 0))
+        val p = ctx.getSharedPreferences("sahl", android.content.Context.MODE_PRIVATE)
+        val c = MatrixCursor(arrayOf("scale", "night", "lang"))
+        c.addRow(arrayOf(p.getFloat("textScale", 1f), if (isNight(ctx)) 1 else 0, p.getString("lang", null) ?: ""))
         return c
     }
     override fun getType(uri: Uri): String? = null
