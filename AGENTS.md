@@ -5,3 +5,7 @@ When changing a feature, default setting, menu path, permission, installation st
 Run `python3 tools/readme_review.py --write`, then `python3 tools/readme_review.py --check` and `python3 -m unittest discover -s tools -p 'test_readme_review.py'`. Commit generated version-table updates alongside module version changes. Follow the existing build and regression checks for implementation changes.
 
 For internal changes without reader impact, record a specific reason in the PR description as `README review: not needed — <reason of at least 15 characters>`. Do not use that exception for new features. See `docs/DOCUMENTATION.md` for the automated review policy and its limits.
+
+## GitHub workflow
+
+- When pushing changes to GitHub, always push a branch, open a pull request, and merge it into `main` (never push directly to `main`).
