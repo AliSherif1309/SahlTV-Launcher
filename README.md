@@ -1,15 +1,19 @@
 <div align="center">
 
-# Sahl TV · سهل
-### Your TV. Your apps. Your home.
+<img src="docs/banner.svg" alt="Sahl TV · سهل للتلفاز" width="100%"/>
 
-A calm, ad-free Android TV launcher with Arabic & English, Islamic essentials, a phone remote, and a layout you control.
+<br/><br/>
 
-[**Download SahlTV.apk**](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlTV.apk) · [All releases](https://github.com/AliSherif1309/SahlTV-Launcher/releases) · [Installation](#install-in-a-few-minutes) · [Report a problem](https://github.com/AliSherif1309/SahlTV-Launcher/issues)
+[![Download APK](https://img.shields.io/github/v/release/AliSherif1309/SahlTV-Launcher?label=Download%20SahlTV.apk&color=0B5D4B&style=for-the-badge)](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlTV.apk)
+[![Build APK](https://img.shields.io/github/actions/workflow/status/AliSherif1309/SahlTV-Launcher/build.yml?label=Build&color=1E8A70&style=for-the-badge)](https://github.com/AliSherif1309/SahlTV-Launcher/actions/workflows/build.yml)
+[![README review](https://img.shields.io/github/actions/workflow/status/AliSherif1309/SahlTV-Launcher/readme-review.yml?label=Docs&color=D4AF37&style=for-the-badge)](https://github.com/AliSherif1309/SahlTV-Launcher/actions/workflows/readme-review.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-073D32?style=for-the-badge)](LICENSE)
 
-[![Build APK](https://github.com/AliSherif1309/SahlTV-Launcher/actions/workflows/build.yml/badge.svg)](https://github.com/AliSherif1309/SahlTV-Launcher/actions/workflows/build.yml)
-[![README review](https://github.com/AliSherif1309/SahlTV-Launcher/actions/workflows/readme-review.yml/badge.svg)](https://github.com/AliSherif1309/SahlTV-Launcher/actions/workflows/readme-review.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-2e7563)](LICENSE)
+<br/>
+
+[All releases](https://github.com/AliSherif1309/SahlTV-Launcher/releases) · [Installation](#install-in-a-few-minutes) · [Report a problem](https://github.com/AliSherif1309/SahlTV-Launcher/issues)
+
+<br/>
 
 ![Illustrated Sahl TV feature map: prayer dashboard, app rows, phone remote and floating timer](docs/images/home-overview.svg)
 
@@ -237,3 +241,12 @@ Selected settings and shared dialogs keep soft-white text on green with a gold b
 ### Card subtitles and Arabic dialogs
 
 In **Settings → Home screen & apps**, **Ramadan & fasting subtitles** keeps the sentence below each title visible by default. Turn it off to restore automatic compact cards on ordinary days. **Adhkar subtitle** shows a morning/evening reminder by default and can be switched off independently. Arabic About and shared settings dialogs align their titles and messages from the right.
+
+---
+
+## 🌿 The Sahl Apps Family · عائلة تطبيقات سهل
+
+A calm, ad-free, bilingual (**Arabic & English**) suite of everyday Android apps crafted in **Emerald & Gold**:
+
+[🎨 Sahl Theme](https://github.com/AliSherif1309/SahlHome) · [🕌 Sahl Adhan](https://github.com/AliSherif1309/SahlAdhan) · [🧭 Sahl Qibla](https://github.com/AliSherif1309/SahlQibla) · [📞 Sahl Phone](https://github.com/AliSherif1309/SahlPhone) · [👤 Sahl Contacts](https://github.com/AliSherif1309/SahlContacts) · [💬 Sahl Messages](https://github.com/AliSherif1309/SahlMessages) · [📷 Sahl Camera](https://github.com/AliSherif1309/SahlCamera) · [🖼️ Sahl Gallery](https://github.com/AliSherif1309/SahlGallery) · [📁 Sahl Files](https://github.com/AliSherif1309/SahlFiles) · [📄 Sahl PDF](https://github.com/AliSherif1309/SahlPDF) · [🛠️ Sahl Tools](https://github.com/AliSherif1309/SahlTools) · [☁️ Sahl Sync](https://github.com/AliSherif1309/SahlSync)
+
