@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 240" width="900" height="240" role="img" aria-label="Sahl TV banner">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#072A22"/>
+      <stop offset="55%" stop-color="#0B5D4B"/>
+      <stop offset="100%" stop-color="#136E56"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#F7D36A"/>
+      <stop offset="50%" stop-color="#D4AF37"/>
+      <stop offset="100%" stop-color="#B88922"/>
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="896" height="236" rx="24" fill="url(#bg)" stroke="url(#gold)" stroke-width="2.5"/>
+  <g>
+    <circle cx="780" cy="120" r="92" fill="none" stroke="#D4AF37" stroke-opacity="0.18" stroke-width="1.5"/>
+    <circle cx="780" cy="120" r="60" fill="none" stroke="#D4AF37" stroke-opacity="0.18" stroke-width="1.2"/>
+    <polyline points="840.0,120.0 868.9,143.8 810.0,172.0" fill="none" stroke="#F5C84C" stroke-opacity="0.22" stroke-width="1.4"/>
+    <polyline points="832.0,150.0 845.1,185.1 780.0,180.0" fill="none" stroke="#F5C84C" stroke-opacity="0.22" stroke-width="1.4"/>
+    <polyline points="810.0,172.0 803.8,208.9 750.0,172.0" fill="none" stroke="#F5C84C" stroke-opacity="0.22" stroke-width="1.4"/>
+    <polyline points="780.0,180.0 756.2,208.9 728.0,150.0" fill="none" stroke="#F5C84C" stroke-opacity="0.22" stroke-width="1.4"/>
+    <polyline points="750.0,172.0 714.9,185.1 720.0,120.0" fill="none" stroke="#F5C84C" stroke-opacity="0.22" stroke-width="1.4"/>
+    <polyline points="728.0,150.0 691.1,143.8 728.0,90.0" fill="none" stroke="#F5C84C" stroke-opacity="0.22" stroke-width="1.4"/>
+    <polyline points="720.0,120.0 691.1,96.2 750.0,68.0" fill="none" stroke="#F5C84C" stroke-opacity="0.22" stroke-width="1.4"/>
+    <polyline points="728.0,90.0 714.9,54.9 780.0,60.0" fill="none" stroke="#F5C84C" stroke-opacity="0.22" stroke-width="1.4"/>
+    <polyline points="750.0,68.0 756.2,31.1 810.0,68.0" fill="none" stroke="#F5C84C" stroke-opacity="0.22" stroke-width="1.4"/>
+    <polyline points="780.0,60.0 803.8,31.1 832.0,90.0" fill="none" stroke="#F5C84C" stroke-opacity="0.22" stroke-width="1.4"/>
+    <polyline points="810.0,68.0 845.1,54.9 840.0,120.0" fill="none" stroke="#F5C84C" stroke-opacity="0.22" stroke-width="1.4"/>
+    <polyline points="832.0,90.0 868.9,96.2 832.0,150.0" fill="none" stroke="#F5C84C" stroke-opacity="0.22" stroke-width="1.4"/>
+    <circle cx="780" cy="120" r="10" fill="#F5C84C" fill-opacity="0.35"/>
+  </g>
+  <rect x="52" y="42" width="154" height="26" rx="13" fill="#072A22" stroke="#D4AF37" stroke-width="1"/>
+  <text x="129" y="59" text-anchor="middle" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="11.5" font-weight="700" fill="#F5C84C">SAHL APPS FAMILY</text>
+  <text x="52" y="116" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="36" font-weight="800" fill="#FFFFFF">Sahl TV  ·  <tspan fill="#F5C84C">سهل للتلفاز</tspan></text>
+  <text x="52" y="158" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="16" fill="#DCE8E3">A calm, ad-free Android TV home screen with Arabic &amp; English, Islamic</text>
+  <text x="52" y="180" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="16" fill="#DCE8E3">essentials, and phone remote.</text>
+</svg>
