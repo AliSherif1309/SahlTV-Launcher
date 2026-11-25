@@ -248,9 +248,9 @@ internal fun MainActivity.tile(a: App, row: String, big: Boolean): View {
         background = GradientDrawable().apply { setColor(GOLD); cornerRadius = dp(10).toFloat() }
         setPadding(dp(7), dp(1), dp(7), dp(2)); alpha = 0f
     }.also { frame.addView(it, FrameLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT, Gravity.TOP or Gravity.START).apply { setMargins(dp(5), dp(5), dp(5), dp(5)) }) } else null
-    // focus ring drawn on top
+    // high-contrast double focus ring drawn on top so it stands out against any banner or background
     val ring = View(this).apply {
-        background = GradientDrawable().apply { setColor(Color.TRANSPARENT); setStroke(dp(3), FOCUS); cornerRadius = radius }
+        background = focusRingDrawable(radius)
         visibility = View.INVISIBLE
     }
     frame.addView(ring, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
@@ -260,7 +260,7 @@ internal fun MainActivity.tile(a: App, row: String, big: Boolean): View {
         v.animate().cancel()
         nameStrip?.animate()?.cancel()
         star?.animate()?.cancel()
-        v.animate().scaleX(if (has) 1.1f else 1f).scaleY(if (has) 1.1f else 1f).translationZ(if (has) dp(10).toFloat() else 0f)
+        v.animate().scaleX(if (has) 1.12f else 1f).scaleY(if (has) 1.12f else 1f).translationZ(if (has) dp(12).toFloat() else 0f)
             .setInterpolator(ease).setDuration(110).start()
         nameStrip?.animate()?.alpha(if (has) 1f else 0f)?.setDuration(110)?.start()
         star?.animate()?.alpha(if (has) 1f else 0f)?.setDuration(110)?.start()
@@ -283,4 +283,22 @@ internal fun MainActivity.tile(a: App, row: String, big: Boolean): View {
              else LinearLayout.LayoutParams(w, h).apply { setMargins(dp(homeTileGapDp), 0, dp(homeTileGapDp), 0) }
     frame.layoutParams = lp
     return frame
+}
+
+internal fun MainActivity.focusRingDrawable(radius: Float): Drawable {
+    val outerColor = if (islamic) Color.parseColor("#FFF6D6") else Color.WHITE
+    val outer = GradientDrawable().apply {
+        setColor(Color.TRANSPARENT)
+        setStroke(dp(4), outerColor)
+        cornerRadius = radius
+    }
+    val inner = GradientDrawable().apply {
+        setColor(Color.TRANSPARENT)
+        setStroke(dp(2), Color.parseColor("#CC0B1E1A"))
+        cornerRadius = (radius - dp(3)).coerceAtLeast(0f)
+    }
+    val inset = dp(4)
+    return android.graphics.drawable.LayerDrawable(arrayOf(outer, inner)).apply {
+        setLayerInset(1, inset, inset, inset, inset)
+    }
 }

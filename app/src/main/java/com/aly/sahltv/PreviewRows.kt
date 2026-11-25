@@ -106,13 +106,14 @@ internal fun MainActivity.previewTile(r: Previews.Row, i: Int, item: Previews.It
         background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Color.TRANSPARENT, Color.parseColor("#DD000000")))
     }, FrameLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT, Gravity.BOTTOM))
     val ring = View(this).apply {
-        background = GradientDrawable().apply { setColor(Color.TRANSPARENT); setStroke(dp(3), FOCUS); cornerRadius = radius }
+        background = focusRingDrawable(radius)
         visibility = View.INVISIBLE
     }
     frame.addView(ring, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
     frame.setOnFocusChangeListener { v, has ->
         ring.visibility = if (has) View.VISIBLE else View.INVISIBLE
-        v.animate().scaleX(if (has) 1.08f else 1f).scaleY(if (has) 1.08f else 1f).translationZ(if (has) dp(10).toFloat() else 0f)
+        v.animate().cancel()
+        v.animate().scaleX(if (has) 1.10f else 1f).scaleY(if (has) 1.10f else 1f).translationZ(if (has) dp(12).toFloat() else 0f)
             .setInterpolator(ease).setDuration(150).withLayer().start()
     }
     frame.setOnClickListener { openPreview(r, item) }

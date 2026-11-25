@@ -58,12 +58,13 @@ import com.aly.sahltv.MainActivity.*
 
 internal fun MainActivity.cardBg(strong: Boolean, focused: Boolean, glow: Boolean = false) = GradientDrawable().apply {
     orientation = GradientDrawable.Orientation.TOP_BOTTOM
-    colors = if (focused) intArrayOf(Color.parseColor("#F2183A31"), Color.parseColor("#F2102A24"))
+    colors = if (focused) intArrayOf(Color.parseColor("#F7235547"), Color.parseColor("#F7173B31"))
              else if (islamic) intArrayOf(Color.parseColor("#B00E211D"), Color.parseColor("#B8091714"))      // frosted glass: the Kaaba shows through
              else intArrayOf(Color.parseColor("#E8102521"), Color.parseColor("#E80A1A17"))
     cornerRadius = dp(16).toFloat()
-    val w = if (focused) dp(3) else if (strong || glow) dp(2) else dp(1)
-    setStroke(w, if (focused) Color.parseColor("#F3D58A") else if (strong || glow) GOLD else Color.argb(60, 227, 184, 92))
+    val w = if (focused) dp(4) else if (strong || glow) dp(2) else dp(1)
+    val focusStroke = if (islamic) Color.parseColor("#FFF6D6") else Color.WHITE
+    setStroke(w, if (focused) focusStroke else if (strong || glow) GOLD else Color.argb(60, 227, 184, 92))
 }
 
 internal fun MainActivity.card(strong: Boolean, onClick: () -> Unit) = LinearLayout(this).apply {
@@ -73,6 +74,9 @@ internal fun MainActivity.card(strong: Boolean, onClick: () -> Unit) = LinearLay
     setPadding(dp(16), dp(8), dp(16), dp(8))
     setOnFocusChangeListener { v, has ->
         v.background = cardBg(strong, has, v.tag == "glow")
+        v.animate().cancel()
+        v.animate().scaleX(if (has) 1.025f else 1f).scaleY(if (has) 1.025f else 1f)
+            .translationZ(if (has) dp(8).toFloat() else 0f).setDuration(110).start()
         if (has) scroll.smoothScrollTo(0, 0)
     }
     setOnClickListener { onClick() }

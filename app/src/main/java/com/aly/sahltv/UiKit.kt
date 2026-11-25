@@ -28,7 +28,7 @@ class IconBtn(ctx: Context, kind: Int, private var name: CharSequence, private v
     private fun bg(focused: Boolean) = GradientDrawable().apply {
         shape = GradientDrawable.OVAL
         setColor(if (focused) gold else Color.parseColor("#990B1E1A"))
-        setStroke(dp(1), if (focused) gold else Color.argb(110, 227, 184, 92))
+        setStroke(dp(if (focused) 2 else 1), if (focused) Color.parseColor("#FFF6D6") else Color.argb(110, 227, 184, 92))
     }
 
     /** Name under the button; setting it shows it briefly (used for status messages). */
@@ -52,6 +52,8 @@ class IconBtn(ctx: Context, kind: Int, private var name: CharSequence, private v
         addView(label, LayoutParams(dp(110), LayoutParams.WRAP_CONTENT))
         setOnFocusChangeListener { _, has ->
             circle.background = bg(has); icon.color = if (has) dark else gold
+            circle.animate().cancel()
+            circle.animate().scaleX(if (has) 1.12f else 1f).scaleY(if (has) 1.12f else 1f).setDuration(110).start()
             if (has) { h.removeCallbacks(hideLabel); label.animate().alpha(1f).setDuration(180).start() }
             else label.animate().alpha(0f).setDuration(180).withEndAction { label.text = name }.start()
         }
