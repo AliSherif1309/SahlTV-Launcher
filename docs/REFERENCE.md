@@ -18,8 +18,8 @@ A replacement home screen for Android TV / Mi TV. It opens instantly, shows only
 - **🧹 Free memory:** closes apps running in the background and shows how much memory was freed. **Auto clean** is optional and off by default; see the Speed section for current safeguards.
 - **🔒 PIN lock:** lock any app, and optionally the TV settings button, with a 4-digit PIN entered on a remote-friendly number pad.
 - **⚙ TV settings** and **☰ Launcher** options: sort order, 12/24-hour clock, show hidden apps.
-- **App previews (optional, off by default):** rows that apps publish for the home screen (e.g. recommended videos from SmartTube, or "Continue watching"). Each row can be switched on or off in ☰ Launcher → App previews. This needs one permission: `adb shell pm grant com.aly.sahltv android.permission.READ_TV_LISTINGS`. Pictures are downloaded only while previews are on.
-- **Now playing bar:** shows what's playing (e.g. SmartTube in picture-in-picture or background audio) with ⏮ ⏯ ⏭ and Open buttons. One-time setup: `adb shell cmd notification allow_listener com.aly.sahltv/com.aly.sahltv.MediaListener` (Sahl TV reads no notifications).
+- **App previews (optional, off by default):** rows that apps publish for the home screen (e.g. recommended videos from SmartTube, or "Continue watching"). Each row can be switched on or off in ☰ Launcher → App previews. This needs one permission: `adb shell pm grant com.sahl.tv android.permission.READ_TV_LISTINGS`. Pictures are downloaded only while previews are on.
+- **Now playing bar:** shows what's playing (e.g. SmartTube in picture-in-picture or background audio) with ⏮ ⏯ ⏭ and Open buttons. One-time setup: `adb shell cmd notification allow_listener com.sahl.tv/com.sahl.tv.MediaListener` (Sahl TV reads no notifications).
 - **Clock screensaver:** after 3, 5 or 10 idle minutes on the home screen, a dim clock with the dates and next prayer that slowly moves around the screen (safe for OLED). It doesn't start while something is playing; any key wakes it.
 - **Backup & restore:** saves all settings (favourites, order, hidden and locked apps, previews, language…) to `Download/SahlTV-backup.json` on the TV. Keep a copy on your PC with `adb pull /sdcard/Download/SahlTV-backup.json`.
 - **No tracking.** Optional features use Android services (media access and timer overlays). Apps load in the background and icons are kept in memory, so the Home button is instant.
@@ -53,7 +53,7 @@ Profiles (Default, Minimal, Family) can save and restore layouts; three addition
 ## Make it the home screen
 Android TV doesn't show a "choose home app" prompt, so turn the stock launcher off with ADB:
 ```
-# 1) list the home-screen apps; the one that isn't com.aly.sahltv is the stock launcher
+# 1) list the home-screen apps; the one that isn't com.sahl.tv is the stock launcher
 adb shell cmd package query-activities --brief -a android.intent.action.MAIN -c android.intent.category.HOME
 
 # 2) disable the stock launcher (replace <package> with the name from step 1)
@@ -85,8 +85,8 @@ Open Settings → Tools & connection → Phone remote → Pair a phone to open a
 Launch apps, play/pause/next, volume, Home, and type text into any search box.
 For typing, run once:
 ```
-adb shell ime enable com.aly.sahltv/.RemoteKeyboard
-adb shell pm grant com.aly.sahltv android.permission.WRITE_SECURE_SETTINGS
+adb shell ime enable com.sahl.tv/.RemoteKeyboard
+adb shell pm grant com.sahl.tv android.permission.WRITE_SECURE_SETTINGS
 ```
 
 ## 📖 Sahl Quran (separate app: SahlQuran.apk)
@@ -105,7 +105,7 @@ Quran text: Tanzil Project (tanzil.net), Uthmani, CC BY 3.0, used unchanged. Fon
 ## v1.6: calmer look, prayer-time banner, calm mode
 - Calmer Islamic theme: deeper colours, very faint pattern, small dark mosque on the horizon, matching gold line icons.
 - 🔔 Prayer-time banner (no sound): a quiet card in the corner at each prayer time, even over SmartTube; optional heads-up 10 minutes before. One-time setup:
-  `adb shell appops set com.aly.sahltv SYSTEM_ALERT_WINDOW allow`
+  `adb shell appops set com.sahl.tv SYSTEM_ALERT_WINDOW allow`
 - 👶 Calm mode (on by default): countdown changes once a minute instead of every second, softer focus, home screen dims from an hour after Isha until Fajr.
 
 ## ⬆ Updates from the TV (v1.7)
@@ -113,8 +113,8 @@ After this version, no more ADB for updates: ☰ Launcher → Check for updates 
 The launcher also checks by itself twice a day and shows an "Update ready" button.
 One-time setup (only if the TV has no "Install unknown apps" screen):
 ```
-adb shell appops set com.aly.sahltv REQUEST_INSTALL_PACKAGES allow
-adb shell appops set com.aly.sahlquran REQUEST_INSTALL_PACKAGES allow
+adb shell appops set com.sahl.tv REQUEST_INSTALL_PACKAGES allow
+adb shell appops set com.sahl.tv.quran REQUEST_INSTALL_PACKAGES allow
 ```
 Updates come from this repository's "latest" release. Android only installs an update signed with the same key, so a changed APK can never replace the app.
 
@@ -280,11 +280,11 @@ Enable only features you want, using ADB from your PC.
 
 | Feature | One-time setup |
 | --- | --- |
-| App previews | `adb shell pm grant com.aly.sahltv android.permission.READ_TV_LISTINGS` |
-| Now playing | `adb shell cmd notification allow_listener com.aly.sahltv/com.aly.sahltv.MediaListener` |
-| Phone keyboard | `adb shell ime enable com.aly.sahltv/.RemoteKeyboard` and `adb shell pm grant com.aly.sahltv android.permission.WRITE_SECURE_SETTINGS` |
-| Prayer banners / timer overlay permission | `adb shell appops set com.aly.sahltv SYSTEM_ALERT_WINDOW allow`; explicitly enable Above other apps in the timer menu too |
-| TV updates if no permission screen exists | `adb shell appops set com.aly.sahltv REQUEST_INSTALL_PACKAGES allow` |
+| App previews | `adb shell pm grant com.sahl.tv android.permission.READ_TV_LISTINGS` |
+| Now playing | `adb shell cmd notification allow_listener com.sahl.tv/com.sahl.tv.MediaListener` |
+| Phone keyboard | `adb shell ime enable com.sahl.tv/.RemoteKeyboard` and `adb shell pm grant com.sahl.tv android.permission.WRITE_SECURE_SETTINGS` |
+| Prayer banners / timer overlay permission | `adb shell appops set com.sahl.tv SYSTEM_ALERT_WINDOW allow`; explicitly enable Above other apps in the timer menu too |
+| TV updates if no permission screen exists | `adb shell appops set com.sahl.tv REQUEST_INSTALL_PACKAGES allow` |
 
 Permission screens vary by firmware. None of these are needed to try the basic launcher.
 
@@ -322,7 +322,7 @@ Android `versionCode` remains the existing increasing build number, preserving i
 
 ## Sahl Timer companion app
 
-Sahl Timer (`com.aly.sahltimer`, `SahlTimer.apk`, Android 8+) is a standalone family member. Launch it from the TV apps list. Switch between Timer (5, 10, 15, 25 or 30 minutes directly, or More for 1–180 minute presets) and Stopwatch mode. Start, Pause/Resume, Reset and Start again share one screen; replacing a running or partially elapsed timer requires confirmation. D-pad focus stays on the selected control during updates, and the clock stays fixed in place. Labels and RTL layout follow the Sahl TV launcher language when installed, or the system Arabic/English locale.
+Sahl Timer (`com.sahl.tv.timer`, `SahlTimer.apk`, Android 8+) is a standalone family member. Launch it from the TV apps list. Switch between Timer (5, 10, 15, 25 or 30 minutes directly, or More for 1–180 minute presets) and Stopwatch mode. Start, Pause/Resume, Reset and Start again share one screen; replacing a running or partially elapsed timer requires confirmation. D-pad focus stays on the selected control during updates, and the clock stays fixed in place. Labels and RTL layout follow the Sahl TV launcher language when installed, or the system Arabic/English locale.
 
 Above apps is off by default. Enable overlay permission through its help dialog, return, then explicitly turn the option on. Choose one of four corners. The foreground overlay is non-interactive and does not take focus from playback; open Sahl Timer for controls. No alarm sound, wake lock, automatic TV shutdown or boot auto-start is provided. Paused overlays remain visible; completed overlays close. Saved remaining time survives restart but needs manual resume after a reboot. Firmware restrictions and protected content can hide overlays. The existing Sahl TV timer is independent and retained for compatibility.
 
@@ -333,7 +333,7 @@ Separate Favorites retain their existing tiles and remote focus when only Recent
 
 ## Sahl Connect · main launcher and standalone phone app
 
-The sixth family member is **Sahl Connect for Android phones**, package `com.aly.sahlconnect`. The main launcher (`com.aly.sahltv`) hosts the encrypted endpoint; the old separate `com.aly.sahltv.connectpreview` launcher is retired. No preview variant is built or published. **Settings → Tools & connection → Sahl Connect** and **Sahl apps → Sahl Connect** open the main setup menu. Connect is off by default. **Get phone app** shows a public download QR; **Options → Pair a phone** shows a separate private one-use QR/full code after enabling the endpoint.
+The sixth family member is **Sahl Connect for Android phones**, package `com.sahl.tv.connect`. The main launcher (`com.sahl.tv`) hosts the encrypted endpoint; the old separate `com.sahl.tv.connectpreview` launcher is retired. No preview variant is built or published. **Settings → Tools & connection → Sahl Connect** and **Sahl apps → Sahl Connect** open the main setup menu. Connect is off by default. **Get phone app** shows a public download QR; **Options → Pair a phone** shows a separate private one-use QR/full code after enabling the endpoint.
 
 Both devices require Android 8+, on the same private IPv4 Wi-Fi. Navigation requires explicit TV Accessibility consent, typing requires selecting the main launcher's Sahl Keyboard and opening a field, and file receiving requires separate consent (Android 10+, supported types up to 8 MB). Pairing uses pinned TLS on TCP 8766; credentials are separate from the browser remote and excluded from backup. Turning Connect off closes pairing/connections and disables file receiving. Revoke individual/all phones in the TV menu. The endpoint runs in the launcher process, cannot wake a sleeping/force-stopped TV, and does not provide family sync. New Connect screens currently use English; the phone uses system fonts rather than packaged TV fonts.
 

@@ -35,13 +35,13 @@
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
         </intent>
-        <package android:name="com.aly.sahlquran" />
-        <package android:name="com.aly.sahlpdf" />
-        <package android:name="com.aly.sahlfiles" />
+        <package android:name="com.sahl.tv.quran" />
+        <package android:name="com.sahl.tv.pdf" />
+        <package android:name="com.sahl.tv.files" />
     </queries>
 
     <application
-        android:name="com.aly.sahl.common.SahlApp"
+        android:name="com.sahl.tv.common.SahlApp"
         android:supportsRtl="true"
         android:allowBackup="true"
         android:fullBackupContent="@xml/connect_backup"
@@ -69,7 +69,7 @@
             </intent-filter>
             <!-- the other Sahl apps ask Sahl TV (the family's update centre) to check for updates / install missing apps -->
             <intent-filter>
-                <action android:name="com.aly.sahltv.UPDATES" />
+                <action android:name="com.sahl.tv.UPDATES" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>

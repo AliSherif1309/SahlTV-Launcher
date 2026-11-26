@@ -12,8 +12,8 @@
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
     <queries>
-        <package android:name="com.aly.sahltv" />
-        <package android:name="com.aly.sahlpdf" />
+        <package android:name="com.sahl.tv" />
+        <package android:name="com.sahl.tv.pdf" />
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <data android:mimeType="*/*" />
@@ -21,7 +21,7 @@
     </queries>
 
     <application
-        android:name="com.aly.sahl.common.SahlApp"
+        android:name="com.sahl.tv.common.SahlApp"
         android:allowBackup="true"
         android:banner="@drawable/banner_img"
         android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher_round"
@@ -47,7 +47,7 @@
             android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout|uiMode|smallestScreenSize" />
         <provider
             android:name=".FilesProvider"
-            android:authorities="com.aly.sahlfiles.files"
+            android:authorities="com.sahl.tv.files.files"
             android:exported="false"
             android:grantUriPermissions="true" />
     </application>

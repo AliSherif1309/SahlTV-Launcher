@@ -8,16 +8,16 @@ plugins {
 val keystorePath: String? = System.getenv("SIGNING_KEYSTORE_PATH")
 
 android {
-    namespace = "com.aly.sahlquran"
+    namespace = "com.sahl.tv.quran"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.aly.sahlquran"
+        applicationId = "com.sahl.tv.quran"
         minSdk = 26
         targetSdk = 34
         // Every cloud build gets a higher number, so a new APK installs over the old one.
         versionCode = 100 + (System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 0)
-        versionName = "1.12.9"
+        versionName = "1.12.10"
     }
 
     signingConfigs {

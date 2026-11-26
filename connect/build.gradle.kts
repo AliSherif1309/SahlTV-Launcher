@@ -5,14 +5,14 @@ plugins {
 val keystorePath: String? = System.getenv("SIGNING_KEYSTORE_PATH")
 
 android {
-    namespace = "com.aly.sahlconnect"
+    namespace = "com.sahl.tv.connect"
     compileSdk = 34
     defaultConfig {
-        applicationId = "com.aly.sahlconnect"
+        applicationId = "com.sahl.tv.connect"
         minSdk = 26
         targetSdk = 34
         versionCode = 100 + (System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 0)
-        versionName = "1.0.8"
+        versionName = "1.0.9"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     signingConfigs {
