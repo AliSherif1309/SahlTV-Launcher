@@ -121,5 +121,10 @@
             android:authorities="${applicationId}.prefs"
             android:exported="true"
             android:readPermission="com.sahl.permission.UNION" />
+        <provider
+            android:name=".UnionProvider"
+            android:authorities="com.sahl.tv.union"
+            android:exported="true"
+            android:readPermission="com.sahl.permission.UNION" />
     </application>
 </manifest>

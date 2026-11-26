@@ -50,5 +50,10 @@
             android:authorities="com.sahl.tv.files.files"
             android:exported="false"
             android:grantUriPermissions="true" />
+        <provider
+            android:name=".UnionProvider"
+            android:authorities="com.sahl.tv.files.union"
+            android:exported="true"
+            android:readPermission="com.sahl.permission.UNION" />
     </application>
 </manifest>

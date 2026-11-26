@@ -18,5 +18,10 @@
         <service android:name=".TimerOverlayService" android:exported="false" android:foregroundServiceType="specialUse">
             <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="User-started floating countdown visible above TV apps" />
         </service>
+        <provider
+            android:name=".UnionProvider"
+            android:authorities="com.sahl.tv.timer.union"
+            android:exported="true"
+            android:readPermission="com.sahl.permission.UNION" />
     </application>
 </manifest>
