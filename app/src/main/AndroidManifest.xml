@@ -119,6 +119,7 @@
         <provider
             android:name=".PrefsProvider"
             android:authorities="${applicationId}.prefs"
-            android:exported="true" />
+            android:exported="true"
+            android:readPermission="com.sahl.permission.UNION" />
     </application>
 </manifest>

@@ -1,11 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Sahl Union: shared with every Sahl app signed with the Sahl Family key -->
+    <permission
+        android:name="com.sahl.permission.UNION"
+        android:label="Sahl apps"
+        android:protectionLevel="signature" />
+    <uses-permission android:name="com.sahl.permission.UNION" />
+
     <queries>
         <package android:name="com.sahl.tv" />
         <package android:name="com.sahl.tv.quran" />
         <package android:name="com.sahl.tv.pdf" />
         <package android:name="com.sahl.tv.files" />
         <package android:name="com.sahl.tv.timer" />
+        <package android:name="com.sahl.tv.connect" />
     </queries>
+
+    <application>
+        <activity
+            android:name="com.sahl.tv.common.SahlCrashActivity"
+            android:exported="false"
+            android:process=":crash" />
+    </application>
 </manifest>
 
