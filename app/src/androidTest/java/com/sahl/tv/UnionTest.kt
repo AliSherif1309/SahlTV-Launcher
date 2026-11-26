@@ -21,16 +21,18 @@ class UnionTest {
             ctx.checkSelfPermission(SahlUnion.PERMISSION)
         )
 
-        ctx.contentResolver.query(Uri.parse("${SahlUnion.TV_UNION}/prayers"), null, null, null, null).use { c ->
-            assertNotNull(c)
-            assertEquals(10, c!!.count) // 5 prayers * 2 days
+        val prayers = ctx.contentResolver.query(Uri.parse("${SahlUnion.TV_UNION}/prayers"), null, null, null, null)
+        assertNotNull(prayers)
+        prayers!!.use { c ->
+            assertEquals(10, c.count) // 5 prayers * 2 days
             assertTrue(c.moveToFirst())
             assertTrue(c.getLong(c.getColumnIndexOrThrow("time")) > 0L)
         }
 
-        ctx.contentResolver.query(Uri.parse("${SahlUnion.TV_UNION}/prefs"), null, null, null, null).use { c ->
-            assertNotNull(c)
-            assertEquals(1, c!!.count)
+        val prefs = ctx.contentResolver.query(Uri.parse("${SahlUnion.TV_UNION}/prefs"), null, null, null, null)
+        assertNotNull(prefs)
+        prefs!!.use { c ->
+            assertEquals(1, c.count)
             assertTrue(c.moveToFirst())
             assertTrue(c.getFloat(c.getColumnIndexOrThrow("scale")) >= 1f)
         }

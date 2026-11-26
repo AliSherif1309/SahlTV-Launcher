@@ -32,7 +32,7 @@ class UnionProvider : ContentProvider() {
             .filter { it.isDirectory }
         var count = 0
         for (dir in roots) {
-            val stack = ArrayDeque<File>()
+            val stack = java.util.ArrayDeque<File>()
             stack.add(dir)
             while (stack.isNotEmpty() && count < 50) {
                 val cur = stack.removeFirst()
