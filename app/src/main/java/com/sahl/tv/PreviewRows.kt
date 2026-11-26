@@ -95,6 +95,7 @@ internal fun MainActivity.previewTile(r: Previews.Row, i: Int, item: Previews.It
         isFocusable = true; isClickable = true; defaultFocusHighlightEnabled = false
         clipToOutline = true
         background = GradientDrawable().apply { setColor(Color.parseColor("#1C2A30")); cornerRadius = radius }
+        alpha = 0.84f
         contentDescription = item.title
     }
     val img = ImageView(this).apply { scaleType = ImageView.ScaleType.CENTER_CROP }
@@ -113,7 +114,9 @@ internal fun MainActivity.previewTile(r: Previews.Row, i: Int, item: Previews.It
     frame.setOnFocusChangeListener { v, has ->
         ring.visibility = if (has) View.VISIBLE else View.INVISIBLE
         v.animate().cancel()
-        v.animate().scaleX(if (has) 1.10f else 1f).scaleY(if (has) 1.10f else 1f).translationZ(if (has) dp(12).toFloat() else 0f)
+        v.animate().scaleX(if (has) 1.08f else 1f).scaleY(if (has) 1.08f else 1f)
+            .alpha(if (has) 1f else 0.84f)
+            .translationZ(if (has) dp(10).toFloat() else 0f)
             .setInterpolator(ease).setDuration(150).withLayer().start()
     }
     frame.setOnClickListener { openPreview(r, item) }

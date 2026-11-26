@@ -28,7 +28,7 @@ class IconBtn(ctx: Context, kind: Int, private var name: CharSequence, private v
     private fun bg(focused: Boolean) = GradientDrawable().apply {
         shape = GradientDrawable.OVAL
         setColor(if (focused) gold else Color.parseColor("#990B1E1A"))
-        setStroke(dp(if (focused) 2 else 1), if (focused) Color.parseColor("#FFF6D6") else Color.argb(110, 227, 184, 92))
+        setStroke(dp(1), if (focused) gold else Color.argb(110, 227, 184, 92))
     }
 
     /** Name under the button; setting it shows it briefly (used for status messages). */
@@ -38,22 +38,24 @@ class IconBtn(ctx: Context, kind: Int, private var name: CharSequence, private v
 
     init {
         orientation = VERTICAL; gravity = Gravity.CENTER_HORIZONTAL
+        clipChildren = false; clipToPadding = false
+        setPadding(dp(4), dp(4), dp(4), 0)
         isFocusable = true; isClickable = true; defaultFocusHighlightEnabled = false
         contentDescription = name
         circle.background = bg(false)
-        circle.addView(icon, FrameLayout.LayoutParams(dp(24), dp(24), Gravity.CENTER))
+        circle.addView(icon, FrameLayout.LayoutParams(dp(22), dp(22), Gravity.CENTER))
         dot.background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(gold); setStroke(dp(2), Color.parseColor("#0B1E1A")) }
         dot.visibility = View.GONE
         circle.addView(dot, FrameLayout.LayoutParams(dp(14), dp(14), Gravity.TOP or Gravity.END))
-        addView(circle, LayoutParams(dp(52), dp(52)))
+        addView(circle, LayoutParams(dp(48), dp(48)))
         label.text = name; label.textSize = 12f; label.setTextColor(Color.parseColor("#EEF3F1")); label.maxLines = 1
         label.gravity = Gravity.CENTER; label.alpha = 0f; label.setPadding(0, dp(4), 0, 0)
         label.setShadowLayer(6f, 0f, 1f, Color.BLACK)
-        addView(label, LayoutParams(dp(110), LayoutParams.WRAP_CONTENT))
+        addView(label, LayoutParams(dp(88), LayoutParams.WRAP_CONTENT))
         setOnFocusChangeListener { _, has ->
             circle.background = bg(has); icon.color = if (has) dark else gold
             circle.animate().cancel()
-            circle.animate().scaleX(if (has) 1.12f else 1f).scaleY(if (has) 1.12f else 1f).setDuration(110).start()
+            circle.animate().scaleX(if (has) 1.08f else 1f).scaleY(if (has) 1.08f else 1f).setDuration(110).start()
             if (has) { h.removeCallbacks(hideLabel); label.animate().alpha(1f).setDuration(180).start() }
             else label.animate().alpha(0f).setDuration(180).withEndAction { label.text = name }.start()
         }

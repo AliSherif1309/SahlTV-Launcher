@@ -57,7 +57,7 @@ import com.sahl.tv.MainActivity.*
 // Top bar: clock, dates, weather slot and the round quick buttons.  (part of the Sahl TV home screen, split out of MainActivity)
 
 internal fun MainActivity.buildTopBar(): View {
-    val bar = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+    val bar = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; clipChildren = false; clipToPadding = false }
     val left = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
     // one line only: the clock shrinks a little instead of wrapping (the column is shared with the weather and buttons)
     clockTv = TextView(this).apply { textSize = 56f; setTextColor(Color.WHITE); typeface = Fonts.get(2); includeFontPadding = false
