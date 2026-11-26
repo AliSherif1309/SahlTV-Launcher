@@ -97,15 +97,19 @@ jobs:
         run: python3 tools/pack_fonts.py
       - name: Build signed release APK
         env:
-          KEYSTORE_B64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
-          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
-          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
-          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+          KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 || secrets.SIGNING_KEYSTORE_BASE64 }}
+          SIGNING_STORE_PASSWORD: ${{ secrets.KEYSTORE_PASS || secrets.SIGNING_STORE_PASSWORD }}
+          SIGNING_KEY_ALIAS: ${{ secrets.KEYSTORE_ALIAS || secrets.SIGNING_KEY_ALIAS }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.KEY_PASS || secrets.SIGNING_KEY_PASSWORD || secrets.KEYSTORE_PASS || secrets.SIGNING_STORE_PASSWORD }}
         run: |
-          test -n "$KEYSTORE_B64" || { echo "Production signing key is required" >&2; exit 1; }
-          if [ -n "$KEYSTORE_B64" ]; then
-            echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.jks"
-            export SIGNING_KEYSTORE_PATH="$RUNNER_TEMP/release.jks"
+          test -n "$KEYSTORE_B64" || { echo "Production signing key is required (add KEYSTORE_B64 + KEYSTORE_PASS secrets)" >&2; exit 1; }
+          echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.jks"
+          export SIGNING_KEYSTORE_PATH="$RUNNER_TEMP/release.jks"
+          if [ -z "$SIGNING_KEY_ALIAS" ]; then
+            aliases=$(keytool -J-Duser.language=en -J-Duser.country=US -list -v -keystore "$SIGNING_KEYSTORE_PATH" -storepass:env SIGNING_STORE_PASSWORD | awk -F': ' '/^Alias name: /{print $2}')
+            count=$(printf '%s\n' "$aliases" | grep -c . || true)
+            test "$count" -eq 1 || { echo "::error::Set KEYSTORE_ALIAS/SIGNING_KEY_ALIAS when the keystore does not have exactly one key (found $count)." >&2; exit 1; }
+            export SIGNING_KEY_ALIAS="$aliases"
           fi
           gradle assembleRelease :connect-protocol:test :app:assembleDebug :app:assembleDebugAndroidTest :timer:assembleDebug :timer:assembleDebugAndroidTest :connect:assembleDebug :connect:assembleDebugAndroidTest :app:lintDebug :connect:lintDebug --no-daemon
           cp app/build/outputs/apk/release/app-release.apk SahlTV.apk
