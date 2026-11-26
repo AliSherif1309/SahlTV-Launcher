@@ -10,17 +10,17 @@ val keystorePath: String? = System.getenv("SIGNING_KEYSTORE_PATH")
 android {
     useLibrary("android.test.runner")
     useLibrary("android.test.base")
-    namespace = "com.aly.sahltv"
+    namespace = "com.sahl.tv"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.aly.sahltv"
+        applicationId = "com.sahl.tv"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         minSdk = 26
         targetSdk = 34
         // Every cloud build gets a higher number, so a new APK installs over the old one.
         versionCode = 100 + (System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 0)
-        versionName = "1.27.10"
+        versionName = "1.27.11"
     }
 
     signingConfigs {

@@ -1,6 +1,7 @@
 {
-  "version": "1.27.10",
+  "version": "1.27.11",
   "en": [
+    "Sahl TV apps now use the Sahl Family com.sahl.tv.* package identity.",
     "Clearer, high-contrast focus rings and lifted cards so the selected app or item stands out at first glance.",
     "Unified Sahl Emerald & Gold Seal app icons across the Sahl app family.",
     "Keep the Arabic clock screensaver inside the TV screen bounds instead of drifting off the right edge.",
@@ -18,6 +19,7 @@
     "Floating timer with optional cross-app overlay and improved Arabic prayer overlays"
   ],
   "ar": [
+    "تستخدم تطبيقات سهل TV الآن معرّف حزمة عائلة سهل com.sahl.tv.*.",
     "إطار تركيز أوضح وعالي التباين وبطاقات مرفوعة لتمييز التطبيق أو العنصر المحدد من النظرة الأولى.",
     "أيقونات موحدة بطابع سهل الزمردي والذهبي عبر عائلة تطبيقات سهل.",
     "إبقاء شاشة توقف الساعة العربية داخل حدود شاشة التلفاز بدل انزياحها خارج الحافة اليمنى.",

@@ -9,7 +9,7 @@
 # Usage: perf.sh <folder with the APKs> <label: RAM in MB, optionally -build>
 set -u
 D=$1; RAM=$2; OUT=perf-$RAM.md
-PKG=com.aly.sahltv; ACT=$PKG/.MainActivity
+PKG=com.sahl.tv; ACT=$PKG/.MainActivity
 PERF_PID=$BASHPID
 PHASE=setup
 # Bound every ADB call, including those in pipelines/command substitutions. Signal the
@@ -125,7 +125,7 @@ if [ "${PERF_KILL_ALL_BASELINE:-0}" = "1" ]; then
   # 4) System-wide kill-all baseline, NOT the launcher's selective broom cleaner.
   # The launcher protects recent apps and active media; this command does not exercise that logic.
   # Open the three companion apps, return Home, then ask Android to kill background processes.
-  APPS="com.aly.sahlquran/.QuranActivity com.aly.sahlpdf/.LibraryActivity com.aly.sahlfiles/.FilesActivity com.aly.sahltimer/.TimerActivity"
+  APPS="com.sahl.tv.quran/.QuranActivity com.sahl.tv.pdf/.LibraryActivity com.sahl.tv.files/.FilesActivity com.sahl.tv.timer/.TimerActivity"
   phase 'companion apps and system kill-all baseline'
   adb logcat -d > "logcat-$RAM.txt" 2>&1 || { echo 'Cannot save pre-baseline logs' >&2; exit 1; }
   for a in $APPS; do A am start -W -n "$a" >/dev/null; sleep 3; A input keyevent KEYCODE_HOME; sleep 1; done

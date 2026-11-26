@@ -39,7 +39,7 @@ jobs:
           script: |
             adb install candidate/connect/build/outputs/apk/debug/connect-debug.apk
             adb install candidate/connect/build/outputs/apk/androidTest/debug/connect-debug-androidTest.apk
-            timeout --kill-after=5s 180s adb shell am instrument -w -r com.aly.sahlconnect.test/androidx.test.runner.AndroidJUnitRunner | tee phone-instrumentation.txt
+            timeout --kill-after=5s 180s adb shell am instrument -w -r com.sahl.tv.connect.test/androidx.test.runner.AndroidJUnitRunner | tee phone-instrumentation.txt
             grep -q 'OK (2 tests)' phone-instrumentation.txt
             ! grep -Eq 'FAILURES!!!|INSTRUMENTATION_FAILED|INSTRUMENTATION_ABORTED|Process crashed' phone-instrumentation.txt
       - uses: actions/upload-artifact@v4

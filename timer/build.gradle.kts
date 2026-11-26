@@ -10,17 +10,17 @@ val keystorePath: String? = System.getenv("SIGNING_KEYSTORE_PATH")
 android {
     useLibrary("android.test.runner")
     useLibrary("android.test.base")
-    namespace = "com.aly.sahltimer"
+    namespace = "com.sahl.tv.timer"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.aly.sahltimer"
+        applicationId = "com.sahl.tv.timer"
         testInstrumentationRunner = "android.test.InstrumentationTestRunner"
         minSdk = 26
         targetSdk = 34
         // Every cloud build gets a higher number, so a new APK installs over the old one.
         versionCode = 100 + (System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 0)
-        versionName = "1.1.9"
+        versionName = "1.1.10"
     }
 
     signingConfigs {

@@ -32,10 +32,10 @@ elif a[:4] == ['logcat','-d','-b','crash']:
     with open('crash-reads', 'a') as f: f.write('read\n')
     names = {
         'google': ['com.google.android.tvrecommendations'],
-        'sahl': ['com.aly.sahltv'],
-        'subprocess': ['com.aly.sahltv:remote'],
-        'prefix': ['com.aly.sahltvother'],
-        'mixed': ['com.google.android.tvrecommendations','com.aly.sahltv','com.aly.sahltv:remote'],
+        'sahl': ['com.sahl.tv'],
+        'subprocess': ['com.sahl.tv:remote'],
+        'prefix': ['com.sahl.tvother'],
+        'mixed': ['com.google.android.tvrecommendations','com.sahl.tv','com.sahl.tv:remote'],
     }.get(mode, [])
     for i,p in enumerate(names):
         print(f'E/AndroidRuntime( {100+i}): FATAL EXCEPTION: main')

@@ -85,7 +85,7 @@ Use your TV's default-home selector if it offers one. Otherwise, first confirm S
 adb shell cmd package query-activities --brief -a android.intent.action.MAIN -c android.intent.category.HOME
 ```
 
-Identify the stock launcher package (not `com.aly.sahltv`), substitute its actual name below, and keep that name for recovery:
+Identify the stock launcher package (not `com.sahl.tv`), substitute its actual name below, and keep that name for recovery:
 
 ```sh
 adb shell pm disable-user --user 0 STOCK_LAUNCHER_PACKAGE
@@ -151,7 +151,7 @@ Separate Favorites keep their focus when Recent apps change.
 
 Connect is off by default. It supports navigation, typing into an active TV field, media/volume controls, app launching, favourite add/remove and basic diagnostics. Some TV apps do not expose usable focus controls. Connect uses encrypted, certificate-pinned connections; the existing browser remote remains a separate option.
 
-**Switching from the preview:** turn Connect off in the preview launcher, update the main Sahl TV, install the signed phone app, and pair again with the main launcher. If Android reports a phone-app signature conflict, uninstall the debug-signed phone preview first; this clears its pairing. Enable the main launcher's navigation service and keyboard if wanted. Once the main connection works, uninstall **Sahl TV Connect Preview** (`com.aly.sahltv.connectpreview`), keeping **Sahl TV** as your Home app. This change does not automatically uninstall anything from your devices.
+**Switching from the preview:** turn Connect off in the preview launcher, update the main Sahl TV, install the signed phone app, and pair again with the main launcher. If Android reports a phone-app signature conflict, uninstall the debug-signed phone preview first; this clears its pairing. Enable the main launcher's navigation service and keyboard if wanted. Once the main connection works, uninstall **Sahl TV Connect Preview** (`com.sahl.tv.connectpreview`), keeping **Sahl TV** as your Home app. This change does not automatically uninstall anything from your devices.
 
 Phone updates are downloaded using **Download latest Sahl Connect** in the phone app; the TV installer does not install phone APKs. See [Connect setup, migration and limitations](docs/SAHL_CONNECT.md).
 
@@ -164,12 +164,12 @@ Install only the apps you want. **Sahl apps** lists installed TV versions and op
 <!-- BEGIN AUTO:APP_VERSIONS -->
 | App | Source version | Minimum Android API | Download |
 | --- | --- | --- | --- |
-| Sahl TV | 1.27.10 | 26 | [SahlTV.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlTV.apk) |
-| Sahl Quran | 1.12.9 | 26 | [SahlQuran.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlQuran.apk) |
-| Sahl PDF | 2.6.8 | 26 | [SahlPDF.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlPDF.apk) |
-| Sahl Files | 1.6.8 | 26 | [SahlFiles.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlFiles.apk) |
-| Sahl Timer | 1.1.9 | 26 | [SahlTimer.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlTimer.apk) |
-| Sahl Connect (Android phone) | 1.0.8 | 26 | [SahlConnect.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlConnect.apk) |
+| Sahl TV | 1.27.11 | 26 | [SahlTV.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlTV.apk) |
+| Sahl Quran | 1.12.10 | 26 | [SahlQuran.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlQuran.apk) |
+| Sahl PDF | 2.6.9 | 26 | [SahlPDF.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlPDF.apk) |
+| Sahl Files | 1.6.9 | 26 | [SahlFiles.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlFiles.apk) |
+| Sahl Timer | 1.1.10 | 26 | [SahlTimer.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlTimer.apk) |
+| Sahl Connect (Android phone) | 1.0.9 | 26 | [SahlConnect.apk](https://github.com/AliSherif1309/SahlTV-Launcher/releases/download/latest/SahlConnect.apk) |
 <!-- END AUTO:APP_VERSIONS -->
 
 Versions above describe the source in this branch; download links point to the latest **published, validated** release and may lag an unmerged change.

@@ -28,7 +28,7 @@ required = {
     'Landroidx/core/content/ContextCompat;',
     'Landroidx/core/app/ActivityCompat;',
     'Landroidx/fragment/app/Fragment;',
-    'Lcom/aly/sahlconnect/ConnectScannerActivity;',
+    'Lcom/sahl/tv/connect/ConnectScannerActivity;',
 }
 missing = required - classes
 if missing:

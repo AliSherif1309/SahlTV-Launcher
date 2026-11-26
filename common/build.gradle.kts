@@ -8,7 +8,7 @@ dependencies { api(project(":connect-protocol")) }
 // The Sahl family: one look (colours, Thmanyah fonts, dialogs), the phone upload page, storage helpers and
 // network safety checks, shared by Sahl TV, Sahl Quran, Sahl PDF and Sahl Files. No external libraries.
 android {
-    namespace = "com.aly.sahl.common"
+    namespace = "com.sahl.tv.common"
     compileSdk = 34
     defaultConfig { minSdk = 26 }
     compileOptions {

@@ -23,7 +23,7 @@ Paired phones may open the TV Accessibility/Keyboard settings screens from the s
 
 ## Retire the preview
 
-The old test release contained `SahlTV-connect-preview.apk` (`com.aly.sahltv.connectpreview`) and a debug-signed phone preview (`com.aly.sahlconnect`). The production phone app keeps the phone package ID and uses the family release signing key. Android will normally reject installing it over a differently signed debug preview.
+The old test release contained `SahlTV-connect-preview.apk` (`com.sahl.tv.connectpreview`) and a debug-signed phone preview (`com.sahl.tv.connect`). The production phone app keeps the phone package ID and uses the family release signing key. Android will normally reject installing it over a differently signed debug preview.
 
 1. Turn Connect off in the TV preview, which closes its listener on port 8766. Keep the main Sahl TV as Home.
 2. Update the main Sahl TV launcher and install the signed phone app. If Android reports a signature conflict, uninstall the phone preview first, then install `SahlConnect.apk`. Uninstalling clears its saved TV pairing.

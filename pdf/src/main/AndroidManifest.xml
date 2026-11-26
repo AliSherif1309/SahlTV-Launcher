@@ -10,11 +10,11 @@
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
 
     <queries>
-        <package android:name="com.aly.sahltv" />
+        <package android:name="com.sahl.tv" />
     </queries>
 
     <application
-        android:name="com.aly.sahl.common.SahlApp"
+        android:name="com.sahl.tv.common.SahlApp"
         android:allowBackup="true"
         android:banner="@drawable/banner_img"
         android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher_round"
