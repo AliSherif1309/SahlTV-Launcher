@@ -1,6 +1,7 @@
 {
-  "version": "1.27.13",
+  "version": "1.27.14",
   "en": [
+    "Refined Sahl Gold spotlight focus without white borders and kept top-bar buttons and grid edges inside the TV safe area.",
     "Added TV-scoped Sahl Union data providers for prayer times, preferences, files, and timer state.",
     "Sahl TV apps now share Sahl Union signature permissions and crash reporting.",
     "Sahl TV apps now use the Sahl Family com.sahl.tv.* package identity.",
@@ -21,6 +22,7 @@
     "Floating timer with optional cross-app overlay and improved Arabic prayer overlays"
   ],
   "ar": [
+    "تحسين تمييز التركيز الذهبي بدون حدود بيضاء مع إبقاء أزرار الشريط العلوي والشبكة داخل حدود شاشة التلفاز.",
     "إضافة موفّري بيانات اتحاد سهل للتلفاز لمواقيت الصلاة والإعدادات والملفات وحالة المؤقت.",
     "تطبيقات سهل TV تشارك الآن أذونات اتحاد سهل وتقارير الأعطال.",
     "تستخدم تطبيقات سهل TV الآن معرّف حزمة عائلة سهل com.sahl.tv.*.",

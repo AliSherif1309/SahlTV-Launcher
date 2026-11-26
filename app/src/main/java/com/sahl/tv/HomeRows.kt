@@ -133,8 +133,8 @@ internal fun MainActivity.render(keepFocus: Boolean, force: Boolean = false) {
     section("all", style + listOf(all, all.map { it.pkg in locks })) {
         addView(rowTitle(digits(t("All apps  ·  ${all.size}", "كل التطبيقات  ·  ${all.size}"))))
         val tileWidth = homeTileDimensions(homeTileSize).widthDp + homeTileGapDp * 2 // including horizontal tile margins
-        val cols = maxOf(1, (resources.configuration.screenWidthDp - 96) / tileWidth)
-        val grid = GridLayout(this@render).apply { columnCount = cols; useDefaultMargins = false; clipChildren = false; clipToPadding = false }
+        val cols = maxOf(1, (resources.configuration.screenWidthDp - 112) / tileWidth)
+        val grid = GridLayout(this@render).apply { columnCount = cols; useDefaultMargins = false; setPadding(dp(8), dp(4), dp(8), dp(4)); clipChildren = false; clipToPadding = false }
         for (a in all) grid.addView(tile(a, "all", big = false))
         addView(grid)
     }
@@ -213,6 +213,7 @@ internal fun MainActivity.tile(a: App, row: String, big: Boolean): View {
         defaultFocusHighlightEnabled = false
         clipToOutline = true
         background = GradientDrawable().apply { setColor(a.tint); cornerRadius = radius }
+        alpha = 0.84f
         contentDescription = a.label
     }
     if (a.banner != null) {
@@ -260,7 +261,9 @@ internal fun MainActivity.tile(a: App, row: String, big: Boolean): View {
         v.animate().cancel()
         nameStrip?.animate()?.cancel()
         star?.animate()?.cancel()
-        v.animate().scaleX(if (has) 1.12f else 1f).scaleY(if (has) 1.12f else 1f).translationZ(if (has) dp(12).toFloat() else 0f)
+        v.animate().scaleX(if (has) 1.10f else 1f).scaleY(if (has) 1.10f else 1f)
+            .alpha(if (has) 1f else 0.84f)
+            .translationZ(if (has) dp(10).toFloat() else 0f)
             .setInterpolator(ease).setDuration(110).start()
         nameStrip?.animate()?.alpha(if (has) 1f else 0f)?.setDuration(110)?.start()
         star?.animate()?.alpha(if (has) 1f else 0f)?.setDuration(110)?.start()
@@ -286,10 +289,9 @@ internal fun MainActivity.tile(a: App, row: String, big: Boolean): View {
 }
 
 internal fun MainActivity.focusRingDrawable(radius: Float): Drawable {
-    val outerColor = if (islamic) Color.parseColor("#FFF6D6") else Color.WHITE
     val outer = GradientDrawable().apply {
         setColor(Color.TRANSPARENT)
-        setStroke(dp(4), outerColor)
+        setStroke(dp(3), GOLD)
         cornerRadius = radius
     }
     val inner = GradientDrawable().apply {
@@ -297,7 +299,7 @@ internal fun MainActivity.focusRingDrawable(radius: Float): Drawable {
         setStroke(dp(2), Color.parseColor("#CC0B1E1A"))
         cornerRadius = (radius - dp(3)).coerceAtLeast(0f)
     }
-    val inset = dp(4)
+    val inset = dp(3)
     return android.graphics.drawable.LayerDrawable(arrayOf(outer, inner)).apply {
         setLayerInset(1, inset, inset, inset, inset)
     }
