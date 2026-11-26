@@ -1,6 +1,7 @@
 {
-  "version": "1.27.12",
+  "version": "1.27.13",
   "en": [
+    "Added TV-scoped Sahl Union data providers for prayer times, preferences, files, and timer state.",
     "Sahl TV apps now share Sahl Union signature permissions and crash reporting.",
     "Sahl TV apps now use the Sahl Family com.sahl.tv.* package identity.",
     "Clearer, high-contrast focus rings and lifted cards so the selected app or item stands out at first glance.",
@@ -20,6 +21,7 @@
     "Floating timer with optional cross-app overlay and improved Arabic prayer overlays"
   ],
   "ar": [
+    "إضافة موفّري بيانات اتحاد سهل للتلفاز لمواقيت الصلاة والإعدادات والملفات وحالة المؤقت.",
     "تطبيقات سهل TV تشارك الآن أذونات اتحاد سهل وتقارير الأعطال.",
     "تستخدم تطبيقات سهل TV الآن معرّف حزمة عائلة سهل com.sahl.tv.*.",
     "إطار تركيز أوضح وعالي التباين وبطاقات مرفوعة لتمييز التطبيق أو العنصر المحدد من النظرة الأولى.",
