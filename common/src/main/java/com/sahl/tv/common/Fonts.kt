@@ -234,6 +234,7 @@ object Fonts {
 class SahlApp : Application() {
     override fun onCreate() {
         super.onCreate()
+        SahlUnion.catchCrashes(this)
         Fonts.init(this)
         readScale()
         registerActivityLifecycleCallbacks(object : ActivityLifecycleCallbacks {

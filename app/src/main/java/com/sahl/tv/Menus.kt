@@ -130,7 +130,7 @@ internal fun MainActivity.menuAction(which: Int) {
         22 -> { prefs.edit().putBoolean("wxOn", !wxOn).putLong("wxTry", 0L).apply(); updateClock() }
         23 -> { prefs.edit().putBoolean("ayahOn", !ayahOn).apply(); ayahToday = null; updateClock() }
         24 -> textSizeMenu()
-        25 -> { prefs.edit().putBoolean("nightStyle", !nightStyle).commit(); Fonts.night = PrefsProvider.isNight(this); recreate() }
+        25 -> { prefs.edit().putBoolean("nightStyle", !nightStyle).commit(); Fonts.night = PrefsProvider.isNight(this); com.sahl.tv.common.SahlUnion.announce(this, com.sahl.tv.common.SahlUnion.EVENT_PREFS_CHANGED); recreate() }
         26 -> { prefs.edit().putBoolean("arDigits", !arDigits).apply(); updateClock(); tickCountdowns(); prefs.edit().putLong("wxTry", 0L).apply(); refreshWeather(); render(true) }
         27 -> greetingMenu()
         30 -> com.sahl.tv.common.Family.show(this) { guarded { connectMenu() } }
