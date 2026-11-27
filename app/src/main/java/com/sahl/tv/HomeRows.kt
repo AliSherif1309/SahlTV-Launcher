@@ -132,10 +132,12 @@ internal fun MainActivity.render(keepFocus: Boolean, force: Boolean = false) {
     }
     section("all", style + listOf(all, all.map { it.pkg in locks })) {
         addView(rowTitle(digits(t("All apps  ·  ${all.size}", "كل التطبيقات  ·  ${all.size}"))))
-        val tileWidth = homeTileDimensions(homeTileSize).widthDp + homeTileGapDp * 2 // including horizontal tile margins
-        val cols = maxOf(1, (resources.configuration.screenWidthDp - 112) / tileWidth)
-        val grid = GridLayout(this@render).apply { columnCount = cols; useDefaultMargins = false; setPadding(dp(8), dp(4), dp(8), dp(4)); clipChildren = false; clipToPadding = false }
-        for (a in all) grid.addView(tile(a, "all", big = false))
+        val availPx = (resources.displayMetrics.widthPixels - dp(96) - dp(16)).coerceAtLeast(dp(200))
+        val baseTileW = dp(homeTileDimensions(homeTileSize).widthDp + homeTileGapDp * 2)
+        val cols = maxOf(1, availPx / baseTileW)
+        val cellW = (availPx / cols - dp(homeTileGapDp) * 2).coerceAtLeast(dp(80))
+        val grid = GridLayout(this@render).apply { columnCount = cols; useDefaultMargins = false; setPadding(dp(8), dp(4), dp(8), dp(8)); clipChildren = false; clipToPadding = false }
+        for (a in all) grid.addView(tile(a, "all", big = false, widthPx = cellW))
         addView(grid)
     }
     // Insert new sections around retained views; never detach an unchanged row.
@@ -175,7 +177,7 @@ internal fun MainActivity.rowTitle(t: String) = TextView(this).apply {
 
 internal fun MainActivity.hRow(row: String, list: List<App>, big: Boolean): View {
     // room around the tiles + no clipping, so the grown (focused) tile and its gold ring are never cut
-    val line = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(dp(12), dp(12), dp(12), dp(12)); clipChildren = false; clipToPadding = false }
+    val line = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(dp(12), dp(14), dp(12), dp(18)); clipChildren = false; clipToPadding = false }
     for (a in list) line.addView(tile(a, row, big))
     return HorizontalScrollView(this).apply {
         isHorizontalScrollBarEnabled = false; clipToPadding = false; clipChildren = false
@@ -189,7 +191,7 @@ internal fun MainActivity.hRow(row: String, list: List<App>, big: Boolean): View
 internal fun MainActivity.hMixedRow(entries: List<Pair<App, String>>): View {
     val line = LinearLayout(this).apply {
         orientation = LinearLayout.HORIZONTAL
-        setPadding(dp(12), dp(12), dp(12), dp(12))
+        setPadding(dp(12), dp(14), dp(12), dp(18))
         clipChildren = false; clipToPadding = false
     }
     for ((app, row) in entries) line.addView(tile(app, row, big = false))
@@ -201,9 +203,9 @@ internal fun MainActivity.hMixedRow(entries: List<Pair<App, String>>): View {
     }
 }
 
-internal fun MainActivity.tile(a: App, row: String, big: Boolean): View {
+internal fun MainActivity.tile(a: App, row: String, big: Boolean, widthPx: Int? = null): View {
     val (tileWidthDp, tileHeightDp) = homeTileDimensions(homeTileSize)
-    val w = dp(tileWidthDp)
+    val w = widthPx ?: dp(tileWidthDp)
     val h = dp(tileHeightDp)
     val radius = dp(10).toFloat()
     var nameStrip: TextView? = null
@@ -213,7 +215,7 @@ internal fun MainActivity.tile(a: App, row: String, big: Boolean): View {
         defaultFocusHighlightEnabled = false
         clipToOutline = true
         background = GradientDrawable().apply { setColor(a.tint); cornerRadius = radius }
-        alpha = 0.84f
+        alpha = 0.62f
         contentDescription = a.label
     }
     if (a.banner != null) {
@@ -249,20 +251,26 @@ internal fun MainActivity.tile(a: App, row: String, big: Boolean): View {
         background = GradientDrawable().apply { setColor(GOLD); cornerRadius = dp(10).toFloat() }
         setPadding(dp(7), dp(1), dp(7), dp(2)); alpha = 0f
     }.also { frame.addView(it, FrameLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT, Gravity.TOP or Gravity.START).apply { setMargins(dp(5), dp(5), dp(5), dp(5)) }) } else null
-    // high-contrast double focus ring drawn on top so it stands out against any banner or background
+    // high-contrast double focus ring + bottom gold bar drawn on top so focus stands out against any banner
     val ring = View(this).apply {
         background = focusRingDrawable(radius)
         visibility = View.INVISIBLE
     }
     frame.addView(ring, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
+    val focusBar = View(this).apply {
+        background = GradientDrawable().apply { setColor(GOLD); cornerRadius = dp(2).toFloat() }
+        visibility = View.INVISIBLE
+    }
+    frame.addView(focusBar, FrameLayout.LayoutParams(dp(44), dp(4), Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL).apply { bottomMargin = dp(4) })
 
     frame.setOnFocusChangeListener { v, has ->
         ring.visibility = if (has) View.VISIBLE else View.INVISIBLE
+        focusBar.visibility = if (has) View.VISIBLE else View.INVISIBLE
         v.animate().cancel()
         nameStrip?.animate()?.cancel()
         star?.animate()?.cancel()
-        v.animate().scaleX(if (has) 1.10f else 1f).scaleY(if (has) 1.10f else 1f)
-            .alpha(if (has) 1f else 0.84f)
+        v.animate().scaleX(if (has) 1.08f else 1f).scaleY(if (has) 1.08f else 1f)
+            .alpha(if (has) 1f else 0.62f)
             .translationZ(if (has) dp(10).toFloat() else 0f)
             .setInterpolator(ease).setDuration(110).start()
         nameStrip?.animate()?.alpha(if (has) 1f else 0f)?.setDuration(110)?.start()

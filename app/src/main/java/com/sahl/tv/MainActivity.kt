@@ -200,17 +200,19 @@ class MainActivity : Activity(), RemoteServer.Host {
         val col = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             layoutDirection = if (ar) View.LAYOUT_DIRECTION_RTL else View.LAYOUT_DIRECTION_LTR
-            setPadding(dp(48), dp(24), dp(48), 0)       // TV safe area
+            setPadding(dp(48), dp(24), dp(48), dp(20))   // TV safe area on all 4 sides
+            clipChildren = false; clipToPadding = false
         }
         col.addView(buildTopBar())
         col.addView(buildNowBar())
         content = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL; setPadding(0, dp(4), 0, dp(40)); clipChildren = false; clipToPadding = false
+            orientation = LinearLayout.VERTICAL; setPadding(0, dp(8), 0, dp(48)); clipChildren = false; clipToPadding = false
         }
         scroll = ScrollView(this).apply {
             isVerticalScrollBarEnabled = false
             isSmoothScrollingEnabled = true
-            clipToPadding = false
+            setPadding(0, dp(6), 0, dp(12))
+            clipToPadding = false; clipChildren = false
             addView(content)
         }
         col.addView(scroll, LinearLayout.LayoutParams(MATCH_PARENT, 0, 1f))
