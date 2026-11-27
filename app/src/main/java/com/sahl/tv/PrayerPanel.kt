@@ -58,19 +58,19 @@ import com.sahl.tv.MainActivity.*
 
 internal fun MainActivity.cardBg(strong: Boolean, focused: Boolean, glow: Boolean = false) = GradientDrawable().apply {
     orientation = GradientDrawable.Orientation.TOP_BOTTOM
-    colors = if (focused) intArrayOf(Color.parseColor("#F7215244"), Color.parseColor("#F716382E"))
+    colors = if (focused) intArrayOf(Color.parseColor("#F51E4638"), Color.parseColor("#F5122E24"))
              else if (islamic) intArrayOf(Color.parseColor("#B00E211D"), Color.parseColor("#B8091714"))      // frosted glass: the Kaaba shows through
              else intArrayOf(Color.parseColor("#E8102521"), Color.parseColor("#E80A1A17"))
     cornerRadius = dp(16).toFloat()
     val w = if (focused) dp(3) else if (strong || glow) dp(2) else dp(1)
-    setStroke(w, if (focused) GOLD else if (strong || glow) Color.argb(140, 227, 184, 92) else Color.argb(55, 227, 184, 92))
+    setStroke(w, if (focused) GOLD else if (strong || glow) Color.argb(120, 227, 184, 92) else Color.argb(50, 227, 184, 92))
 }
 
 internal fun MainActivity.card(strong: Boolean, onClick: () -> Unit) = LinearLayout(this).apply {
     isFocusable = true; isClickable = true; defaultFocusHighlightEnabled = false
     gravity = Gravity.CENTER_VERTICAL
     background = cardBg(strong, false)
-    setPadding(dp(16), dp(8), dp(16), dp(8))
+    setPadding(dp(16), dp(6), dp(16), dp(6))
     setOnFocusChangeListener { v, has ->
         v.background = cardBg(strong, has, v.tag == "glow")
         v.animate().cancel()
@@ -90,44 +90,44 @@ internal fun MainActivity.iconLabel(kind: Int, text: String) = LinearLayout(this
 internal fun MainActivity.small(text: String, color: Int = MUTED) = TextView(this).apply { this.text = text; textSize = 13f; setTextColor(color); maxLines = 1 }
 
 internal fun MainActivity.buildPanel(): LinearLayout {
-    val col = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(4), dp(12), dp(4), dp(2)); clipChildren = false; clipToPadding = false }
+    val col = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(4), dp(8), dp(4), dp(2)); clipChildren = false; clipToPadding = false }
 
     // row 1: next prayer + countdown, then the five prayers
     prayRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; clipChildren = false }
-    val hero = card(true) { prayerDialog() }
+    val hero = card(true) { prayerDialog() }.apply { minimumHeight = dp(82) }
     val a = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
     val lbl = iconLabel(GoldIcon.MOSQUE, t("Next prayer", "الصلاة القادمة")); nextLabelTv = lbl.getChildAt(1) as TextView
     a.addView(lbl)
-    nextNameTv = TextView(this).apply { textSize = 28f; setTextColor(TEXT); typeface = Fonts.display(true); maxLines = 1; includeFontPadding = false; Fonts.heading(this) }
+    nextNameTv = TextView(this).apply { textSize = 26f; setTextColor(TEXT); typeface = Fonts.display(true); maxLines = 1; includeFontPadding = false; Fonts.heading(this) }
     a.addView(nextNameTv)
     hero.addView(a, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
-    hero.addView(View(this).apply { setBackgroundColor(Color.argb(90, 227, 184, 92)) }, LinearLayout.LayoutParams(dp(1), dp(46)).apply { setMargins(dp(12), 0, dp(12), 0) })
+    hero.addView(View(this).apply { setBackgroundColor(Color.argb(90, 227, 184, 92)) }, LinearLayout.LayoutParams(dp(1), dp(44)).apply { setMargins(dp(10), 0, dp(10), 0) })
     val b = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
     b.addView(iconLabel(GoldIcon.HOURGLASS, t("Time left", "الوقت المتبقي")))
     nextCountTv = TextView(this).apply {
-        textSize = 28f; setTextColor(GOLD); setTypeface(Typeface.create("sans-serif-medium", Typeface.BOLD)); maxLines = 1
+        textSize = 24f; setTextColor(GOLD); setTypeface(Typeface.create("sans-serif-medium", Typeface.BOLD)); maxLines = 1
         fontFeatureSettings = "tnum"; textDirection = View.TEXT_DIRECTION_LTR
     }
     b.addView(nextCountTv)
     hero.addView(b, LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT))
-    prayRow.addView(hero, LinearLayout.LayoutParams(0, dp(84), 0.42f))
+    prayRow.addView(hero, LinearLayout.LayoutParams(0, WRAP_CONTENT, 0.42f))
 
-    val strip = card(false) { prayerDialog() }.apply { setPadding(dp(6), dp(6), dp(6), dp(6)) }
+    val strip = card(false) { prayerDialog() }.apply { setPadding(dp(6), dp(6), dp(6), dp(6)); minimumHeight = dp(82) }
     val stripIcons = intArrayOf(GoldIcon.FAJR, GoldIcon.SUN, GoldIcon.DHUHR, GoldIcon.ASR, GoldIcon.MAGHRIB, GoldIcon.ISHA)
     for (i in 0 until 6) {
         val cell = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER }
-        cell.addView(GoldIcon(this, stripIcons[i], GOLD), LinearLayout.LayoutParams(dp(20), dp(20)).apply { bottomMargin = dp(2) })
-        val n = TextView(this).apply { textSize = 13f; setTextColor(MUTED); gravity = Gravity.CENTER; maxLines = 1 }
-        val tm = TextView(this).apply { textSize = 16f; setTextColor(TEXT); setTypeface(typeface, Typeface.BOLD); gravity = Gravity.CENTER; maxLines = 1 }
+        cell.addView(GoldIcon(this, stripIcons[i], GOLD), LinearLayout.LayoutParams(dp(18), dp(18)).apply { bottomMargin = dp(2) })
+        val n = TextView(this).apply { textSize = 12.5f; setTextColor(MUTED); gravity = Gravity.CENTER; maxLines = 1 }
+        val tm = TextView(this).apply { textSize = 15.5f; setTextColor(TEXT); setTypeface(typeface, Typeface.BOLD); gravity = Gravity.CENTER; maxLines = 1 }
         cell.addView(n); cell.addView(tm)
         cellBoxes.add(cell); cellNames.add(n); cellTimes.add(tm)
         strip.addView(cell, LinearLayout.LayoutParams(0, MATCH_PARENT, 1f).apply { setMargins(dp(3), 0, dp(3), 0) })
     }
-    prayRow.addView(strip, LinearLayout.LayoutParams(0, dp(84), 0.58f).apply { marginStart = dp(12) })
+    prayRow.addView(strip, LinearLayout.LayoutParams(0, WRAP_CONTENT, 0.58f).apply { marginStart = dp(12) })
     col.addView(prayRow)
 
     // row 2: Ramadan / Hijri occasions, and the next Sunnah fast
-    val row2 = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(0, dp(12), 0, 0); clipChildren = false }
+    val row2 = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(0, dp(8), 0, 0); clipChildren = false }
     ramCard = card(false) { islamicDatesDialog() }
     ramCard.addView(GoldIcon(this, GoldIcon.LANTERN, GOLD), LinearLayout.LayoutParams(dp(34), dp(34)).apply { marginEnd = dp(14) })
     val rc = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
@@ -254,10 +254,10 @@ internal fun MainActivity.updateIslamic() {
             cellTimes[i].text = digits(Prayer.hm(if (i == 0 && epochAt(today, tt.isha) < now) tm.fajr else hours[i]))
             val on = i == nextI
             cellBoxes[i].background = if (on) GradientDrawable().apply {
-                setColor(Color.parseColor("#1C4337")); cornerRadius = dp(12).toFloat(); setStroke(dp(1), GOLD)
+                setColor(Color.parseColor("#66183D32")); cornerRadius = dp(10).toFloat()
             } else null
             cellNames[i].setTextColor(if (on) GOLD else MUTED)
-            cellTimes[i].setTextColor(if (on) Color.parseColor("#FFF6E0") else TEXT)
+            cellTimes[i].setTextColor(if (on) GOLD else TEXT)
         }
     } else { prayRow.visibility = View.GONE; nextAt = 0 }
 
@@ -352,8 +352,11 @@ internal fun MainActivity.tickCountdowns() {
     val now = System.currentTimeMillis()
     if ((nextAt in 1..now) || (ramAt in 1..now)) { updateClock(); return }
     if (nextAt > 0) {
-        val left = nextAt - now
-        nextCountTv.text = digits(fmtLeft(left))
+        val totalSec = ((nextAt - now) / 1000L).coerceAtLeast(0L)
+        val h = totalSec / 3600L
+        val m = (totalSec % 3600L) / 60L
+        val s = totalSec % 60L
+        nextCountTv.text = digits(String.format(Locale.US, "%02d:%02d:%02d", h, m, s))
     }
     if (ramAt > 0) ramSub.text = digits("$ramLabel  ${fmtLeft(ramAt - now)}")
 }
